@@ -27,8 +27,8 @@ object TTSUtils {
     private val REGEX_BULLET = Regex("^\\s*[-*+]\\s+", RegexOption.MULTILINE)
     private val REGEX_NEWLINE = Regex("\n{3,}")
 
-    private val SENTENCE_ENDERS = listOf("。", "．", ". ", "! ", "? ", "！", "？")
-    private val COMMA_ENDERS = listOf("、", "，", ", ")
+    private val SENTENCE_ENDERS = arrayOf("。", "．", ". ", "! ", "? ", "！", "？")
+    private val COMMA_ENDERS = arrayOf("、", "，", ", ")
 
     /**
      * Setup locale and high-quality voice
@@ -159,55 +159,74 @@ object TTSUtils {
         if (text.length <= maxLength) return listOf(text)
 
         val chunks = mutableListOf<String>()
-        var remaining = text
+        var offset = 0
 
-        while (remaining.isNotEmpty()) {
-            if (remaining.length <= maxLength) {
-                chunks.add(remaining)
+        while (offset < text.length) {
+            val remainingLength = text.length - offset
+            if (remainingLength <= maxLength) {
+                chunks.add(text.substring(offset).trim())
                 break
             }
 
             // Find the last sentence boundary within maxLength
-            val searchRange = remaining.substring(0, maxLength)
-            val splitIndex = findBestSplitPoint(searchRange)
+            val splitPoint = findBestSplitPoint(text, offset, offset + maxLength)
 
-            if (splitIndex > 0) {
-                chunks.add(remaining.substring(0, splitIndex).trim())
-                remaining = remaining.substring(splitIndex).trim()
+            if (splitPoint > offset) {
+                chunks.add(text.substring(offset, splitPoint).trim())
+                offset = splitPoint
             } else {
                 // No boundary found, force split at maxLength
-                chunks.add(remaining.substring(0, maxLength).trim())
-                remaining = remaining.substring(maxLength).trim()
+                chunks.add(text.substring(offset, offset + maxLength).trim())
+                offset += maxLength
+            }
+
+            // Skip leading whitespace for the next chunk to emulate .trim() behavior for the remainder
+            while (offset < text.length && text[offset].isWhitespace()) {
+                offset++
             }
         }
 
         return chunks.filter { it.isNotBlank() }
     }
 
-    private fun findBestSplitPoint(text: String): Int {
+    private fun findBestSplitPoint(text: String, offset: Int, limit: Int): Int {
+        val chunkLength = limit - offset
+
         // Priority: paragraph break > sentence end > comma > space
-        val paragraphBreak = text.lastIndexOf("\n\n")
-        if (paragraphBreak > text.length / 2) return paragraphBreak + 2
+        val paragraphBreak = lastIndexOfBounded(text, "\n\n", offset, limit)
+        if (paragraphBreak > offset + chunkLength / 2) return paragraphBreak + 2
 
         var bestPos = -1
         for (ender in SENTENCE_ENDERS) {
-            val pos = text.lastIndexOf(ender)
+            val pos = lastIndexOfBounded(text, ender, offset, limit)
             if (pos > bestPos) bestPos = pos + ender.length
         }
-        if (bestPos > text.length / 3) return bestPos
+        if (bestPos > offset + chunkLength / 3) return bestPos
 
-        val lineBreak = text.lastIndexOf("\n")
-        if (lineBreak > text.length / 3) return lineBreak + 1
+        val lineBreak = lastIndexOfBounded(text, "\n", offset, limit)
+        if (lineBreak > offset + chunkLength / 3) return lineBreak + 1
 
         for (ender in COMMA_ENDERS) {
-            val pos = text.lastIndexOf(ender)
+            val pos = lastIndexOfBounded(text, ender, offset, limit)
             if (pos > bestPos) bestPos = pos + ender.length
         }
-        if (bestPos > text.length / 3) return bestPos
+        if (bestPos > offset + chunkLength / 3) return bestPos
 
-        val space = text.lastIndexOf(" ")
-        if (space > text.length / 3) return space + 1
+        val space = lastIndexOfBounded(text, " ", offset, limit)
+        if (space > offset + chunkLength / 3) return space + 1
 
+        return -1
+    }
+
+    private fun lastIndexOfBounded(text: String, delimiter: String, offset: Int, limit: Int): Int {
+        if (delimiter.isEmpty()) return -1
+        val startSearch = limit - delimiter.length
+        if (startSearch < offset) return -1
+        for (i in startSearch downTo offset) {
+            if (text.regionMatches(i, delimiter, 0, delimiter.length)) {
+                return i
+            }
+        }
         return -1
     }
 }
