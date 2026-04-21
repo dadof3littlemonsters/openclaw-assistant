@@ -1040,7 +1040,7 @@ fun SystemStatusCard(
     onDisconnect: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
-    val isConnecting = statusText.contains("Connecting", ignoreCase = true)
+    val isConnecting = statusText.contains("Connecting", ignoreCase = true) || statusText.contains("Verify gateway TLS fingerprint", ignoreCase = true)
 
     val backgroundColor = when {
         connected -> Color(0xFFE8F5E9)

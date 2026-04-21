@@ -1107,7 +1107,7 @@ private fun FinalCheckStep(
                 textAlign = TextAlign.Center
             )
         } else {
-            val isConnecting = statusText.contains("Connecting", ignoreCase = true)
+            val isConnecting = statusText.contains("Connecting", ignoreCase = true) || statusText.contains("Verify gateway TLS fingerprint", ignoreCase = true)
             val state = when {
                 isConnected -> ConnectionState.Connected
                 isConnecting -> ConnectionState.Connecting
