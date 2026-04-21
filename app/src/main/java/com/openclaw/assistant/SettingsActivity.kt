@@ -866,7 +866,7 @@ fun SettingsScreen(
                                                         isFetchingAgents = false
                                                     }
                                                 }) {
-                                                    Icon(Icons.Default.Refresh, contentDescription = "Refresh Agents")
+                                                    Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.action_refresh))
                                                 }
                                             }
                                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = showAgentMenu)
@@ -917,7 +917,7 @@ fun SettingsScreen(
                                                 isFetchingAgents = false
                                             }
                                         }) {
-                                            Icon(Icons.Default.Refresh, contentDescription = "Refresh Agents")
+                                            Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.action_refresh))
                                         }
                                     }
                                 },
