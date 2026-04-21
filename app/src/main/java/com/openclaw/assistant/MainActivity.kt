@@ -1234,7 +1234,7 @@ fun PermissionDiagnosticsPanel(allPermissionsStatus: List<PermissionStatusInfo>,
             Spacer(modifier = Modifier.height(8.dp))
             allPermissionsStatus.forEach { perm ->
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).semantics(mergeDescendants = true) {},
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     val color = if (perm.isGranted) Color(0xFF4CAF50) else Color(0xFFF44336)
@@ -1259,7 +1259,7 @@ fun PermissionDiagnosticsPanel(allPermissionsStatus: List<PermissionStatusInfo>,
 fun DiagnosticItem(label: String, status: DiagnosticStatus, modifier: Modifier = Modifier) {
     val color = when (status) { DiagnosticStatus.READY -> Color(0xFF4CAF50); DiagnosticStatus.WARNING -> Color(0xFFFFC107); DiagnosticStatus.ERROR -> Color(0xFFF44336) }
     val icon = when (status) { DiagnosticStatus.READY -> Icons.Default.Check; DiagnosticStatus.WARNING -> Icons.Default.Info; DiagnosticStatus.ERROR -> Icons.Default.Error }
-    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier = modifier.semantics(mergeDescendants = true) {}, verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, contentDescription = status.name, tint = color, modifier = Modifier.size(16.dp))
         Spacer(modifier = Modifier.width(4.dp))
         Text(label, fontSize = 11.sp, fontWeight = FontWeight.Medium)
@@ -1270,7 +1270,7 @@ fun DiagnosticItem(label: String, status: DiagnosticStatus, modifier: Modifier =
 fun SuggestionItem(suggestion: com.openclaw.assistant.speech.diagnostics.DiagnosticSuggestion) {
     val context = LocalContext.current
     Surface(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), color = MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(8.dp), tonalElevation = 1.dp) {
-        Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(modifier = Modifier.padding(8.dp).semantics(mergeDescendants = true) {}, verticalAlignment = Alignment.CenterVertically) {
             Text(text = suggestion.message, modifier = Modifier.weight(1f), fontSize = 12.sp, lineHeight = 16.sp)
             if (suggestion.actionLabel != null && suggestion.intent != null) {
                 TextButton(onClick = { try { context.startActivity(suggestion.intent) } catch (e: Exception) { Toast.makeText(context, context.getString(R.string.state_error), Toast.LENGTH_SHORT).show() } }, contentPadding = PaddingValues(horizontal = 8.dp)) { Text(suggestion.actionLabel, fontSize = 12.sp) }
@@ -1474,7 +1474,7 @@ fun PermissionStatusCard(
             Spacer(modifier = Modifier.height(12.dp))
             missingPermissions.forEach { perm ->
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).semantics(mergeDescendants = true) {},
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
