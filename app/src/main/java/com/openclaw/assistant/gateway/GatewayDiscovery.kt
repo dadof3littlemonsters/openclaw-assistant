@@ -14,6 +14,7 @@ import java.io.IOException
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.charset.CodingErrorAction
+import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
@@ -358,7 +359,7 @@ class GatewayDiscovery(
   }
 
   private fun records(msg: Message?, section: Int): List<Record> {
-    return msg?.getSectionArray(section)?.toList() ?: emptyList()
+    return msg?.getSection(section).orEmpty()
   }
 
   private fun keyName(raw: String): String {
@@ -434,14 +435,14 @@ class GatewayDiscovery(
           try {
             SimpleResolver().apply {
               setAddress(InetSocketAddress(addr, 53))
-              setTimeout(3)
+              setTimeout(Duration.ofSeconds(3))
             }
           } catch (_: Throwable) {
             null
           }
         }
       if (resolvers.isEmpty()) return null
-      ExtendedResolver(resolvers.toTypedArray()).apply { setTimeout(3) }
+      ExtendedResolver(resolvers.toTypedArray()).apply { setTimeout(Duration.ofSeconds(3)) }
     } catch (_: Throwable) {
       null
     }
