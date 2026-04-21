@@ -553,4 +553,11 @@
     <string name="action_copy">कॉपी करें</string>
     <string name="error_mic_privacy_title">माइक्रोफ़ोन एक्सेस अवरुद्ध है</string>
     <string name="error_mic_privacy_message">आपके डिवाइस का माइक्रोफ़ोन गोपनीयता स्विच बंद है। इसे सेटिंग &gt; गोपनीयता &gt; माइक्रोफ़ोन में चालू करें।</string>
+    <string name="action_hide_token">टोकन छुपाएं</string>
+    <string name="action_show_token">टोकन दिखाएं</string>
+    <string name="action_hide_password">पासवर्ड छुपाएं</string>
+    <string name="action_show_password">पासवर्ड दिखाएं</string>
+    <string name="action_hide_api_key">API कुंजी छुपाएं</string>
+    <string name="action_show_api_key">API कुंजी दिखाएं</string>
+    <string name="action_refresh_agents">एजेंट अपडेट करें</string>
 </resources>

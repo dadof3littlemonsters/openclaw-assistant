@@ -553,4 +553,11 @@
     <string name="action_copy">复制</string>
     <string name="error_mic_privacy_title">麦克风访问被阻止</string>
     <string name="error_mic_privacy_message">您的设备麦克风隐私开关已关闭。请在设置 &gt; 隐私 &gt; 麦克风中开启。</string>
+    <string name="action_hide_token">隐藏令牌</string>
+    <string name="action_show_token">显示令牌</string>
+    <string name="action_hide_password">隐藏密码</string>
+    <string name="action_show_password">显示密码</string>
+    <string name="action_hide_api_key">隐藏 API 密钥</string>
+    <string name="action_show_api_key">显示 API 密钥</string>
+    <string name="action_refresh_agents">刷新代理</string>
 </resources>

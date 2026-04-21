@@ -552,4 +552,11 @@ Weitere Informationen finden Sie auf der offiziellen Website von VOICEVOX.</stri
     <string name="action_copy">Kopieren</string>
     <string name="error_mic_privacy_title">Mikrofonzugriff blockiert</string>
     <string name="error_mic_privacy_message">Der Mikrofon-Datenschutzschalter Ihres Geräts ist deaktiviert. Aktivieren Sie ihn unter Einstellungen &gt; Datenschutz &gt; Mikrofon.</string>
+    <string name="action_hide_token">Token verbergen</string>
+    <string name="action_show_token">Token anzeigen</string>
+    <string name="action_hide_password">Passwort verbergen</string>
+    <string name="action_show_password">Passwort anzeigen</string>
+    <string name="action_hide_api_key">API-Schlüssel verbergen</string>
+    <string name="action_show_api_key">API-Schlüssel anzeigen</string>
+    <string name="action_refresh_agents">Agenten aktualisieren</string>
 </resources>

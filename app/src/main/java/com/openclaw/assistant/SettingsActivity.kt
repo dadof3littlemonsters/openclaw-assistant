@@ -714,7 +714,7 @@ fun SettingsScreen(
                                         IconButton(onClick = { showNodeToken = !showNodeToken }) {
                                             Icon(
                                                 if (showNodeToken) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                                contentDescription = if (showNodeToken) "Hide token" else "Show token"
+                                                contentDescription = stringResource(if (showNodeToken) R.string.action_hide_token else R.string.action_show_token)
                                             )
                                         }
                                     },
@@ -736,7 +736,7 @@ fun SettingsScreen(
                                         IconButton(onClick = { showGatewayPassword = !showGatewayPassword }) {
                                             Icon(
                                                 if (showGatewayPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                                contentDescription = if (showGatewayPassword) "Hide password" else "Show password"
+                                                contentDescription = stringResource(if (showGatewayPassword) R.string.action_hide_password else R.string.action_show_password)
                                             )
                                         }
                                     },
@@ -789,7 +789,7 @@ fun SettingsScreen(
                                     IconButton(onClick = { showNodeToken = !showNodeToken }) {
                                         Icon(
                                             if (showNodeToken) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                            contentDescription = if (showNodeToken) "Hide token" else "Show token"
+                                            contentDescription = stringResource(if (showNodeToken) R.string.action_hide_token else R.string.action_show_token)
                                         )
                                     }
                                 },
@@ -866,7 +866,7 @@ fun SettingsScreen(
                                                         isFetchingAgents = false
                                                     }
                                                 }) {
-                                                    Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.action_refresh))
+                                                    Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.action_refresh_agents))
                                                 }
                                             }
                                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = showAgentMenu)
@@ -917,7 +917,7 @@ fun SettingsScreen(
                                                 isFetchingAgents = false
                                             }
                                         }) {
-                                            Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.action_refresh))
+                                            Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.action_refresh_agents))
                                         }
                                     }
                                 },
@@ -1907,7 +1907,7 @@ fun ElevenLabsSettingsCard(
                     IconButton(onClick = { onShowApiKeyChange(!showApiKey) }) {
                         Icon(
                             if (showApiKey) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = if (showApiKey) "Hide API Key" else "Show API Key"
+                            contentDescription = stringResource(if (showApiKey) R.string.action_hide_api_key else R.string.action_show_api_key)
                         )
                     }
                 },
@@ -2102,7 +2102,7 @@ fun OpenAISettingsCard(
                     IconButton(onClick = { onShowApiKeyChange(!showApiKey) }) {
                         Icon(
                             if (showApiKey) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = if (showApiKey) "Hide API Key" else "Show API Key"
+                            contentDescription = stringResource(if (showApiKey) R.string.action_hide_api_key else R.string.action_show_api_key)
                         )
                     }
                 },

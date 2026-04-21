@@ -555,4 +555,11 @@
     <string name="action_copy">コピー</string>
     <string name="error_mic_privacy_title">マイクのアクセスがブロックされています</string>
     <string name="error_mic_privacy_message">システムのマイクプライバシートグルがオフになっています。設定 &gt; プライバシー &gt; マイクから有効にしてください。</string>
+    <string name="action_hide_token">トークンを隠す</string>
+    <string name="action_show_token">トークンを表示</string>
+    <string name="action_hide_password">パスワードを隠す</string>
+    <string name="action_show_password">パスワードを表示</string>
+    <string name="action_hide_api_key">APIキーを隠す</string>
+    <string name="action_show_api_key">APIキーを表示</string>
+    <string name="action_refresh_agents">エージェントを更新</string>
 </resources>

@@ -552,4 +552,11 @@
     <string name="action_copy">複製</string>
     <string name="error_mic_privacy_title">麥克風存取被封鎖</string>
     <string name="error_mic_privacy_message">您的裝置麥克風隱私開關已關閉。請至設定 &gt; 隱私 &gt; 麥克風開啟。</string>
+    <string name="action_hide_token">隱藏令牌</string>
+    <string name="action_show_token">顯示令牌</string>
+    <string name="action_hide_password">隱藏密碼</string>
+    <string name="action_show_password">顯示密碼</string>
+    <string name="action_hide_api_key">隱藏 API 金鑰</string>
+    <string name="action_show_api_key">顯示 API 金鑰</string>
+    <string name="action_refresh_agents">重新整理代理程式</string>
 </resources>
