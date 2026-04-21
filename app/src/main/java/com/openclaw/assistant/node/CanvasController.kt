@@ -73,6 +73,12 @@ class CanvasController {
         allowFileAccess = false
         allowContentAccess = false
         mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+        builtInZoomControls = false
+        displayZoomControls = false
+        setSupportZoom(false)
+        if (androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.ALGORITHMIC_DARKENING)) {
+          androidx.webkit.WebSettingsCompat.setAlgorithmicDarkeningAllowed(this, false)
+        }
       }
       // Required so JavaScript interactions (dialogs, file choosers, etc.) work properly.
       // Without this, alert()/confirm() calls silently fail and can halt button actions.
