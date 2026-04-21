@@ -254,7 +254,6 @@ dependencies {
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
     implementation("com.google.firebase:firebase-crashlytics")
-    implementation("com.google.firebase:firebase-analytics")
 
     // QR Code Scanning (Google Code Scanner — no camera permission required)
     implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
