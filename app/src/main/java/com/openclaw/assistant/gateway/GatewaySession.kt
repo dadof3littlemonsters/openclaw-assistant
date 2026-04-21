@@ -98,7 +98,18 @@ class GatewaySession(
       if (host == "localhost") return true
       if (host == "::1") return true
       if (host == "0.0.0.0" || host == "::") return true
-      return host.startsWith("127.")
+
+      val parts = host.split(".")
+      if (parts.size == 4) {
+          val p1 = parts[0].toIntOrNull() ?: return false
+          val p2 = parts[1].toIntOrNull() ?: return false
+          val p3 = parts[2].toIntOrNull() ?: return false
+          val p4 = parts[3].toIntOrNull() ?: return false
+          if (p1 in 0..255 && p2 in 0..255 && p3 in 0..255 && p4 in 0..255) {
+              return p1 == 127
+          }
+      }
+      return false
     }
 
     internal fun normalizeCanvasHostUrl(
