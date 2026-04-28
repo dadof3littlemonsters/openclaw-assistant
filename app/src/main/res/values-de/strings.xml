@@ -503,7 +503,7 @@ Weitere Informationen finden Sie auf der offiziellen Website von VOICEVOX.</stri
 <string name="permission_summary_title">Permissions Summary</string>
 <string name="permission_summary_format">%1$d standard permissions, %2$d special access granted</string>
     <!-- Missing translations -->
-    <string name="approve_command_format">openclaw devices approve $(openclaw devices list --json | tr \'{\' \'\\n\' | grep \'\"deviceId\":\"%s\"\' | grep -o \'\"requestId\":\"[^\"]*\"\' | cut -d\'\"\' -f4)</string>
+    <string name="approve_command_format">openclaw devices approve $(openclaw devices list --json | jq -r \'.pending[] | select(.deviceId == \"%s\") | .requestId\')</string>
     <string name="credits_support_description">このアプリが役に立った場合は、Ko-fiでの支援をご検討ください。</string>
     <string name="credits_support_kofi_button">Support the Developer</string>
     <string name="credits_support_title">開発をサポートする</string>
@@ -511,7 +511,7 @@ Weitere Informationen finden Sie auf der offiziellen Website von VOICEVOX.</stri
     <string name="qr_scan_desc">Align the QR code within the frame to scan it</string>
     <string name="qr_scan_prompt">Scan QR Code</string>
     <string name="qr_scan_unavailable">QR-Scan ist nicht verfügbar. Bitte aktualisieren Sie die Google Play-Dienste.</string>
-    <string name="reject_command_format">openclaw devices reject $(openclaw devices list --json | tr \'{\' \'\\n\' | grep \'\"deviceId\":\"%s\"\' | grep -o \'\"requestId\":\"[^\"]*\"\' | cut -d\'\"\' -f4)</string>
+    <string name="reject_command_format">openclaw devices reject $(openclaw devices list --json | jq -r \'.pending[] | select(.deviceId == \"%s\") | .requestId\')</string>
     <string name="setup_guide_qr_scan_title">Option 1: QR-Code scannen</string>
     <string name="setup_guide_qr_scan_cmd_label">Führen Sie dies auf dem Gateway-Host aus, um einen QR-Code anzuzeigen:</string>
     <string name="setup_guide_code_input_title">Option 2: Setup-Code eingeben</string>

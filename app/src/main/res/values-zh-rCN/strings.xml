@@ -504,7 +504,7 @@
 <string name="permission_summary_title">Permissions Summary</string>
 <string name="permission_summary_format">%1$d standard permissions, %2$d special access granted</string>
     <!-- Missing translations -->
-    <string name="approve_command_format">openclaw devices approve $(openclaw devices list --json | tr \'{\' \'\\n\' | grep \'\"deviceId\":\"%s\"\' | grep -o \'\"requestId\":\"[^\"]*\"\' | cut -d\'\"\' -f4)</string>
+    <string name="approve_command_format">openclaw devices approve $(openclaw devices list --json | jq -r \'.pending[] | select(.deviceId == \"%s\") | .requestId\')</string>
     <string name="credits_support_description">このアプリが役に立った場合は、Ko-fiでの支援をご検討ください。</string>
     <string name="credits_support_kofi_button">Support the Developer</string>
     <string name="credits_support_title">開発をサポートする</string>
@@ -512,7 +512,7 @@
     <string name="qr_scan_desc">Align the QR code within the frame to scan it</string>
     <string name="qr_scan_prompt">Scan QR Code</string>
     <string name="qr_scan_unavailable">QR 扫描不可用。请更新 Google Play 服务。</string>
-    <string name="reject_command_format">openclaw devices reject $(openclaw devices list --json | tr \'{\' \'\\n\' | grep \'\"deviceId\":\"%s\"\' | grep -o \'\"requestId\":\"[^\"]*\"\' | cut -d\'\"\' -f4)</string>
+    <string name="reject_command_format">openclaw devices reject $(openclaw devices list --json | jq -r \'.pending[] | select(.deviceId == \"%s\") | .requestId\')</string>
     <string name="setup_guide_qr_scan_title">方式 1：扫描 QR 码</string>
     <string name="setup_guide_qr_scan_cmd_label">在网关主机上运行以下命令以显示 QR 码：</string>
     <string name="setup_guide_code_input_title">方式 2：输入设置码</string>

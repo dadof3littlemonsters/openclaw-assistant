@@ -310,8 +310,8 @@
     <string name="pairing_copy_command">Copy Command</string>
     <string name="pairing_command_copied">Command copied to clipboard</string>
     <string name="pairing_device_id">Device ID: %s</string>
-    <string name="approve_command_format">openclaw devices approve $(openclaw devices list --json | tr \'{\' \'\\n\' | grep \'\"deviceId\":\"%s\"\' | grep -o \'\"requestId\":\"[^\"]*\"\' | cut -d\'\"\' -f4)</string>
-    <string name="reject_command_format">openclaw devices reject $(openclaw devices list --json | tr \'{\' \'\\n\' | grep \'\"deviceId\":\"%s\"\' | grep -o \'\"requestId\":\"[^\"]*\"\' | cut -d\'\"\' -f4)</string>
+    <string name="approve_command_format">openclaw devices approve $(openclaw devices list --json | jq -r \'.pending[] | select(.deviceId == \"%s\") | .requestId\')</string>
+    <string name="reject_command_format">openclaw devices reject $(openclaw devices list --json | jq -r \'.pending[] | select(.deviceId == \"%s\") | .requestId\')</string>
     <string name="pairing_approve_command">Approve Command (Copy)</string>
     <string name="pairing_reject_command">Reject Command (Copy)</string>
     <string name="pairing_refresh_status">Refresh Status</string>

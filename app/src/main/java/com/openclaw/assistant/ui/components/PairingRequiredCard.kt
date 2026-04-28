@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.sp
 import com.openclaw.assistant.OpenClawApplication
 import com.openclaw.assistant.R
 
-internal const val PAIRING_AUTO_RETRY_MS = 6_000L
+internal const val PAIRING_AUTO_RETRY_MS = 5 * 60_000L
 
 @Composable
 fun PairingRequiredCard(deviceId: String, displayName: String = "") {
