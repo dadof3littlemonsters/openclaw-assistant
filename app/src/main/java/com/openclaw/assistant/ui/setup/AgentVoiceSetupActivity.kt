@@ -56,12 +56,9 @@ import com.openclaw.assistant.utils.GatewayConfigUtils
  *   Step 1 — Welcome
  *   Step 2 — Tick the backends you want to set up (Hermes / OpenClaw)
  *   Step 3 — Per-backend setup, only for ticked options:
- *              • Hermes: scan the QR that `hermes-pair` prints on your PC.
- *                Any QR scanner on the phone routes to HermesImportActivity
- *                automatically, so we just show the instructions and a
- *                manual paste fallback.
- *              • OpenClaw: run `openclaw qr` on the server and tap Scan in
- *                the existing OpenClaw setup screen (we open it directly).
+ *              • Agent Voice helper: run `agentvoice-pair` on the host. It
+ *                detects Hermes, OpenClaw, and Tailscale, asks what to include,
+ *                and prints one QR for this app to scan.
  *   Step 4 — Done
  */
 class AgentVoiceSetupActivity : ComponentActivity() {
@@ -95,7 +92,7 @@ private fun SimpleSetupWizard(onDone: () -> Unit) {
                     pickHermes = pickHermes, pickOpenClaw = pickOpenClaw,
                     onHermes = { pickHermes = it }, onOpenClaw = { pickOpenClaw = it },
                 )
-                2 -> ConfigurePane(pickHermes, pickOpenClaw, backends.size)
+                2 -> ConfigurePane()
                 3 -> DonePane(backends)
             }
 
@@ -162,18 +159,14 @@ private fun BackendChoiceCard(title: String, subtitle: String, checked: Boolean,
 }
 
 @Composable
-private fun ConfigurePane(pickHermes: Boolean, pickOpenClaw: Boolean, existingBackends: Int) {
-    if (pickHermes) HermesQrCard()
-    if (pickHermes && pickOpenClaw) Spacer(Modifier.height(16.dp))
-    if (pickOpenClaw) OpenClawCard()
-    if (pickHermes && !pickOpenClaw) {
-        Spacer(Modifier.height(16.dp))
-        ManualHermesFallback()
-    }
+private fun ConfigurePane() {
+    UnifiedPairingCard()
+    Spacer(Modifier.height(16.dp))
+    ManualHermesFallback()
 }
 
 @Composable
-private fun HermesQrCard() {
+private fun UnifiedPairingCard() {
     val context = LocalContext.current
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -183,7 +176,7 @@ private fun HermesQrCard() {
             CodeBlock("curl -fsSL https://raw.githubusercontent.com/Codename-11/hermes-relay/main/install.sh | bash")
             Spacer(Modifier.height(8.dp))
             Text(stringResource(R.string.av_hermes_card_step2), style = MaterialTheme.typography.bodyMedium)
-            CodeBlock("hermes-pair")
+            CodeBlock("agentvoice-pair")
             Spacer(Modifier.height(8.dp))
             Text(stringResource(R.string.av_hermes_card_step3), style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(8.dp))

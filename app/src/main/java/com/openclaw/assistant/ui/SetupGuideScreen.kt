@@ -502,29 +502,11 @@ private fun ConnectionStep(
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Mode Selector
-        TabRow(
-            selectedTabIndex = when (effectiveMode) {
-                ConnectionMode.Hermes -> 0
-                ConnectionMode.SetupCode -> 1
-                ConnectionMode.Manual -> 2
-            },
-            containerColor = Color.Transparent,
-            contentColor = OnboardingGradientMid,
-            divider = {}
-        ) {
-            Tab(
-                selected = mode == ConnectionMode.Hermes,
-                onClick = { onModeChange(ConnectionMode.Hermes) },
-                text = { Text(stringResource(R.string.av_backend_hermes), color = if (mode == ConnectionMode.Hermes) OnboardingGradientMid else OnboardingTextSecondary) }
-            )
-            Tab(
-                selected = effectiveMode == ConnectionMode.SetupCode,
-                onClick = { onModeChange(ConnectionMode.SetupCode) },
-                text = { Text(stringResource(R.string.av_backend_openclaw), color = if (effectiveMode == ConnectionMode.SetupCode) OnboardingGradientMid else OnboardingTextSecondary) }
-            )
-        }
-
+        Text(
+            text = stringResource(R.string.av_setup_welcome_body),
+            style = MaterialTheme.typography.bodyMedium,
+            color = OnboardingTextSecondary
+        )
         Spacer(modifier = Modifier.height(24.dp))
 
         if (effectiveMode == ConnectionMode.Hermes) {
@@ -711,7 +693,7 @@ private fun HermesSetupGuideContent() {
                 Text(stringResource(R.string.av_hermes_card_step1), style = MaterialTheme.typography.bodyMedium)
                 CommandBlock("curl -fsSL https://raw.githubusercontent.com/Codename-11/hermes-relay/main/install.sh | bash")
                 Text(stringResource(R.string.av_hermes_card_step2), style = MaterialTheme.typography.bodyMedium)
-                CommandBlock("hermes-pair")
+                CommandBlock("agentvoice-pair")
                 Text(stringResource(R.string.av_hermes_card_step3), style = MaterialTheme.typography.bodyMedium)
                 Text(stringResource(R.string.av_hermes_card_note), style = MaterialTheme.typography.bodySmall)
                 OutlinedButton(

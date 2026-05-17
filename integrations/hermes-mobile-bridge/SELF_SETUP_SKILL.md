@@ -16,7 +16,7 @@ Use this skill when:
 
 1. **Read the manifest** (`GET /manifest` on the Agent Voice Mobile Bridge).
    If it 401s, the token rotated → ask the user to re-pair via
-   `hermes_pair.py` on the PC and re-scan the QR.
+   `agentvoice-pair` on the PC and re-scan the QR.
 2. **Cross-check expected capabilities**. The minimum a healthy install
    should advertise is `device.info`, `apps.list`, and `clipboard.read`. If
    any of those are missing despite Mobile Bridge being on, prompt the

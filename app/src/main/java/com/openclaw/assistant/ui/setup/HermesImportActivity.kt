@@ -28,31 +28,40 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.openclaw.assistant.MainActivity
+import com.openclaw.assistant.OpenClawApplication
 import com.openclaw.assistant.backend.AgentBackendConfig
 import com.openclaw.assistant.backend.AgentClientFactory
 import com.openclaw.assistant.backend.BackendRepository
 import com.openclaw.assistant.backend.BackendType
 import com.openclaw.assistant.backend.ConnectionTestResult
+import com.openclaw.assistant.data.SettingsRepository
+import com.openclaw.assistant.utils.GatewayConfigUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Deep-link target for `agentvoice://hermes/setup?...` URIs. The companion
- * `hermes-pair` CLI on the desktop prints a QR encoding such a URI. The user
- * scans it with any QR reader on the phone (the stock camera app on Pixel /
- * recent Samsung devices already does this); Android resolves the scheme to
- * this Activity, the params are parsed, and a Hermes backend is added
- * automatically — no typing required.
+ * Deep-link target for Agent Voice setup QR URIs. The desktop helper prints one
+ * QR that can include Hermes plus OpenClaw settings:
+ *
+ *   agentvoice://setup?hu=...&hk=...&oc=...
+ *
+ * The older Hermes-only `agentvoice://hermes/setup?u=...` form is still
+ * accepted for compatibility.
  *
  * Accepted query parameters:
- *   u  — base URL (required). Multiple `u=` params are stored as
+ * Hermes-only compatibility parameters:
+ *   u  — base URL. Multiple `u=` params are stored as
  *        secondary URLs for the endpoint racer (LAN + Tailscale + public).
  *   k  — API key (optional but recommended).
  *   m  — model name (optional, defaults to `hermes-agent`).
  *   r  — `1` to default to Runs API, `0` for chat completions.
  *   s  — `1` to enable streaming (default), `0` to disable.
  *   n  — display name (optional).
+ *
+ * Combined setup parameters:
+ *   hu/hk/hm/hr/hs/hn mirror the Hermes-only params.
+ *   oc is an OpenClaw Gateway setup code, as printed by `openclaw qr`.
  */
 class HermesImportActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -80,7 +89,7 @@ private fun ImportScreen(uri: Uri?, onFinish: () -> Unit, onCancel: () -> Unit) 
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top,
     ) {
-        Text("Add Hermes Agent", style = MaterialTheme.typography.headlineSmall)
+        Text("Add Agent Voice backends", style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(8.dp))
         if (parsed == null) {
             Text("This pairing link is missing required information.", style = MaterialTheme.typography.bodyMedium)
@@ -90,43 +99,30 @@ private fun ImportScreen(uri: Uri?, onFinish: () -> Unit, onCancel: () -> Unit) 
         }
         Text("From the QR you scanned:", style = MaterialTheme.typography.bodyMedium)
         Spacer(Modifier.height(8.dp))
-        InfoRow("URL", parsed.baseUrl)
-        if (parsed.secondaryUrls.isNotEmpty()) InfoRow("Extra URLs", parsed.secondaryUrls.joinToString("\n"))
-        InfoRow("API key", if (parsed.apiKey.isNullOrBlank()) "(none)" else mask(parsed.apiKey))
-        InfoRow("Model", parsed.modelName)
-        InfoRow("Mode", if (parsed.useRunsApi) "Runs API" else "Chat completions")
+        parsed.hermes?.let { hermes ->
+            InfoRow("Hermes URL", hermes.baseUrl)
+            if (hermes.secondaryUrls.isNotEmpty()) InfoRow("Hermes extra URLs", hermes.secondaryUrls.joinToString("\n"))
+            InfoRow("Hermes API key", if (hermes.apiKey.isNullOrBlank()) "(none)" else mask(hermes.apiKey))
+            InfoRow("Hermes model", hermes.modelName)
+            InfoRow("Hermes mode", if (hermes.useRunsApi) "Runs API" else "Chat completions")
+        }
+        parsed.openClawSetupCode?.let { code ->
+            InfoRow("OpenClaw", if (GatewayConfigUtils.decodeGatewaySetupCode(code) != null) "Setup code included" else "Invalid setup code")
+        }
         Spacer(Modifier.height(16.dp))
         status?.let { Text(it, style = MaterialTheme.typography.bodySmall); Spacer(Modifier.height(8.dp)) }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = {
-                val repo = BackendRepository.getInstance(context)
-                val config = AgentBackendConfig(
-                    displayName = parsed.displayName ?: "Hermes Agent",
-                    type = BackendType.HERMES_API_SERVER,
-                    baseUrl = parsed.baseUrl,
-                    secondaryUrls = parsed.secondaryUrls,
-                    apiKeyOrToken = parsed.apiKey,
-                    modelName = parsed.modelName,
-                    useRunsApi = parsed.useRunsApi,
-                    useStreaming = parsed.streaming,
-                    isPrimary = repo.backends.value.isEmpty(),
-                )
-                repo.upsert(config)
-                if (config.isPrimary) repo.setPrimary(config.id)
+                applyPairingPayload(context, parsed)
                 onFinish()
             }) { Text("Add & open Agent Voice") }
             OutlinedButton(onClick = {
-                val repo = BackendRepository.getInstance(context)
-                val config = AgentBackendConfig(
-                    displayName = parsed.displayName ?: "Hermes Agent",
-                    type = BackendType.HERMES_API_SERVER,
-                    baseUrl = parsed.baseUrl,
-                    secondaryUrls = parsed.secondaryUrls,
-                    apiKeyOrToken = parsed.apiKey,
-                    modelName = parsed.modelName,
-                    useRunsApi = parsed.useRunsApi,
-                    useStreaming = parsed.streaming,
-                )
+                val hermes = parsed.hermes
+                if (hermes == null) {
+                    status = "No Hermes backend in this QR."
+                    return@OutlinedButton
+                }
+                val config = hermes.toBackendConfig(isPrimary = false)
                 scope.launch {
                     status = "Testing…"
                     val r = withContext(Dispatchers.IO) { AgentClientFactory.create(config).testConnection() }
@@ -149,6 +145,11 @@ private fun InfoRow(label: String, value: String) {
 private fun mask(s: String): String = if (s.length <= 6) "•".repeat(s.length) else s.take(3) + "…" + s.takeLast(2)
 
 internal data class PairingPayload(
+    val hermes: HermesPairingPayload?,
+    val openClawSetupCode: String?,
+)
+
+internal data class HermesPairingPayload(
     val baseUrl: String,
     val secondaryUrls: List<String>,
     val apiKey: String?,
@@ -165,16 +166,72 @@ internal data class PairingPayload(
  */
 internal fun parsePairingUri(uri: Uri): PairingPayload? {
     if (uri.scheme != "agentvoice") return null
-    val urls = uri.getQueryParameters("u")
+    val hermes = parseHermesParams(uri, prefix = if (uri.host == "setup") "h" else "")
+    val openClawSetupCode = uri.getQueryParameter("oc")?.trim()?.ifEmpty { null }
+    if (hermes == null && openClawSetupCode == null) return null
+    return PairingPayload(
+        hermes = hermes,
+        openClawSetupCode = openClawSetupCode,
+    )
+}
+
+private fun parseHermesParams(uri: Uri, prefix: String): HermesPairingPayload? {
+    val urls = uri.getQueryParameters("${prefix}u")
     val base = urls.firstOrNull()?.takeIf { it.startsWith("http://") || it.startsWith("https://") } ?: return null
     val secondary = urls.drop(1).filter { it.startsWith("http://") || it.startsWith("https://") }
-    return PairingPayload(
+    return HermesPairingPayload(
         baseUrl = base,
         secondaryUrls = secondary,
-        apiKey = uri.getQueryParameter("k"),
-        modelName = uri.getQueryParameter("m")?.ifBlank { null } ?: "hermes-agent",
-        useRunsApi = uri.getQueryParameter("r") == "1",
-        streaming = uri.getQueryParameter("s") != "0",
-        displayName = uri.getQueryParameter("n"),
+        apiKey = uri.getQueryParameter("${prefix}k"),
+        modelName = uri.getQueryParameter("${prefix}m")?.ifBlank { null } ?: "hermes-agent",
+        useRunsApi = uri.getQueryParameter("${prefix}r") == "1",
+        streaming = uri.getQueryParameter("${prefix}s") != "0",
+        displayName = uri.getQueryParameter("${prefix}n"),
     )
+}
+
+private fun HermesPairingPayload.toBackendConfig(isPrimary: Boolean): AgentBackendConfig = AgentBackendConfig(
+    displayName = displayName ?: "Hermes Agent",
+    type = BackendType.HERMES_API_SERVER,
+    baseUrl = baseUrl,
+    secondaryUrls = secondaryUrls,
+    apiKeyOrToken = apiKey,
+    modelName = modelName,
+    useRunsApi = useRunsApi,
+    useStreaming = streaming,
+    isPrimary = isPrimary,
+)
+
+private fun applyPairingPayload(context: android.content.Context, payload: PairingPayload) {
+    val repo = BackendRepository.getInstance(context)
+    payload.hermes?.let { hermes ->
+        val config = hermes.toBackendConfig(isPrimary = repo.backends.value.isEmpty())
+        repo.upsert(config)
+        if (config.isPrimary) repo.setPrimary(config.id)
+    }
+    payload.openClawSetupCode?.let { code ->
+        val decoded = GatewayConfigUtils.decodeGatewaySetupCode(code) ?: return@let
+        val parsed = GatewayConfigUtils.parseGatewayEndpoint(decoded.url) ?: return@let
+        val runtime = (context.applicationContext as OpenClawApplication).nodeRuntime
+        val settings = SettingsRepository.getInstance(context)
+        runtime.setManualHost(parsed.host)
+        runtime.setManualPort(parsed.port)
+        runtime.setManualTls(parsed.tls)
+        when {
+            decoded.bootstrapToken != null -> runtime.setGatewayBootstrapToken(decoded.bootstrapToken)
+            decoded.token != null -> {
+                runtime.prefs.saveGatewayToken(decoded.token)
+                settings.authToken = decoded.token
+            }
+            decoded.password != null -> runtime.setGatewayPassword(decoded.password)
+        }
+        GatewayConfigUtils.composeGatewayManualUrl(parsed.host, parsed.port.toString(), parsed.tls)
+            ?.let { url ->
+                if (com.openclaw.assistant.shared.utils.NetworkUtils.isUrlSecure(url)) {
+                    settings.httpUrl = url
+                }
+            }
+        runtime.setManualEnabled(true)
+        settings.connectionType = SettingsRepository.CONNECTION_TYPE_GATEWAY
+    }
 }

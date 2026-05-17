@@ -21,7 +21,7 @@
     <!-- Agent Voice setup wizard -->
     <string name="av_setup_title">Set up Agent Voice</string>
     <string name="av_setup_welcome_title">Welcome to Agent Voice</string>
-    <string name="av_setup_welcome_body">A native Android voice client for Hermes Agent and OpenClaw. Pick your backends, generate a QR on the host, then scan it in this app.</string>
+    <string name="av_setup_welcome_body">A native Android voice client for Hermes Agent and OpenClaw. Run the pairing helper on your computer, answer whether to include Hermes, OpenClaw, and Tailscale, then scan one QR in this app.</string>
     <string name="av_setup_choose_title">Which backends will you use?</string>
     <string name="av_setup_choose_hint">Tick at least one. You can add more later in Settings → Backends.</string>
     <string name="av_setup_get_started">Get started</string>
@@ -34,16 +34,16 @@
     <!-- Backend cards -->
     <string name="av_backend_hermes">Hermes Agent</string>
     <string name="av_backend_openclaw">OpenClaw</string>
-    <string name="av_backend_hermes_subtitle">Hermes API Server. Install the pairing helper, let it read your Hermes config, then scan the QR.</string>
-    <string name="av_backend_openclaw_subtitle">OpenClaw Gateway / HTTP. Run the OpenClaw QR command on your server and scan it here.</string>
+    <string name="av_backend_hermes_subtitle">Hermes API Server. The pairing helper detects Hermes, reads config/env, and includes it in the shared QR.</string>
+    <string name="av_backend_openclaw_subtitle">OpenClaw Gateway / HTTP. The same helper detects OpenClaw and adds its setup code to the shared QR.</string>
     <string name="av_backend_open_openclaw_setup">Open OpenClaw setup</string>
 
     <!-- Hermes QR card -->
-    <string name="av_hermes_card_title">Hermes Agent · pair with QR</string>
-    <string name="av_hermes_card_step1">1. On the machine running Hermes, install the Hermes-Relay pairing helper:</string>
-    <string name="av_hermes_card_step2">2. Run the helper. It reads your Hermes API Server config and prints a QR / 6-character code:</string>
-    <string name="av_hermes_card_step3">3. Scan that QR in Agent Voice. The Hermes URL, API key, model, streaming, and Runs API mode are filled automatically.</string>
-    <string name="av_hermes_card_note">Need access away from home? Add a Tailscale/VPN URL when pairing so the QR can carry LAN + Tailscale endpoints and Agent Voice can use the reachable one.</string>
+    <string name="av_hermes_card_title">Agent Voice · one QR setup</string>
+    <string name="av_hermes_card_step1">1. On the machine running Hermes/OpenClaw, install the pairing helper:</string>
+    <string name="av_hermes_card_step2">2. Run the helper. It checks local Hermes, OpenClaw, and Tailscale, asks what to include, then prints one QR:</string>
+    <string name="av_hermes_card_step3">3. Scan that QR in Agent Voice. Hermes and OpenClaw settings are applied together when both are included.</string>
+    <string name="av_hermes_card_note">For use away from home, answer yes to the Tailscale/VPN prompt so the QR includes LAN + Tailscale endpoint candidates.</string>
 
     <!-- Manual Hermes fallback -->
     <string name="av_hermes_manual_title">Hermes manual fallback</string>

@@ -1,19 +1,18 @@
-# hermes-pair (PC helper)
+# Agent Voice pairing helper
 
-The fastest way to add a Hermes backend to Agent Voice on your phone:
+The fastest way to set up Agent Voice is to install the host-side helper, then
+scan the one QR it prints:
 
 ```bash
-pip install qrcode
-python integrations/hermes-mobile-bridge/hermes_pair.py \
-    --url http://192.168.1.42:8642 \
-    --key sk-xxxx
+curl -fsSL https://raw.githubusercontent.com/Codename-11/hermes-relay/main/install.sh | bash
+agentvoice-pair
 ```
 
-It prints an ASCII QR encoding `agentvoice://hermes/setup?…`. Point your
-phone's stock camera at it; Agent Voice opens with the connection
-pre-filled, you tap **Add**, done. Multi-network: pass `--url` more than
-once (LAN + Tailscale + public) and Agent Voice will race them on every
-connect.
+The helper checks whether Hermes, OpenClaw, and Tailscale are installed locally,
+asks which backends to include, and prints one `agentvoice://setup?...` QR.
+Scanning that single QR in Agent Voice can configure both Hermes and OpenClaw.
+If you want the phone to work outside your LAN, answer yes when it asks about
+Tailscale/VPN endpoint candidates.
 
 ---
 
