@@ -564,7 +564,7 @@
     <!-- AgentVoice setup wizard -->
     <string name="av_setup_title">设置 AgentVoice</string>
     <string name="av_setup_welcome_title">欢迎使用 AgentVoice</string>
-    <string name="av_setup_welcome_body">支持 Hermes Agent 和 OpenClaw 的 Android 原生语音客户端。设置约 30 秒 — 勾选要使用的后端,分别扫描 QR 即可。</string>
+    <string name="av_setup_welcome_body">支持 Hermes Agent 和 OpenClaw 的 Android 原生语音客户端。勾选要使用的后端,分别扫描 QR,约 30 秒即可完成设置。</string>
     <string name="av_setup_choose_title">使用哪些后端?</string>
     <string name="av_setup_choose_hint">至少选择一个。之后可在「设置 → Backends」中添加更多。</string>
     <string name="av_setup_get_started">开始</string>
@@ -583,7 +583,7 @@
     <string name="av_hermes_card_title">Hermes Agent · 扫描 PC 上的 QR</string>
     <string name="av_hermes_card_step1">1. 在运行 Hermes API Server 的 PC 上安装辅助工具:</string>
     <string name="av_hermes_card_step2">2. 指定服务器并运行:</string>
-    <string name="av_hermes_card_step3">3. 工具会显示 QR。用手机相机(或任意扫码工具)扫描后,AgentVoice 会自动打开并预填配置 — 点击「添加」即可。</string>
+    <string name="av_hermes_card_step3">3. 工具会显示 QR。用手机相机(或任意扫码工具)扫描后,AgentVoice 会自动打开并预填配置,点击「添加」即可。</string>
     <string name="av_hermes_card_note">QR 编码为 agentvoice:// 深链,无需安装单独的扫码 App。</string>
 
     <string name="av_hermes_manual_title">或手动填写</string>
@@ -611,7 +611,7 @@
     <string name="av_bridge_pair_remote">配对远端</string>
     <string name="av_bridge_a11y_section">无障碍桥接</string>
     <string name="av_bridge_a11y_on">服务已启用</string>
-    <string name="av_bridge_a11y_off">已关闭 — 在「设置 → 无障碍」中启用</string>
+    <string name="av_bridge_a11y_off">已关闭。请在「设置 → 无障碍」中启用。</string>
     <string name="av_bridge_open_a11y_settings">打开无障碍设置</string>
     <string name="av_bridge_rotate">重新生成</string>
     <string name="av_bridge_copy">复制</string>
@@ -643,7 +643,7 @@
 
     <string name="av_approval_intro">外部代理请求执行:</string>
     <string name="av_approval_args">参数:</string>
-    <string name="av_approval_destructive_warning">此操作具有破坏性。每次调用都会提示 — 不复用已有授权。</string>
+    <string name="av_approval_destructive_warning">此操作具有破坏性。每次调用都会提示,不复用已有授权。</string>
     <string name="av_approval_deny">拒绝</string>
     <string name="av_approval_once">仅本次允许</string>
     <string name="av_approval_10min">允许 10 分钟</string>
