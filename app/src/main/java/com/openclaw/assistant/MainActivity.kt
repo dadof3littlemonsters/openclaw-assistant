@@ -6,6 +6,8 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.PowerSettingsNew
 import android.content.pm.PackageManager
 import android.hardware.SensorPrivacyManager
 import android.media.AudioManager
@@ -214,14 +216,33 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         setContent {
             OpenClawAssistantTheme {
                 val hasCompletedSetup by remember { mutableStateOf(settings.hasCompletedSetup) }
-                var showSetupGuide by remember { mutableStateOf(!hasCompletedSetup) }
+                // Agent Voice users who already configured at least one backend
+                // (either via migration from a legacy OpenClaw install, or
+                // through the new BackendListActivity) should skip the legacy
+                // OpenClaw setup guide entirely.
+                val backendRepo = remember { com.openclaw.assistant.backend.BackendRepository.getInstance(this@MainActivity) }
+                val hasAnyBackend by backendRepo.backends.collectAsState()
+                var showSetupGuide by remember { mutableStateOf(!hasCompletedSetup && hasAnyBackend.isEmpty()) }
 
-                if (showSetupGuide) {
+                // Track whether the user has been offered (or dismissed) the
+                // AgentVoice wizard for this process — if they intentionally
+                // back out, we fall through to the legacy OpenClaw guide so
+                // they still have a path to a classic pairing setup.
+                var didOfferAgentVoiceWizard by rememberSaveable { mutableStateOf(false) }
+                if (showSetupGuide && !didOfferAgentVoiceWizard) {
+                    val ctx = LocalContext.current
+                    androidx.compose.runtime.LaunchedEffect(Unit) {
+                        didOfferAgentVoiceWizard = true
+                        ctx.startActivity(android.content.Intent(ctx, com.openclaw.assistant.ui.setup.AgentVoiceSetupActivity::class.java))
+                    }
+                    // While we hand off, render nothing to avoid flashing the
+                    // legacy OpenClaw guide behind the new wizard.
+                    androidx.compose.foundation.layout.Box(modifier = androidx.compose.ui.Modifier.fillMaxSize()) {}
+                } else if (showSetupGuide) {
                     SetupGuideScreen(
                         settings = settings,
                         onComplete = {
                             showSetupGuide = false
-                            // After setup, we might want to trigger permission refresh or other once
                             refreshMissingPermissions()
                             refreshAllPermissionsStatus()
                         }
@@ -686,6 +707,22 @@ fun MainScreen(
                     IconButton(onClick = onOpenSettings) {
                         Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings_title))
                     }
+                    val ctx = LocalContext.current
+                    IconButton(onClick = {
+                        ctx.startActivity(Intent(ctx, com.openclaw.assistant.ui.backend.BackendListActivity::class.java))
+                    }) {
+                        Icon(Icons.Default.Cloud, contentDescription = "Backends")
+                    }
+                    IconButton(onClick = {
+                        ctx.startActivity(Intent(ctx, com.openclaw.assistant.ui.bridge.MobileBridgeSettingsActivity::class.java))
+                    }) {
+                        Icon(Icons.Default.PowerSettingsNew, contentDescription = "Mobile Bridge")
+                    }
+                    IconButton(onClick = {
+                        ctx.startActivity(Intent(ctx, com.openclaw.assistant.ui.setup.AgentVoiceSetupActivity::class.java))
+                    }) {
+                        Icon(Icons.Default.PlayArrow, contentDescription = "Setup wizard")
+                    }
                 }
             )
         },
@@ -706,6 +743,8 @@ fun MainScreen(
                     onDecline = { runtime.declineGatewayTrustPrompt() }
                 )
             }
+            com.openclaw.assistant.ui.backend.PrimaryBackendCard()
+            Spacer(modifier = Modifier.height(12.dp))
             // Show alert if missing scope error is present
             if (missingScopeError != null) {
                 MissingScopeCard(error = missingScopeError!!, onClick = onOpenSettings)

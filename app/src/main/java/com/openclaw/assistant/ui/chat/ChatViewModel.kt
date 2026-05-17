@@ -561,6 +561,20 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
         chatRepository.applicationScope.launch {
             try {
+                // Route through the Primary backend when it is Hermes; the
+                // Chat UI also honours an explicit per-conversation override
+                // from [ChatBackendTarget].
+                val hermesText = trySendViaPrimaryHermes(text)
+                if (hermesText != null) {
+                    chatRepository.addMessage(sessionId, hermesText, isUser = false)
+                    viewModelScope.launch {
+                        stopThinkingSound()
+                        _uiState.update { it.copy(isThinking = false) }
+                        afterResponseReceived(hermesText)
+                    }
+                    return@launch
+                }
+
                 val result = apiClient.sendMessage(
                     httpUrl = httpUrl,
                     message = text,
@@ -1131,5 +1145,38 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             timestamp = timestampMs ?: System.currentTimeMillis(),
             attachments = attachmentContents
         )
+    }
+
+    /**
+     * Sends `text` through the Primary backend if it is a Hermes API Server
+     * (or to whichever backend the user has explicitly selected from the
+     * Chat backend selector). Returns the final assistant text, or null if
+     * no Hermes backend should handle this message — in which case the
+     * caller falls back to the legacy OpenClaw HTTP send.
+     */
+    private suspend fun trySendViaPrimaryHermes(text: String): String? {
+        val ctx = getApplication<Application>().applicationContext
+        val manager = com.openclaw.assistant.backend.BackendManager.getInstance(ctx)
+        val overrideId = com.openclaw.assistant.ui.backend.ChatBackendTarget.selectedId.value
+        val backends = manager.backends.value
+        val target = (overrideId?.let { id -> backends.firstOrNull { it.id == id && it.enabled } }
+            ?: backends.firstOrNull { it.enabled && it.isPrimary })
+            ?: return null
+        if (target.type != com.openclaw.assistant.backend.BackendType.HERMES_API_SERVER) return null
+        val client = com.openclaw.assistant.backend.AgentClientFactory.create(target)
+        val collected = StringBuilder()
+        client.sendMessage(
+            messages = listOf(com.openclaw.assistant.backend.AgentMessage.user(text)),
+            options = com.openclaw.assistant.backend.AgentSendOptions(stream = target.useStreaming),
+        ).collect { event ->
+            when (event) {
+                is com.openclaw.assistant.backend.AgentEvent.TokenDelta -> collected.append(event.text)
+                is com.openclaw.assistant.backend.AgentEvent.MessageDelta -> collected.append(event.text)
+                is com.openclaw.assistant.backend.AgentEvent.Completed -> if (collected.isEmpty()) collected.append(event.finalText)
+                is com.openclaw.assistant.backend.AgentEvent.Error -> throw RuntimeException(event.message)
+                else -> Unit
+            }
+        }
+        return collected.toString()
     }
 }

@@ -699,9 +699,35 @@ class OpenClawSession(context: Context) : VoiceInteractionSession(context),
 
     private suspend fun sendViaHttp(message: String) {
         val agentId = settings.defaultAgentId.takeIf { it.isNotBlank() && it != "main" }
-        
+
         startWaitPhraseTimer()
-        
+
+        // Route through the Primary backend when it is a Hermes API Server. For
+        // OpenClaw HTTP / Gateway primaries (or when no Hermes is configured)
+        // fall through to the legacy OpenClaw HTTP pipeline so existing
+        // installs are byte-for-byte compatible.
+        val hermesReply = try {
+            com.openclaw.assistant.backend.PrimaryBackendDispatcher.sendIfHermesPrimary(context, message)
+        } catch (e: Throwable) {
+            cancelWaitPhraseTimer(); cancelInitialFillerPhrase(); stopThinkingSound()
+            currentState.value = AssistantState.ERROR
+            errorMessage.value = e.message ?: context.getString(R.string.error_network)
+            return
+        }
+        if (hermesReply != null) {
+            cancelWaitPhraseTimer()
+            val text = hermesReply.text
+            if (text.isNotBlank()) {
+                displayText.value = text
+                handleResponseReceived(text)
+            } else {
+                cancelInitialFillerPhrase(); stopThinkingSound()
+                currentState.value = AssistantState.ERROR
+                errorMessage.value = context.getString(R.string.error_no_response)
+            }
+            return
+        }
+
         val result = apiClient.sendMessage(
             httpUrl = settings.getChatCompletionsUrl(),
             message = message,
@@ -1023,35 +1049,27 @@ fun AssistantUI(
             // When speaking loudly, the voice reaction should dominate.
             val finalScale = if (state == AssistantState.LISTENING) maxOf(baseScale, animatedLevelScale) else 1f
 
+            // Hermes-Relay style morphing sphere — audio-reactive blob that
+            // breathes / ripples / pulses by state. The mic icon floats above
+            // the sphere so the existing tap-to-interrupt affordance still
+            // works while the assistant is speaking.
             Box(
                 modifier = Modifier
-                    .size(80.dp)
-                    .graphicsLayer {
-                        scaleX = finalScale
-                        scaleY = finalScale
-                    }
-                    .clip(CircleShape)
-                    .background(
-                        when (state) {
-                            AssistantState.LISTENING -> Color(0xFF4CAF50)
-                            AssistantState.SPEAKING, AssistantState.PREPARING_SPEECH -> Color(0xFF2196F3)
-                            AssistantState.THINKING, AssistantState.PROCESSING -> Color(0xFFFFC107)
-                            AssistantState.ERROR -> Color(0xFFF44336)
-                            else -> Color(0xFF9E9E9E)
-                        }
-                    )
+                    .size(140.dp)
                     .then(
                         if (state == AssistantState.SPEAKING || state == AssistantState.PREPARING_SPEECH) {
                             Modifier.clickable(
                                 onClickLabel = stringResource(R.string.interrupt_description),
                                 role = Role.Button
                             ) { onInterrupt() }
-                        } else {
-                            Modifier
-                        }
+                        } else Modifier
                     ),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
+                com.openclaw.assistant.ui.voice.MorphingSphere(
+                    state = state,
+                    audioLevel = normalizedLevel,
+                )
                 Icon(
                     imageVector = if (state == AssistantState.ERROR) Icons.Default.MicOff else Icons.Default.Mic,
                     contentDescription = null,

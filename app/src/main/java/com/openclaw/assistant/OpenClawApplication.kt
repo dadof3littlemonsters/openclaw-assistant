@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.openclaw.assistant.backend.BackendMigration
 import com.openclaw.assistant.data.SettingsRepository
 import com.openclaw.assistant.node.NodeRuntime
 import java.security.Security
@@ -57,6 +58,15 @@ class OpenClawApplication : Application() {
             if (BuildConfig.FIREBASE_ENABLED) {
                 FirebaseCrashlytics.getInstance().recordException(e)
             }
+        }
+
+        // One-shot migration of legacy OpenClaw single-backend settings into the
+        // multi-backend repository. Safe to call on every cold start: it no-ops
+        // once any backend is registered.
+        try {
+            BackendMigration.runIfNeeded(this)
+        } catch (e: Throwable) {
+            Log.w("OpenClawApp", "Backend migration skipped: ${e.message}")
         }
     }
 

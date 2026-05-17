@@ -14,6 +14,14 @@ class OpenClawNotificationListenerService : NotificationListenerService() {
     companion object {
         @Volatile var manager: NotificationManager? = null
         @Volatile var instance: OpenClawNotificationListenerService? = null
+
+        /**
+         * Returns the currently-active [StatusBarNotification]s, or an empty
+         * list if the listener service is not bound. Used by the Mobile
+         * Bridge's `notifications.active.list` capability.
+         */
+        fun activeSnapshot(): List<StatusBarNotification> =
+            try { instance?.activeNotifications?.toList().orEmpty() } catch (_: Throwable) { emptyList() }
     }
 
     override fun onCreate() {

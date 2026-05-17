@@ -397,6 +397,7 @@ fun SetupGuideScreen(
 
 @Composable
 private fun WelcomeStep(onNext: () -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         Column(
             modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
@@ -417,7 +418,26 @@ private fun WelcomeStep(onNext: () -> Unit) {
                 textAlign = TextAlign.Center,
                 lineHeight = 40.sp
             )
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Agent Voice fast-path — for users coming here to set up Hermes,
+            // skip the OpenClaw pairing flow entirely.
+            androidx.compose.material3.OutlinedButton(
+                onClick = {
+                    context.startActivity(android.content.Intent(context, com.openclaw.assistant.ui.setup.AgentVoiceSetupActivity::class.java))
+                },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+            ) {
+                Text("Set up Agent Voice (Hermes-first) →")
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "If you're configuring OpenClaw with QR / pairing / TLS, continue below.",
+                style = MaterialTheme.typography.bodySmall,
+                color = OnboardingTextPrimary,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(modifier = Modifier.height(24.dp))
 
             BulletPoint(stringResource(R.string.setup_guide_welcome_bullet_1))
             BulletPoint(stringResource(R.string.setup_guide_welcome_bullet_2))

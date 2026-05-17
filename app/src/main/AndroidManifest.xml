@@ -132,6 +132,52 @@
             android:exported="false"
             android:theme="@style/Theme.OpenClawAssistant" />
 
+        <!-- Agent Voice multi-backend UI -->
+        <activity
+            android:name="com.openclaw.assistant.ui.backend.BackendListActivity"
+            android:label="@string/backends_title"
+            android:exported="false"
+            android:theme="@style/Theme.OpenClawAssistant" />
+        <activity
+            android:name="com.openclaw.assistant.ui.backend.BackendEditorActivity"
+            android:exported="false"
+            android:theme="@style/Theme.OpenClawAssistant" />
+        <activity
+            android:name="com.openclaw.assistant.ui.bridge.MobileBridgeSettingsActivity"
+            android:label="@string/mobile_bridge_title"
+            android:exported="false"
+            android:theme="@style/Theme.OpenClawAssistant" />
+        <activity
+            android:name="com.openclaw.assistant.ui.setup.AgentVoiceSetupActivity"
+            android:exported="false"
+            android:theme="@style/Theme.OpenClawAssistant" />
+        <!-- Deep-link target for hermes-pair QR codes. Any QR scanner on the
+             phone (including the stock camera app on modern Android) routes
+             agentvoice://hermes/setup?… here. -->
+        <activity
+            android:name="com.openclaw.assistant.ui.setup.HermesImportActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.OpenClawAssistant">
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="agentvoice" android:host="hermes" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="com.openclaw.assistant.bridge.BridgeApprovalActivity"
+            android:exported="false"
+            android:label="@string/bridge_approval_required"
+            android:launchMode="singleTask"
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.OpenClawAssistant" />
+        <activity
+            android:name="com.openclaw.assistant.bridge.pairing.BridgePairingActivity"
+            android:exported="false"
+            android:theme="@style/Theme.OpenClawAssistant" />
+
         <!-- Voice Interaction Service (Home button long press) -->
         <service
             android:name="com.openclaw.assistant.service.OpenClawAssistantService"
@@ -178,6 +224,27 @@
             android:name=".service.NodeForegroundService"
             android:exported="false"
             android:foregroundServiceType="dataSync|microphone|mediaProjection|location" />
+
+        <!-- Mobile Bridge (optional, opt-in, exposes HTTP API to local agents) -->
+        <service
+            android:name="com.openclaw.assistant.bridge.MobileBridgeService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <!-- Agent Voice Accessibility Bridge — off by default. User must enable
+             from Settings → Accessibility. -->
+        <service
+            android:name="com.openclaw.assistant.bridge.accessibility.AgentVoiceAccessibilityService"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/agent_voice_accessibility_service" />
+        </service>
 
         <!-- Notification Listener Service -->
         <service

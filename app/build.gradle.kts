@@ -109,10 +109,15 @@ android {
         create("standard") {
             dimension = "voicevox"
             buildConfigField("boolean", "VOICEVOX_ENABLED", "false")
+            // Sideload-tier capabilities (Accessibility Bridge, SMS) on by default.
+            // The Play track currently uses the same flavor — flip this to false
+            // there to match Google Play accessibility/SMS restrictions.
+            buildConfigField("boolean", "IS_SIDELOAD", "true")
         }
         create("full") {
             dimension = "voicevox"
             buildConfigField("boolean", "VOICEVOX_ENABLED", "true")
+            buildConfigField("boolean", "IS_SIDELOAD", "true")
         }
     }
     compileOptions {
@@ -233,6 +238,7 @@ dependencies {
     // Testing
     testImplementation("junit:junit:4.13.2")
     testImplementation("io.mockk:mockk:1.13.8")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.10.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:5.8.0")

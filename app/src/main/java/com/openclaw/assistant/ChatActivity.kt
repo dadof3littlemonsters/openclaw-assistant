@@ -425,6 +425,7 @@ fun ChatScreen(
                                 onAgentSelected = onAgentSelected,
                                 isReadOnly = uiState.isNodeChatMode
                             )
+                            com.openclaw.assistant.ui.backend.ChatBackendSelector()
                         }
                     },
                     navigationIcon = {

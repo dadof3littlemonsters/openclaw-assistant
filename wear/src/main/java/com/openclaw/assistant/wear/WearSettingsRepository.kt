@@ -45,8 +45,19 @@ class WearSettingsRepository private constructor(context: Context) {
 
     fun isConfigured(): Boolean = httpUrl.isNotBlank()
 
+    /**
+     * Returns the chat-completions URL the watch should POST to.
+     *
+     * To target the phone's Primary backend from the watch, point this URL
+     * at the same Hermes (or OpenClaw) endpoint the phone uses:
+     *  - Hermes: `http://host:8642` (Bearer = your Hermes API key)
+     *  - OpenClaw HTTP: `http://host:8080`
+     *
+     * Both backends speak OpenAI-compatible chat completions, so the same
+     * Wear payload reaches whichever one is currently Primary on the phone.
+     */
     fun getChatUrl(): String {
-        val base = httpUrl.trim().trimEnd('/')
+        val base = httpUrl.trim().trimEnd('/').removeSuffix("/v1")
         return if (base.isBlank()) "" else "$base/v1/chat/completions"
     }
 

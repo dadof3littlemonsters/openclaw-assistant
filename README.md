@@ -1,4 +1,60 @@
-# OpenClaw Assistant 🦞
+# Agent Voice for Android 🦞
+
+> **A native Android voice client for OpenClaw and Hermes Agent.**
+>
+> Agent Voice is the successor to *OpenClaw Assistant*. It keeps every
+> OpenClaw feature you already have — wake word, Voice Overlay, Gateway
+> + HTTP backends, Wear OS, on-device node capabilities, continuous
+> conversation — and adds first-class support for **Hermes Agent** as a
+> peer backend that can be configured side-by-side with OpenClaw.
+>
+> **Supported backends** (configure any combination, pick one as primary):
+> - OpenClaw Gateway (WebSocket, pairing, QR, TLS)
+> - OpenClaw HTTP (OpenAI-compatible chat)
+> - Hermes API Server (`/v1/chat/completions` streaming + `/v1/runs` Runs API)
+>
+> **Mobile Bridge (optional, off by default).** Agent Voice can expose a
+> bearer-token-protected local HTTP service that lets Hermes reach a
+> curated set of Android capabilities. See
+> [`docs/hermes-mobile-bridge.md`](docs/hermes-mobile-bridge.md) and
+> [`integrations/hermes-mobile-bridge/`](integrations/hermes-mobile-bridge/).
+>
+> **Migration.** Existing OpenClaw Assistant installs upgrade in place
+> (`applicationId` unchanged); the first launch silently migrates the
+> previous Gateway / HTTP settings into the new multi-backend repository
+> and marks the existing setup as **Primary**. Wake word, HotwordService,
+> Voice Overlay, Wear OS, and node capabilities continue to target the
+> Primary backend.
+>
+> **Hermes setup in 30 seconds.** Run `hermes gateway` with the API
+> server enabled (default port `8642`), bind it to your LAN/VPN,
+> generate an API key, and add it in **Settings → Backends → Add Hermes
+> API Server**. Agent Voice accepts both `http://host:8642` and
+> `http://host:8642/v1`. Authentication uses `Authorization: Bearer
+> <key>`; the default model name is `hermes-agent`. Connection test
+> calls `GET /v1/models` and falls back to `/health`.
+>
+> **Hermes-Relay feature parity.** Agent Voice mirrors the patterns in
+> [hermes-relay](https://codename-11.github.io/hermes-relay/):
+> 6-character pairing codes + deep-link QR payload (`agentvoice://pair?...`),
+> multi-endpoint candidates (LAN + Tailscale + public) raced in parallel on
+> every connect, per-capability TTL grants ("approve · 10 min / 1 hour /
+> until revoked") with a destructive-verb override, `/revoke` and `/grants`
+> endpoints, an Accessibility Bridge (tap / swipe / Home / Back / window
+> describe — sideload-only), notifications.active.list backed by the
+> existing NotificationListenerService, and a build-flag (`IS_SIDELOAD`)
+> that gates Accessibility + SMS for a Play-track build.
+>
+> **Wear OS** uses its own per-watch backend URL + auth token. Point the
+> watch at the same Hermes (`http://host:8642`, Bearer = your API key) or
+> OpenClaw endpoint you use on the phone. Both backends are
+> OpenAI-compatible, so the same Wear payload reaches whichever is Primary.
+>
+> **Build:** `./gradlew testDebugUnitTest assembleDebug`.
+
+---
+
+# OpenClaw Assistant 🦞 (legacy README continues below)
 ![CI](https://github.com/yuga-hashimoto/OpenClawAssistant/actions/workflows/ci.yml/badge.svg)
 [![Latest Release](https://img.shields.io/github/v/release/yuga-hashimoto/OpenClawAssistant?display_name=tag)](https://github.com/yuga-hashimoto/OpenClawAssistant/releases/latest)
 [![License: MIT](https://img.shields.io/github/license/yuga-hashimoto/OpenClawAssistant)](https://github.com/yuga-hashimoto/OpenClawAssistant/blob/main/LICENSE)
