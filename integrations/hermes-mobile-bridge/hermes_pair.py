@@ -65,10 +65,21 @@ def first_lan_ip() -> Optional[str]:
         return None
 
 
+def tailscale_cmd() -> Optional[List[str]]:
+    cli = shutil.which("tailscale")
+    if cli:
+        return [cli]
+    mac_app_cli = Path("/Applications/Tailscale.app/Contents/MacOS/Tailscale")
+    if mac_app_cli.exists() and os.access(mac_app_cli, os.X_OK):
+        return [str(mac_app_cli)]
+    return None
+
+
 def tailscale_ip() -> Optional[str]:
-    if not shutil.which("tailscale"):
+    cmd = tailscale_cmd()
+    if not cmd:
         return None
-    out = run(["tailscale", "ip", "-4"])
+    out = run([*cmd, "ip", "-4"])
     return out.splitlines()[0].strip() if out else None
 
 
@@ -647,7 +658,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     hermes_installed = bool(shutil.which("hermes"))
     openclaw_installed = bool(shutil.which("openclaw"))
-    tailscale_installed = bool(shutil.which("tailscale"))
+    tailscale_installed = bool(tailscale_cmd())
     hermes_port_open = is_port_open("127.0.0.1", 8642)
     openclaw_port_open = is_port_open("127.0.0.1", 18789)
     hermes_key = args.key or discover_hermes_key()
