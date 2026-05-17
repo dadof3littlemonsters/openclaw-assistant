@@ -485,6 +485,7 @@ private fun ConnectionStep(
     onNext: () -> Unit
 ) {
     val context = LocalContext.current
+    val effectiveMode = if (mode == ConnectionMode.Manual) ConnectionMode.SetupCode else mode
 
     Column(modifier = Modifier.fillMaxSize()) {
         // スクロール可能なコンテンツ部分
@@ -503,7 +504,7 @@ private fun ConnectionStep(
 
         // Mode Selector
         TabRow(
-            selectedTabIndex = when (mode) {
+            selectedTabIndex = when (effectiveMode) {
                 ConnectionMode.Hermes -> 0
                 ConnectionMode.SetupCode -> 1
                 ConnectionMode.Manual -> 2
@@ -518,22 +519,17 @@ private fun ConnectionStep(
                 text = { Text(stringResource(R.string.av_backend_hermes), color = if (mode == ConnectionMode.Hermes) OnboardingGradientMid else OnboardingTextSecondary) }
             )
             Tab(
-                selected = mode == ConnectionMode.SetupCode,
+                selected = effectiveMode == ConnectionMode.SetupCode,
                 onClick = { onModeChange(ConnectionMode.SetupCode) },
-                text = { Text(stringResource(R.string.setup_guide_mode_setup_code), color = if (mode == ConnectionMode.SetupCode) OnboardingGradientMid else OnboardingTextSecondary) }
-            )
-            Tab(
-                selected = mode == ConnectionMode.Manual,
-                onClick = { onModeChange(ConnectionMode.Manual) },
-                text = { Text(stringResource(R.string.setup_guide_mode_manual), color = if (mode == ConnectionMode.Manual) OnboardingGradientMid else OnboardingTextSecondary) }
+                text = { Text(stringResource(R.string.av_backend_openclaw), color = if (effectiveMode == ConnectionMode.SetupCode) OnboardingGradientMid else OnboardingTextSecondary) }
             )
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        if (mode == ConnectionMode.Hermes) {
+        if (effectiveMode == ConnectionMode.Hermes) {
             HermesSetupGuideContent()
-        } else if (mode == ConnectionMode.SetupCode) {
+        } else {
             val decodedSetupCode = GatewayConfigUtils.decodeGatewaySetupCode(setupCode)
             val isCodeValid = decodedSetupCode != null
             val hasBootstrapOnly = isCodeValid &&
@@ -675,86 +671,14 @@ private fun ConnectionStep(
                     colors = credFieldColors,
                 )
             }
-        } else {
-            // Manual Mode fields
-            val manualFieldColors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = OnboardingTextPrimary,
-                unfocusedTextColor = OnboardingTextPrimary,
-                focusedLabelColor = OnboardingGradientMid,
-                unfocusedLabelColor = OnboardingTextSecondary,
-                focusedBorderColor = OnboardingGradientMid,
-                unfocusedBorderColor = OnboardingBorder,
-                cursorColor = OnboardingGradientMid,
-                focusedPlaceholderColor = OnboardingTextSecondary,
-                unfocusedPlaceholderColor = OnboardingTextSecondary,
-            )
-            OutlinedTextField(
-                value = manualHost,
-                onValueChange = onManualHostChange,
-                label = { Text(stringResource(R.string.setup_guide_manual_host)) },
-                placeholder = { Text("192.168.1.100") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                colors = manualFieldColors
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            OutlinedTextField(
-                value = manualPort,
-                onValueChange = onManualPortChange,
-                label = { Text(stringResource(R.string.setup_guide_manual_port)) },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                colors = manualFieldColors
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(stringResource(R.string.setup_guide_manual_tls), fontWeight = FontWeight.Bold, color = OnboardingTextPrimary)
-                    Text(stringResource(R.string.setup_guide_manual_tls_desc), style = MaterialTheme.typography.bodySmall, color = OnboardingTextSecondary)
-                }
-                Switch(
-                    checked = manualTls,
-                    onCheckedChange = onManualTlsChange,
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = OnboardingGradientMid,
-                        checkedTrackColor = OnboardingGradientMid.copy(alpha = 0.4f),
-                        uncheckedThumbColor = OnboardingTextSecondary,
-                        uncheckedTrackColor = OnboardingBorder,
-                    )
-                )
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            OutlinedTextField(
-                value = authToken,
-                onValueChange = onAuthTokenChange,
-                label = { Text(stringResource(R.string.setup_guide_manual_token)) },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                colors = manualFieldColors
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            OutlinedTextField(
-                value = manualPassword,
-                onValueChange = onManualPasswordChange,
-                label = { Text(stringResource(R.string.setup_guide_manual_password)) },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                colors = manualFieldColors
-            )
-        } // end of if/else (SetupCode / Manual)
+        } // end of if/else (Hermes / OpenClaw)
         } // end of scrollable Column
 
         // --- 次へボタン・画面下部に固定 ---
         val canContinue = when (mode) {
             ConnectionMode.Hermes -> true
             ConnectionMode.SetupCode -> GatewayConfigUtils.decodeGatewaySetupCode(setupCode) != null
-            ConnectionMode.Manual -> manualHost.isNotBlank() && manualPort.toIntOrNull() != null
+            ConnectionMode.Manual -> GatewayConfigUtils.decodeGatewaySetupCode(setupCode) != null
         }
 
         Spacer(modifier = Modifier.height(16.dp))

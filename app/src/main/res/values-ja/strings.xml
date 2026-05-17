@@ -405,12 +405,12 @@
 <string name="setup_guide_welcome_bullet_2">セットアップコードで簡単に接続でき、CLIコマンドでペアリングも可能です。</string>
 <string name="setup_guide_welcome_bullet_3">必要な権限や機能だけを自由に有効化できます。</string>
 <string name="setup_guide_welcome_bullet_4">アプリを使い始める前に、実際の接続テストを行えます。</string>
-<string name="setup_guide_connection_title">Gateway接続設定</string>
+<string name="setup_guide_connection_title">バックエンド接続設定</string>
 <string name="setup_guide_connection_guide_title">セットアップコードとURLの取得</string>
 <string name="setup_guide_connection_guide_cmd_1">Gatewayホストで以下のコマンドを実行してください：</string>
 <string name="setup_guide_connection_guide_json_desc">`--json` を指定すると `setupCode` と `gatewayUrl` が表示されます。</string>
 <string name="setup_guide_connection_discovery_desc">自動URL検出は未実装です。エミュレータは `10.0.2.2` を、実機はLAN内またはTailscaleのホスト名を使用してください。</string>
-<string name="setup_guide_mode_setup_code">セットアップコード</string>
+<string name="setup_guide_mode_setup_code">OpenClaw</string>
 <string name="setup_guide_mode_manual">手動入力</string>
 <string name="setup_guide_setup_code_label">セットアップコード</string>
 <string name="setup_guide_setup_code_hint">`openclaw qr --setup-code-only` で取得したコードを貼り付けてください</string>
@@ -505,8 +505,8 @@
 <string name="permission_summary_title">権限の概要</string>
 <string name="permission_summary_format">%1$d 個の標準権限、%2$d 個の特別なアクセスが許可されました</string>
 <string name="qr_scan_prompt">QRコードをスキャンしてください</string>
-    <string name="setup_guide_qr_scan_title">方法1：QRコードをスキャン</string>
-    <string name="setup_guide_qr_scan_cmd_label">QRコードを表示するには、ゲートウェイホストでこれを実行してください:</string>
+    <string name="setup_guide_qr_scan_title">OpenClaw QRペアリング</string>
+    <string name="setup_guide_qr_scan_cmd_label">OpenClawホストで以下を実行し、このアプリ内でQRを読み取ってください:</string>
     <string name="setup_guide_code_input_title">方法2：セットアップコードを入力</string>
     <string name="qr_scan_desc">QRスキャン</string>
     <string name="qr_scan_unavailable">QRスキャンが利用できません。Google Play開発者サービスを更新してください。</string>
@@ -566,7 +566,7 @@
     <!-- Agent Voice setup wizard -->
     <string name="av_setup_title">Agent Voice のセットアップ</string>
     <string name="av_setup_welcome_title">Agent Voice へようこそ</string>
-    <string name="av_setup_welcome_body">Hermes Agent と OpenClaw に対応した Android ネイティブ音声クライアントです。使う backend にチェックを入れ、それぞれの QR を読み取れば 30 秒ほどで完了します。</string>
+    <string name="av_setup_welcome_body">Hermes Agent と OpenClaw に対応した Android ネイティブ音声クライアントです。使う backend を選び、ホスト側でQRを出して、このアプリ内で読み取れば完了します。</string>
     <string name="av_setup_choose_title">どの backend を使いますか?</string>
     <string name="av_setup_choose_hint">最低 1 つ選んでください。後から「設定 → Backends」で追加もできます。</string>
     <string name="av_setup_get_started">はじめる</string>
@@ -578,17 +578,17 @@
 
     <string name="av_backend_hermes">Hermes Agent</string>
     <string name="av_backend_openclaw">OpenClaw</string>
-    <string name="av_backend_hermes_subtitle">最新の Hermes API Server。PC の QR をスキャンして設定します。</string>
-    <string name="av_backend_openclaw_subtitle">従来の OpenClaw Gateway / HTTP。サーバーで「openclaw qr」を実行します。</string>
+    <string name="av_backend_hermes_subtitle">Hermes API Server。ペアリング helper がHermes設定を読み取り、QRで自動設定します。</string>
+    <string name="av_backend_openclaw_subtitle">OpenClaw Gateway / HTTP。サーバーでOpenClawのQRを出し、このアプリで読み取ります。</string>
     <string name="av_backend_open_openclaw_setup">OpenClaw のセットアップを開く</string>
 
-    <string name="av_hermes_card_title">Hermes Agent · PC の QR をスキャン</string>
-    <string name="av_hermes_card_step1">1. Hermes API Server を動かしている PC でツールをインストール:</string>
-    <string name="av_hermes_card_step2">2. サーバーを指定して実行:</string>
-    <string name="av_hermes_card_step3">3. QR が表示されます。このアプリ、スマホのカメラ、または任意の QR スキャナで読み取ると、Agent Voice が設定済みの状態で開きます。「追加」を押すだけです。</string>
-    <string name="av_hermes_card_note">QR は agentvoice:// のディープリンクなので、専用スキャナアプリは不要です。</string>
+    <string name="av_hermes_card_title">Hermes Agent · QRでペアリング</string>
+    <string name="av_hermes_card_step1">1. Hermes を動かしているマシンで Hermes-Relay のペアリング helper をインストール:</string>
+    <string name="av_hermes_card_step2">2. helper を実行します。Hermes API Server の設定を読み取り、QR / 6桁コードを表示します:</string>
+    <string name="av_hermes_card_step3">3. Agent Voice内でQRを読み取ります。Hermes URL、APIキー、モデル、Streaming、Runs API設定が自動で入ります。</string>
+    <string name="av_hermes_card_note">外出先でも使う場合は、ペアリング時にTailscale/VPNのURLも含めてください。LAN + Tailscale候補をQRに入れて、到達できる接続先を使えるようにします。</string>
 
-    <string name="av_hermes_manual_title">手入力で追加</string>
+    <string name="av_hermes_manual_title">Hermesの手動入力フォールバック</string>
     <string name="av_hermes_manual_url">URL (http://host:8642)</string>
     <string name="av_hermes_manual_key">API キー</string>
     <string name="av_hermes_manual_model">モデル名</string>
@@ -597,9 +597,9 @@
     <string name="av_hermes_manual_add">Hermes を追加</string>
     <string name="av_hermes_manual_added">追加しました</string>
 
-    <string name="av_openclaw_card_title">OpenClaw · サーバーの QR をスキャン</string>
-    <string name="av_openclaw_card_step1">1. OpenClaw サーバーで:</string>
-    <string name="av_openclaw_card_step2">2. OpenClaw のセットアップ画面で「QR コードをスキャン」をタップ。ペアリング・TLS・エージェント検出は OpenClaw 側が処理します。</string>
+    <string name="av_openclaw_card_title">OpenClaw · QRでペアリング</string>
+    <string name="av_openclaw_card_step1">1. OpenClawサーバーでセットアップQRを表示します:</string>
+    <string name="av_openclaw_card_step2">2. Agent Voice内でQRを読み取ります。Gatewayペアリング、TLS信頼、agent discovery はOpenClawが処理します。</string>
 
     <string name="av_backends_test">接続テスト</string>
     <string name="av_backends_edit">編集</string>

@@ -1,7 +1,11 @@
 package com.openclaw.assistant.ui.setup
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -38,11 +42,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import com.openclaw.assistant.OpenClawApplication
 import com.openclaw.assistant.R
 import com.openclaw.assistant.backend.AgentBackendConfig
 import com.openclaw.assistant.backend.BackendRepository
 import com.openclaw.assistant.backend.BackendType
 import com.openclaw.assistant.data.SettingsRepository
+import com.openclaw.assistant.utils.GatewayConfigUtils
 
 /**
  * Simplified first-run wizard.
@@ -157,19 +163,9 @@ private fun BackendChoiceCard(title: String, subtitle: String, checked: Boolean,
 
 @Composable
 private fun ConfigurePane(pickHermes: Boolean, pickOpenClaw: Boolean, existingBackends: Int) {
-    val context = LocalContext.current
     if (pickHermes) HermesQrCard()
     if (pickHermes && pickOpenClaw) Spacer(Modifier.height(16.dp))
-    if (pickOpenClaw) OpenClawCard(onLaunch = {
-        // Launch the existing OpenClaw setup guide by reopening MainActivity — the
-        // built-in SetupGuideScreen will surface as long as hasCompletedSetup is
-        // still false. If the user has already completed OpenClaw setup once,
-        // they can use Settings → Backends → Add → OpenClaw Gateway.
-        context.startActivity(
-            Intent(context, com.openclaw.assistant.MainActivity::class.java)
-                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP),
-        )
-    })
+    if (pickOpenClaw) OpenClawCard()
     if (pickHermes && !pickOpenClaw) {
         Spacer(Modifier.height(16.dp))
         ManualHermesFallback()
@@ -178,6 +174,7 @@ private fun ConfigurePane(pickHermes: Boolean, pickOpenClaw: Boolean, existingBa
 
 @Composable
 private fun HermesQrCard() {
+    val context = LocalContext.current
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(stringResource(R.string.av_hermes_card_title), style = MaterialTheme.typography.titleMedium)
@@ -191,12 +188,43 @@ private fun HermesQrCard() {
             Text(stringResource(R.string.av_hermes_card_step3), style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(8.dp))
             Text(stringResource(R.string.av_hermes_card_note), style = MaterialTheme.typography.bodySmall)
+            Spacer(Modifier.height(12.dp))
+            OutlinedButton(
+                onClick = {
+                    val options = GmsBarcodeScannerOptions.Builder()
+                        .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+                        .build()
+                    GmsBarcodeScanning.getClient(context, options)
+                        .startScan()
+                        .addOnSuccessListener { barcode ->
+                            val raw = barcode.rawValue?.trim().orEmpty()
+                            if (raw.startsWith("agentvoice://")) {
+                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(raw)))
+                            } else {
+                                android.widget.Toast.makeText(
+                                    context,
+                                    context.getString(R.string.qr_scan_unavailable),
+                                    android.widget.Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
+                        .addOnFailureListener { /* cancelled */ }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text(stringResource(R.string.qr_scan_prompt)) }
         }
     }
 }
 
 @Composable
-private fun OpenClawCard(onLaunch: () -> Unit) {
+private fun OpenClawCard() {
+    val context = LocalContext.current
+    val runtime = remember(context.applicationContext) {
+        (context.applicationContext as OpenClawApplication).nodeRuntime
+    }
+    val settings = remember { SettingsRepository.getInstance(context) }
+    var status by remember { mutableStateOf<String?>(null) }
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(stringResource(R.string.av_openclaw_card_title), style = MaterialTheme.typography.titleMedium)
@@ -206,7 +234,57 @@ private fun OpenClawCard(onLaunch: () -> Unit) {
             Spacer(Modifier.height(8.dp))
             Text(stringResource(R.string.av_openclaw_card_step2), style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(12.dp))
-            Button(onClick = onLaunch) { Text(stringResource(R.string.av_backend_open_openclaw_setup)) }
+            Button(
+                onClick = {
+                    val options = GmsBarcodeScannerOptions.Builder()
+                        .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+                        .build()
+                    GmsBarcodeScanning.getClient(context, options)
+                        .startScan()
+                        .addOnSuccessListener { barcode ->
+                            val raw = barcode.rawValue?.trim().orEmpty()
+                            val setupCode = try {
+                                org.json.JSONObject(raw)
+                                    .optString("setupCode")
+                                    .takeIf { it.isNotBlank() } ?: raw
+                            } catch (_: Exception) {
+                                raw
+                            }
+                            val decoded = GatewayConfigUtils.decodeGatewaySetupCode(setupCode)
+                            val parsed = decoded?.let { GatewayConfigUtils.parseGatewayEndpoint(it.url) }
+                            if (decoded != null && parsed != null) {
+                                runtime.setManualHost(parsed.host)
+                                runtime.setManualPort(parsed.port)
+                                runtime.setManualTls(parsed.tls)
+                                when {
+                                    decoded.bootstrapToken != null -> runtime.setGatewayBootstrapToken(decoded.bootstrapToken)
+                                    decoded.token != null -> {
+                                        runtime.prefs.saveGatewayToken(decoded.token)
+                                        settings.authToken = decoded.token
+                                    }
+                                    decoded.password != null -> runtime.setGatewayPassword(decoded.password)
+                                }
+                                GatewayConfigUtils.composeGatewayManualUrl(parsed.host, parsed.port.toString(), parsed.tls)
+                                    ?.let { url ->
+                                        if (com.openclaw.assistant.shared.utils.NetworkUtils.isUrlSecure(url)) {
+                                            settings.httpUrl = url
+                                        }
+                                    }
+                                runtime.setManualEnabled(true)
+                                settings.connectionType = SettingsRepository.CONNECTION_TYPE_GATEWAY
+                                status = context.getString(R.string.setup_code_applied)
+                            } else {
+                                status = context.getString(R.string.setup_code_invalid_code)
+                            }
+                        }
+                        .addOnFailureListener { /* cancelled */ }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text(stringResource(R.string.qr_scan_prompt)) }
+            status?.let {
+                Spacer(Modifier.height(8.dp))
+                Text(it, style = MaterialTheme.typography.bodySmall)
+            }
         }
     }
 }

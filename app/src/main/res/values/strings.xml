@@ -21,7 +21,7 @@
     <!-- Agent Voice setup wizard -->
     <string name="av_setup_title">Set up Agent Voice</string>
     <string name="av_setup_welcome_title">Welcome to Agent Voice</string>
-    <string name="av_setup_welcome_body">A native Android voice client for Hermes Agent and OpenClaw. Setup takes about 30 seconds — tick the backends you have, scan a QR per backend, done.</string>
+    <string name="av_setup_welcome_body">A native Android voice client for Hermes Agent and OpenClaw. Pick your backends, generate a QR on the host, then scan it in this app.</string>
     <string name="av_setup_choose_title">Which backends will you use?</string>
     <string name="av_setup_choose_hint">Tick at least one. You can add more later in Settings → Backends.</string>
     <string name="av_setup_get_started">Get started</string>
@@ -34,19 +34,19 @@
     <!-- Backend cards -->
     <string name="av_backend_hermes">Hermes Agent</string>
     <string name="av_backend_openclaw">OpenClaw</string>
-    <string name="av_backend_hermes_subtitle">Modern Hermes API Server. Set up by scanning a QR from your PC.</string>
-    <string name="av_backend_openclaw_subtitle">Classic OpenClaw Gateway / HTTP. Run \"openclaw qr\" on your server.</string>
+    <string name="av_backend_hermes_subtitle">Hermes API Server. Install the pairing helper, let it read your Hermes config, then scan the QR.</string>
+    <string name="av_backend_openclaw_subtitle">OpenClaw Gateway / HTTP. Run the OpenClaw QR command on your server and scan it here.</string>
     <string name="av_backend_open_openclaw_setup">Open OpenClaw setup</string>
 
     <!-- Hermes QR card -->
-    <string name="av_hermes_card_title">Hermes Agent · scan a QR from your PC</string>
-    <string name="av_hermes_card_step1">1. On the PC that runs your Hermes API Server, install the helper tool:</string>
-    <string name="av_hermes_card_step2">2. Run it, pointing at your Hermes server:</string>
-    <string name="av_hermes_card_step3">3. It prints a QR. Scan it with this app, your camera, or any QR scanner. Agent Voice opens with the config pre-filled — tap Add.</string>
-    <string name="av_hermes_card_note">The QR encodes an agentvoice:// deep link, so any QR scanner works — no separate scanner app needed.</string>
+    <string name="av_hermes_card_title">Hermes Agent · pair with QR</string>
+    <string name="av_hermes_card_step1">1. On the machine running Hermes, install the Hermes-Relay pairing helper:</string>
+    <string name="av_hermes_card_step2">2. Run the helper. It reads your Hermes API Server config and prints a QR / 6-character code:</string>
+    <string name="av_hermes_card_step3">3. Scan that QR in Agent Voice. The Hermes URL, API key, model, streaming, and Runs API mode are filled automatically.</string>
+    <string name="av_hermes_card_note">Need access away from home? Add a Tailscale/VPN URL when pairing so the QR can carry LAN + Tailscale endpoints and Agent Voice can use the reachable one.</string>
 
     <!-- Manual Hermes fallback -->
-    <string name="av_hermes_manual_title">Or type it manually</string>
+    <string name="av_hermes_manual_title">Hermes manual fallback</string>
     <string name="av_hermes_manual_url">URL (http://host:8642)</string>
     <string name="av_hermes_manual_key">API key</string>
     <string name="av_hermes_manual_model">Model</string>
@@ -56,9 +56,9 @@
     <string name="av_hermes_manual_added">Added</string>
 
     <!-- OpenClaw card -->
-    <string name="av_openclaw_card_title">OpenClaw · scan a QR from your server</string>
-    <string name="av_openclaw_card_step1">1. On your OpenClaw server:</string>
-    <string name="av_openclaw_card_step2">2. Open the OpenClaw setup screen and tap Scan QR Code. OpenClaw handles pairing, TLS trust, and agent discovery itself.</string>
+    <string name="av_openclaw_card_title">OpenClaw · pair with QR</string>
+    <string name="av_openclaw_card_step1">1. On your OpenClaw server, print a setup QR:</string>
+    <string name="av_openclaw_card_step2">2. Scan it in Agent Voice. OpenClaw handles Gateway pairing, TLS trust, and agent discovery.</string>
 
     <!-- Backend list -->
     <string name="av_backends_test">Test connection</string>
@@ -596,12 +596,12 @@
     <string name="setup_guide_welcome_bullet_2">Connect with setup code and recover pairing with CLI commands.</string>
     <string name="setup_guide_welcome_bullet_3">Enable only the permissions and capabilities you want.</string>
     <string name="setup_guide_welcome_bullet_4">Finish with a real connection check before entering the app.</string>
-    <string name="setup_guide_connection_title">Gateway Connection</string>
+    <string name="setup_guide_connection_title">Backend Connection</string>
     <string name="setup_guide_connection_guide_title">Get setup code + gateway URL</string>
     <string name="setup_guide_connection_guide_cmd_1">Run these on the gateway host:</string>
     <string name="setup_guide_connection_guide_json_desc">`--json` prints `setupCode` and `gatewayUrl`.</string>
     <string name="setup_guide_connection_discovery_desc">Auto URL discovery is not wired yet. Android emulator uses `10.0.2.2`; real devices need LAN/Tailscale host.</string>
-    <string name="setup_guide_mode_setup_code">Setup Code</string>
+    <string name="setup_guide_mode_setup_code">OpenClaw</string>
     <string name="setup_guide_mode_manual">Manual</string>
     <string name="setup_guide_setup_code_label">SETUP CODE</string>
     <string name="setup_guide_setup_code_hint">Paste code from `openclaw qr --setup-code-only`</string>
@@ -718,8 +718,8 @@
     <string name="qr_scan_prompt">Scan QR Code</string>
 <string name="qr_scan_desc">Align the QR code within the frame to scan it</string>
     <string name="qr_scan_unavailable">QR scanning is unavailable. Please update Google Play Services.</string>
-    <string name="setup_guide_qr_scan_title">Option 1: Scan QR Code</string>
-    <string name="setup_guide_qr_scan_cmd_label">Run this on the gateway host to display a QR code:</string>
+    <string name="setup_guide_qr_scan_title">OpenClaw QR pairing</string>
+    <string name="setup_guide_qr_scan_cmd_label">Run this on the OpenClaw host, then scan the QR in this app:</string>
     <string name="setup_guide_code_input_title">Option 2: Enter Setup Code</string>
     <!-- Bottom Navigation Tabs -->
     <string name="tab_nav_home">Home</string>
