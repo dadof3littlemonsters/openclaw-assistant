@@ -93,7 +93,7 @@ fun BackendListScreen(
     val testResults = remember { mutableStateOf(mapOf<String, ConnectionTestResult>()) }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Backends") }) },
+        topBar = { TopAppBar(title = { Text(androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.backends_title)) }) },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onAdd,

@@ -1173,6 +1173,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 is com.openclaw.assistant.backend.AgentEvent.TokenDelta -> collected.append(event.text)
                 is com.openclaw.assistant.backend.AgentEvent.MessageDelta -> collected.append(event.text)
                 is com.openclaw.assistant.backend.AgentEvent.Completed -> if (collected.isEmpty()) collected.append(event.finalText)
+                is com.openclaw.assistant.backend.AgentEvent.ToolProgress ->
+                    com.openclaw.assistant.ui.backend.ToolProgressFeed.push(event)
                 is com.openclaw.assistant.backend.AgentEvent.Error -> throw RuntimeException(event.message)
                 else -> Unit
             }

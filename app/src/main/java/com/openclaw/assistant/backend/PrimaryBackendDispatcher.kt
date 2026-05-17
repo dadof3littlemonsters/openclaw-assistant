@@ -44,6 +44,7 @@ object PrimaryBackendDispatcher {
                 is AgentEvent.Completed -> {
                     if (collected.isEmpty()) collected.append(event.finalText)
                 }
+                is AgentEvent.ToolProgress -> com.openclaw.assistant.ui.backend.ToolProgressFeed.push(event)
                 is AgentEvent.Error -> throw RuntimeException("Hermes error: ${event.message}", event.cause)
                 else -> Unit
             }

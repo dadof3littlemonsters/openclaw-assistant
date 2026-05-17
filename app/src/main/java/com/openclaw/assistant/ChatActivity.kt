@@ -443,6 +443,7 @@ fun ChatScreen(
             },
             bottomBar = {
                 Column {
+                    com.openclaw.assistant.ui.backend.ToolProgressStrip()
                     if (uiState.partialText.isNotBlank()) {
                         Text(
                             text = uiState.partialText,

@@ -177,6 +177,10 @@
             android:name="com.openclaw.assistant.bridge.pairing.BridgePairingActivity"
             android:exported="false"
             android:theme="@style/Theme.OpenClawAssistant" />
+        <activity
+            android:name="com.openclaw.assistant.ui.diag.SelfCheckActivity"
+            android:exported="false"
+            android:theme="@style/Theme.OpenClawAssistant" />
 
         <!-- Voice Interaction Service (Home button long press) -->
         <service

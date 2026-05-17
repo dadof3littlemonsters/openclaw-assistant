@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-<string name="app_name">OpenClaw Assistant</string>
+<string name="app_name">AgentVoice</string>
 <string name="notification_channel_name">Служба Wake Word</string>
 <string name="notification_channel_description">Постоянная служба распознавания голоса</string>
 <string name="notification_title">OpenClaw Assistant</string>
@@ -560,4 +560,97 @@
     <string name="action_hide_api_key">Скрыть ключ API</string>
     <string name="action_show_api_key">Показать ключ API</string>
     <string name="action_refresh_agents">Обновить агентов</string>
+
+    <!-- AgentVoice setup wizard -->
+    <string name="av_setup_title">Настройка AgentVoice</string>
+    <string name="av_setup_welcome_title">Добро пожаловать в AgentVoice</string>
+    <string name="av_setup_welcome_body">Нативный голосовой клиент Android для Hermes Agent и OpenClaw. Настройка занимает около 30 секунд — отметьте нужные бэкенды, отсканируйте QR для каждого, готово.</string>
+    <string name="av_setup_choose_title">Какие бэкенды вы будете использовать?</string>
+    <string name="av_setup_choose_hint">Выберите хотя бы один. Позже можно добавить ещё в «Настройки → Backends».</string>
+    <string name="av_setup_get_started">Начать</string>
+    <string name="av_setup_next">Далее</string>
+    <string name="av_setup_back">Назад</string>
+    <string name="av_setup_finish">Готово</string>
+    <string name="av_setup_done_title">Всё готово</string>
+    <string name="av_setup_done_empty">Бэкенды ещё не настроены. Их можно добавить позже в «Настройки → Backends».</string>
+
+    <string name="av_backend_hermes">Hermes Agent</string>
+    <string name="av_backend_openclaw">OpenClaw</string>
+    <string name="av_backend_hermes_subtitle">Современный сервер Hermes API. Настройка через сканирование QR с ПК.</string>
+    <string name="av_backend_openclaw_subtitle">Классический OpenClaw Gateway / HTTP. Запустите «openclaw qr» на сервере.</string>
+    <string name="av_backend_open_openclaw_setup">Открыть настройку OpenClaw</string>
+
+    <string name="av_hermes_card_title">Hermes Agent · отсканируйте QR с ПК</string>
+    <string name="av_hermes_card_step1">1. На ПК с Hermes API Server установите вспомогательный инструмент:</string>
+    <string name="av_hermes_card_step2">2. Запустите его, указав ваш сервер Hermes:</string>
+    <string name="av_hermes_card_step3">3. Будет показан QR. Наведите камеру телефона (или любой сканер QR) — AgentVoice откроется с уже заполненной конфигурацией, нажмите «Добавить».</string>
+    <string name="av_hermes_card_note">QR кодирует deep link agentvoice://, поэтому подойдёт любой сканер — отдельное приложение не нужно.</string>
+
+    <string name="av_hermes_manual_title">Или введите вручную</string>
+    <string name="av_hermes_manual_url">URL (http://host:8642)</string>
+    <string name="av_hermes_manual_key">Ключ API</string>
+    <string name="av_hermes_manual_model">Модель</string>
+    <string name="av_hermes_manual_add">Добавить Hermes</string>
+    <string name="av_hermes_manual_added">Добавлено</string>
+
+    <string name="av_openclaw_card_title">OpenClaw · отсканируйте QR с сервера</string>
+    <string name="av_openclaw_card_step1">1. На сервере OpenClaw:</string>
+    <string name="av_openclaw_card_step2">2. Откройте экран настройки OpenClaw и нажмите «Сканировать QR-код». OpenClaw сам обработает сопряжение, доверие TLS и обнаружение агентов.</string>
+
+    <string name="av_backends_test">Проверить соединение</string>
+    <string name="av_backends_edit">Изменить</string>
+    <string name="av_backends_set_primary">Сделать основным</string>
+    <string name="av_backends_delete">Удалить</string>
+    <string name="av_backends_manage">Управление бэкендами</string>
+
+    <string name="av_bridge_active_grants">Активные разрешения</string>
+    <string name="av_bridge_no_grants">Нет</string>
+    <string name="av_bridge_revoke">Отозвать</string>
+    <string name="av_bridge_revoke_all">Отозвать все</string>
+    <string name="av_bridge_open_pairing">Открыть экран сопряжения</string>
+    <string name="av_bridge_pair_remote">Сопряжение с удалённым устройством</string>
+    <string name="av_bridge_a11y_section">Мост спецвозможностей</string>
+    <string name="av_bridge_a11y_on">Служба активна</string>
+    <string name="av_bridge_a11y_off">Выкл. — включите в «Настройки → Спецвозможности»</string>
+    <string name="av_bridge_open_a11y_settings">Открыть «Спецвозможности»</string>
+    <string name="av_bridge_rotate">Сгенерировать заново</string>
+    <string name="av_bridge_copy">Копировать</string>
+    <string name="av_bridge_reveal">Показать</string>
+    <string name="av_bridge_hide">Скрыть</string>
+    <string name="av_bridge_bind_mode">Режим привязки</string>
+    <string name="av_bridge_bind_local">Только локально</string>
+    <string name="av_bridge_bind_lan">LAN / VPN</string>
+    <string name="av_bridge_approval_mode">Режим подтверждения</string>
+    <string name="av_bridge_approval_always">Всегда подтверждать</string>
+    <string name="av_bridge_approval_med_high">Подтверждать средний/высокий</string>
+    <string name="av_bridge_approval_trusted">Доверенный (без запросов)</string>
+    <string name="av_bridge_allowlist">Разрешённые группы возможностей</string>
+    <string name="av_bridge_run_self_check">Запустить самопроверку</string>
+    <string name="av_bridge_play_warning">Эта сборка предназначена для Play: мост спецвозможностей и SMS скрыты.</string>
+
+    <string name="av_selfcheck_title">Самопроверка</string>
+    <string name="av_selfcheck_intro">Снимок состояния AgentVoice. После исправления нажмите «Повторить».</string>
+    <string name="av_selfcheck_rerun">Повторить</string>
+
+    <string name="av_pair_title">Сопряжение с удалённым устройством</string>
+    <string name="av_pair_intro">На этом экране вы даёте доступ к Mobile Bridge этого устройства настольному Hermes CLI, другому телефону или сопряжённому ноутбуку.</string>
+    <string name="av_pair_generate">Сгенерировать код сопряжения</string>
+    <string name="av_pair_code_label">6-символьный код</string>
+    <string name="av_pair_or_scan">Или отсканируйте / вставьте:</string>
+    <string name="av_pair_copy_url">Копировать URL</string>
+    <string name="av_pair_copy_code">Копировать код</string>
+    <string name="av_pair_cancel">Отмена</string>
+
+    <string name="av_approval_intro">Внешний агент запрашивает разрешение на выполнение:</string>
+    <string name="av_approval_args">Аргументы:</string>
+    <string name="av_approval_destructive_warning">Это действие выглядит ДЕСТРУКТИВНЫМ. Запрос будет показан при каждом вызове — разрешения не сохраняются.</string>
+    <string name="av_approval_deny">Отклонить</string>
+    <string name="av_approval_once">Разрешить один раз</string>
+    <string name="av_approval_10min">Разрешить · 10 мин</string>
+    <string name="av_approval_1hr">Разрешить · 1 час</string>
+    <string name="av_approval_always">Всегда (до отзыва)</string>
+
+    <string name="av_home_primary_backend">Основной бэкенд</string>
+    <string name="av_home_primary_none">Основной бэкенд не задан</string>
+    <string name="av_home_also_configured">Также настроены:</string>
 </resources>

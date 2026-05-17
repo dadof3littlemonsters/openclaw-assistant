@@ -56,7 +56,7 @@ private fun BridgePairingScreen() {
     var offer by remember { mutableStateOf(BridgePairing.currentOffer()) }
     val bridgeUrl = remember(cfg.port.value) { "http://<device-ip>:${cfg.port.value}" }
 
-    Scaffold(topBar = { TopAppBar(title = { Text("Pair a remote") }) }) { padding ->
+    Scaffold(topBar = { TopAppBar(title = { Text(androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.av_pair_title)) }) }) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text("Use this screen to grant a desktop Hermes CLI, another phone, or a paired laptop access to this device's Mobile Bridge.", style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(16.dp))

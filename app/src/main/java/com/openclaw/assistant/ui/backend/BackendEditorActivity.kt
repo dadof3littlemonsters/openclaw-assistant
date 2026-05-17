@@ -86,7 +86,7 @@ fun BackendEditorScreen(existingId: String?, onDone: () -> Unit) {
     var status by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
-    Scaffold(topBar = { TopAppBar(title = { Text(if (existing == null) "Add backend" else "Edit backend") }) }) { padding ->
+    Scaffold(topBar = { TopAppBar(title = { Text(if (existing == null) androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.add_backend) else androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.av_backends_edit)) }) }) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp).verticalScroll(rememberScrollState())) {
             Text("Type", style = MaterialTheme.typography.labelLarge)
             Spacer(Modifier.height(4.dp))

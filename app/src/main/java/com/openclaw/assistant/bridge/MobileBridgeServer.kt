@@ -50,6 +50,7 @@ open class MobileBridgeServer(
 ) {
     private var serverSocket: ServerSocket? = null
     private var scope: CoroutineScope? = null
+    @Volatile internal var lastActivityMs: Long = System.currentTimeMillis()
 
     fun start() {
         if (serverSocket != null) return
@@ -145,6 +146,7 @@ open class MobileBridgeServer(
         if (!authorize(req)) {
             return HttpResponse(401, errorJson("unauthorized", "Missing or invalid bearer token"))
         }
+        lastActivityMs = System.currentTimeMillis()
         return when {
             req.method == "GET" && req.path == "/manifest" -> manifestResponse()
             req.method == "POST" && req.path == "/execute" -> executeResponse(req.body)

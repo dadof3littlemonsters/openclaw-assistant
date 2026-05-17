@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-<string name="app_name">開爪助手</string>
+<string name="app_name">AgentVoice</string>
 <string name="notification_channel_name">喚醒詞服務</string>
 <string name="notification_channel_description">始終在線的語音檢測服務</string>
 <string name="notification_title">開爪助手</string>
@@ -559,4 +559,97 @@
     <string name="action_hide_api_key">隱藏 API 金鑰</string>
     <string name="action_show_api_key">顯示 API 金鑰</string>
     <string name="action_refresh_agents">重新整理代理程式</string>
+
+    <!-- AgentVoice setup wizard -->
+    <string name="av_setup_title">設定 AgentVoice</string>
+    <string name="av_setup_welcome_title">歡迎使用 AgentVoice</string>
+    <string name="av_setup_welcome_body">支援 Hermes Agent 與 OpenClaw 的 Android 原生語音用戶端。設定約 30 秒 — 勾選要使用的後端,分別掃描 QR 即可。</string>
+    <string name="av_setup_choose_title">使用哪些後端?</string>
+    <string name="av_setup_choose_hint">至少選擇一個。稍後可從「設定 → Backends」新增。</string>
+    <string name="av_setup_get_started">開始</string>
+    <string name="av_setup_next">下一步</string>
+    <string name="av_setup_back">返回</string>
+    <string name="av_setup_finish">完成</string>
+    <string name="av_setup_done_title">設定完成</string>
+    <string name="av_setup_done_empty">尚未設定任何後端。可稍後從「設定 → Backends」新增。</string>
+
+    <string name="av_backend_hermes">Hermes Agent</string>
+    <string name="av_backend_openclaw">OpenClaw</string>
+    <string name="av_backend_hermes_subtitle">新版 Hermes API Server。掃描 PC 上的 QR 進行設定。</string>
+    <string name="av_backend_openclaw_subtitle">傳統 OpenClaw Gateway / HTTP。於伺服器執行 \"openclaw qr\"。</string>
+    <string name="av_backend_open_openclaw_setup">開啟 OpenClaw 設定</string>
+
+    <string name="av_hermes_card_title">Hermes Agent · 掃描 PC 上的 QR</string>
+    <string name="av_hermes_card_step1">1. 於執行 Hermes API Server 的 PC 安裝輔助工具:</string>
+    <string name="av_hermes_card_step2">2. 指定伺服器並執行:</string>
+    <string name="av_hermes_card_step3">3. 工具會顯示 QR。以手機相機(或任何 QR 掃描器)掃描後,AgentVoice 會自動開啟並預填設定 — 點「新增」即可。</string>
+    <string name="av_hermes_card_note">QR 編碼為 agentvoice:// 深連結,無須額外掃描 App。</string>
+
+    <string name="av_hermes_manual_title">或手動輸入</string>
+    <string name="av_hermes_manual_url">URL (http://host:8642)</string>
+    <string name="av_hermes_manual_key">API 金鑰</string>
+    <string name="av_hermes_manual_model">模型名稱</string>
+    <string name="av_hermes_manual_add">新增 Hermes</string>
+    <string name="av_hermes_manual_added">已新增</string>
+
+    <string name="av_openclaw_card_title">OpenClaw · 掃描伺服器上的 QR</string>
+    <string name="av_openclaw_card_step1">1. 於 OpenClaw 伺服器:</string>
+    <string name="av_openclaw_card_step2">2. 開啟 OpenClaw 設定頁,點選「掃描 QR 碼」。OpenClaw 自行處理配對、TLS 信任與代理探索。</string>
+
+    <string name="av_backends_test">測試連線</string>
+    <string name="av_backends_edit">編輯</string>
+    <string name="av_backends_set_primary">設為主用</string>
+    <string name="av_backends_delete">刪除</string>
+    <string name="av_backends_manage">管理後端</string>
+
+    <string name="av_bridge_active_grants">目前授權</string>
+    <string name="av_bridge_no_grants">無</string>
+    <string name="av_bridge_revoke">撤銷</string>
+    <string name="av_bridge_revoke_all">撤銷所有授權</string>
+    <string name="av_bridge_open_pairing">開啟配對畫面</string>
+    <string name="av_bridge_pair_remote">配對遠端</string>
+    <string name="av_bridge_a11y_section">無障礙橋接</string>
+    <string name="av_bridge_a11y_on">服務已啟用</string>
+    <string name="av_bridge_a11y_off">已關閉 — 於「設定 → 無障礙」啟用</string>
+    <string name="av_bridge_open_a11y_settings">開啟無障礙設定</string>
+    <string name="av_bridge_rotate">重新產生</string>
+    <string name="av_bridge_copy">複製</string>
+    <string name="av_bridge_reveal">顯示</string>
+    <string name="av_bridge_hide">隱藏</string>
+    <string name="av_bridge_bind_mode">繫結模式</string>
+    <string name="av_bridge_bind_local">僅本機</string>
+    <string name="av_bridge_bind_lan">LAN / VPN</string>
+    <string name="av_bridge_approval_mode">核准模式</string>
+    <string name="av_bridge_approval_always">永遠確認</string>
+    <string name="av_bridge_approval_med_high">中/高風險時確認</string>
+    <string name="av_bridge_approval_trusted">信任模式(不提示)</string>
+    <string name="av_bridge_allowlist">允許的能力群組</string>
+    <string name="av_bridge_run_self_check">執行自我檢查</string>
+    <string name="av_bridge_play_warning">此版本為 Play 發行版,Accessibility Bridge 與 SMS 已隱藏。</string>
+
+    <string name="av_selfcheck_title">自我檢查</string>
+    <string name="av_selfcheck_intro">AgentVoice 的狀態快照。修正問題後請點「重新執行」。</string>
+    <string name="av_selfcheck_rerun">重新執行</string>
+
+    <string name="av_pair_title">配對遠端</string>
+    <string name="av_pair_intro">透過此畫面,允許桌面 Hermes CLI、另一支手機或已配對的筆電存取本裝置的 Mobile Bridge。</string>
+    <string name="av_pair_generate">產生配對碼</string>
+    <string name="av_pair_code_label">6 字元代碼</string>
+    <string name="av_pair_or_scan">或掃描 / 貼上:</string>
+    <string name="av_pair_copy_url">複製 URL</string>
+    <string name="av_pair_copy_code">複製代碼</string>
+    <string name="av_pair_cancel">取消</string>
+
+    <string name="av_approval_intro">外部代理請求執行:</string>
+    <string name="av_approval_args">參數:</string>
+    <string name="av_approval_destructive_warning">此操作具破壞性。每次呼叫皆會提示 — 不沿用先前授權。</string>
+    <string name="av_approval_deny">拒絕</string>
+    <string name="av_approval_once">僅本次允許</string>
+    <string name="av_approval_10min">允許 10 分鐘</string>
+    <string name="av_approval_1hr">允許 1 小時</string>
+    <string name="av_approval_always">永遠允許(直到撤銷)</string>
+
+    <string name="av_home_primary_backend">主用後端</string>
+    <string name="av_home_primary_none">尚未設定主用後端</string>
+    <string name="av_home_also_configured">其他已設定後端:</string>
 </resources>

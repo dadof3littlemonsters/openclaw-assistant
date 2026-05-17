@@ -71,6 +71,9 @@ object AppsLaunchCapability : BridgeCapability {
     override suspend fun execute(context: Context, arguments: JsonObject): JsonObject {
         val pkg = (arguments["packageName"] as? kotlinx.serialization.json.JsonPrimitive)?.content
             ?: return buildJsonObject { put("launched", false); put("reason", "missing packageName") }
+        if (MobileBridgeConfig.getInstance(context).isPackageBlocked(pkg)) {
+            return buildJsonObject { put("launched", false); put("reason", "package is in user blocklist") }
+        }
         val intent = context.packageManager.getLaunchIntentForPackage(pkg)
         if (intent == null) return buildJsonObject { put("launched", false); put("reason", "not installed") }
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

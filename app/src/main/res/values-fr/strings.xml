@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-<string name="app_name">Assistant OpenClaw</string>
+<string name="app_name">AgentVoice</string>
 <string name="notification_channel_name">Service Wake Word</string>
 <string name="notification_channel_description">Service de détection vocale toujours actif</string>
 <string name="notification_title">Assistant OpenClaw</string>
@@ -560,4 +560,97 @@ Pour plus de détails, consultez le site officiel de VOICEVOX.</string>
     <string name="action_hide_api_key">Masquer la clé API</string>
     <string name="action_show_api_key">Afficher la clé API</string>
     <string name="action_refresh_agents">Actualiser les agents</string>
+
+    <!-- AgentVoice setup wizard -->
+    <string name="av_setup_title">Configurer AgentVoice</string>
+    <string name="av_setup_welcome_title">Bienvenue dans AgentVoice</string>
+    <string name="av_setup_welcome_body">Un client vocal Android natif pour Hermes Agent et OpenClaw. La configuration prend environ 30 secondes — cochez les backends à utiliser, scannez un QR pour chacun, c\'est tout.</string>
+    <string name="av_setup_choose_title">Quels backends allez-vous utiliser ?</string>
+    <string name="av_setup_choose_hint">Cochez-en au moins un. Vous pourrez en ajouter plus tard dans Paramètres → Backends.</string>
+    <string name="av_setup_get_started">Commencer</string>
+    <string name="av_setup_next">Suivant</string>
+    <string name="av_setup_back">Retour</string>
+    <string name="av_setup_finish">Terminer</string>
+    <string name="av_setup_done_title">Tout est prêt</string>
+    <string name="av_setup_done_empty">Aucun backend configuré pour le moment. Vous pouvez en ajouter un depuis Paramètres → Backends.</string>
+
+    <string name="av_backend_hermes">Hermes Agent</string>
+    <string name="av_backend_openclaw">OpenClaw</string>
+    <string name="av_backend_hermes_subtitle">Serveur API Hermes moderne. Configurez-le en scannant un QR depuis votre PC.</string>
+    <string name="av_backend_openclaw_subtitle">OpenClaw Gateway / HTTP classique. Lancez \"openclaw qr\" sur votre serveur.</string>
+    <string name="av_backend_open_openclaw_setup">Ouvrir la configuration OpenClaw</string>
+
+    <string name="av_hermes_card_title">Hermes Agent · scannez un QR depuis votre PC</string>
+    <string name="av_hermes_card_step1">1. Sur le PC qui héberge Hermes API Server, installez l\'outil :</string>
+    <string name="av_hermes_card_step2">2. Lancez-le en pointant vers votre serveur Hermes :</string>
+    <string name="av_hermes_card_step3">3. Un QR s\'affiche. Pointez l\'appareil photo (ou tout scanner QR) de votre téléphone vers lui. AgentVoice s\'ouvre avec la configuration pré-remplie — tapez sur Ajouter.</string>
+    <string name="av_hermes_card_note">Le QR encode un lien profond agentvoice://, donc n\'importe quel scanner QR fonctionne — pas besoin d\'application séparée.</string>
+
+    <string name="av_hermes_manual_title">Ou saisir manuellement</string>
+    <string name="av_hermes_manual_url">URL (http://host:8642)</string>
+    <string name="av_hermes_manual_key">Clé API</string>
+    <string name="av_hermes_manual_model">Modèle</string>
+    <string name="av_hermes_manual_add">Ajouter Hermes</string>
+    <string name="av_hermes_manual_added">Ajouté</string>
+
+    <string name="av_openclaw_card_title">OpenClaw · scannez un QR depuis votre serveur</string>
+    <string name="av_openclaw_card_step1">1. Sur votre serveur OpenClaw :</string>
+    <string name="av_openclaw_card_step2">2. Ouvrez l\'écran de configuration OpenClaw et tapez « Scanner le QR ». OpenClaw gère le pairage, la confiance TLS et la découverte d\'agents.</string>
+
+    <string name="av_backends_test">Tester la connexion</string>
+    <string name="av_backends_edit">Modifier</string>
+    <string name="av_backends_set_primary">Définir comme principal</string>
+    <string name="av_backends_delete">Supprimer</string>
+    <string name="av_backends_manage">Gérer les backends</string>
+
+    <string name="av_bridge_active_grants">Autorisations actives</string>
+    <string name="av_bridge_no_grants">Aucune</string>
+    <string name="av_bridge_revoke">Révoquer</string>
+    <string name="av_bridge_revoke_all">Tout révoquer</string>
+    <string name="av_bridge_open_pairing">Ouvrir l\'écran de pairage</string>
+    <string name="av_bridge_pair_remote">Pairer un appareil distant</string>
+    <string name="av_bridge_a11y_section">Pont d\'accessibilité</string>
+    <string name="av_bridge_a11y_on">Service activé</string>
+    <string name="av_bridge_a11y_off">Désactivé — activez-le dans Paramètres → Accessibilité</string>
+    <string name="av_bridge_open_a11y_settings">Ouvrir les paramètres d\'accessibilité</string>
+    <string name="av_bridge_rotate">Régénérer</string>
+    <string name="av_bridge_copy">Copier</string>
+    <string name="av_bridge_reveal">Afficher</string>
+    <string name="av_bridge_hide">Masquer</string>
+    <string name="av_bridge_bind_mode">Mode d\'écoute</string>
+    <string name="av_bridge_bind_local">Local uniquement</string>
+    <string name="av_bridge_bind_lan">LAN / VPN</string>
+    <string name="av_bridge_approval_mode">Mode d\'approbation</string>
+    <string name="av_bridge_approval_always">Toujours confirmer</string>
+    <string name="av_bridge_approval_med_high">Confirmer moyen/élevé</string>
+    <string name="av_bridge_approval_trusted">Confiance (sans invite)</string>
+    <string name="av_bridge_allowlist">Groupes de capacités autorisés</string>
+    <string name="av_bridge_run_self_check">Lancer le diagnostic</string>
+    <string name="av_bridge_play_warning">Cette version est destinée à Play : Pont d\'accessibilité et SMS sont masqués.</string>
+
+    <string name="av_selfcheck_title">Diagnostic</string>
+    <string name="av_selfcheck_intro">État de santé d\'AgentVoice. Tapez « Relancer » après avoir corrigé un point ci-dessous.</string>
+    <string name="av_selfcheck_rerun">Relancer</string>
+
+    <string name="av_pair_title">Pairer un appareil distant</string>
+    <string name="av_pair_intro">Utilisez cet écran pour autoriser un CLI Hermes de bureau, un autre téléphone ou un ordinateur portable à accéder au Mobile Bridge de cet appareil.</string>
+    <string name="av_pair_generate">Générer un code de pairage</string>
+    <string name="av_pair_code_label">Code à 6 caractères</string>
+    <string name="av_pair_or_scan">Ou scanner / coller :</string>
+    <string name="av_pair_copy_url">Copier l\'URL</string>
+    <string name="av_pair_copy_code">Copier le code</string>
+    <string name="av_pair_cancel">Annuler</string>
+
+    <string name="av_approval_intro">Un agent externe demande l\'autorisation d\'exécuter :</string>
+    <string name="av_approval_args">Arguments :</string>
+    <string name="av_approval_destructive_warning">Cette action semble DESTRUCTIVE. Chaque invocation déclenche une invite — les autorisations ne sont pas réutilisées.</string>
+    <string name="av_approval_deny">Refuser</string>
+    <string name="av_approval_once">Autoriser une fois</string>
+    <string name="av_approval_10min">Autoriser · 10 min</string>
+    <string name="av_approval_1hr">Autoriser · 1 h</string>
+    <string name="av_approval_always">Toujours (jusqu\'à révocation)</string>
+
+    <string name="av_home_primary_backend">Backend principal</string>
+    <string name="av_home_primary_none">Aucun backend principal</string>
+    <string name="av_home_also_configured">Également configurés :</string>
 </resources>

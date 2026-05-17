@@ -35,8 +35,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import com.openclaw.assistant.R
 import com.openclaw.assistant.backend.AgentBackendConfig
 import com.openclaw.assistant.backend.BackendRepository
 import com.openclaw.assistant.backend.BackendType
@@ -74,7 +76,7 @@ private fun SimpleSetupWizard(onDone: () -> Unit) {
     var pickOpenClaw by remember { mutableStateOf(false) }
     val totalSteps = 4
 
-    Scaffold(topBar = { TopAppBar(title = { Text("Set up AgentVoice") }) }) { padding ->
+    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.av_setup_title)) }) }) { padding ->
         Column(
             modifier = Modifier.fillMaxSize().padding(padding).padding(20.dp).verticalScroll(rememberScrollState()),
         ) {
@@ -93,15 +95,15 @@ private fun SimpleSetupWizard(onDone: () -> Unit) {
 
             Spacer(Modifier.height(24.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (step in 1 until totalSteps - 1) OutlinedButton(onClick = { step-- }) { Text("Back") }
+                if (step in 1 until totalSteps - 1) OutlinedButton(onClick = { step-- }) { Text(stringResource(R.string.av_setup_back)) }
                 Spacer(Modifier.weight(1f))
                 if (step < totalSteps - 1) {
                     Button(
                         onClick = { step++ },
                         enabled = step != 1 || (pickHermes || pickOpenClaw),
-                    ) { Text(if (step == 0) "Get started" else "Next") }
+                    ) { Text(if (step == 0) stringResource(R.string.av_setup_get_started) else stringResource(R.string.av_setup_next)) }
                 } else {
-                    Button(onClick = onDone) { Text("Finish") }
+                    Button(onClick = onDone) { Text(stringResource(R.string.av_setup_finish)) }
                 }
             }
         }
@@ -109,13 +111,9 @@ private fun SimpleSetupWizard(onDone: () -> Unit) {
 }
 
 @Composable private fun WelcomePane() {
-    Text("Welcome to AgentVoice", style = MaterialTheme.typography.headlineMedium)
+    Text(stringResource(R.string.av_setup_welcome_title), style = MaterialTheme.typography.headlineMedium)
     Spacer(Modifier.height(8.dp))
-    Text(
-        "A native Android voice client for Hermes Agent and OpenClaw. " +
-            "Setup takes ~30 seconds — you tick the backends you have, scan a QR per backend, done.",
-        style = MaterialTheme.typography.bodyMedium,
-    )
+    Text(stringResource(R.string.av_setup_welcome_body), style = MaterialTheme.typography.bodyMedium)
 }
 
 @Composable
@@ -125,20 +123,20 @@ private fun ChooseBackendsPane(
     onHermes: (Boolean) -> Unit,
     onOpenClaw: (Boolean) -> Unit,
 ) {
-    Text("Which backends will you use?", style = MaterialTheme.typography.titleMedium)
+    Text(stringResource(R.string.av_setup_choose_title), style = MaterialTheme.typography.titleMedium)
     Spacer(Modifier.height(4.dp))
-    Text("Tick at least one. You can add more later in Settings → Backends.", style = MaterialTheme.typography.bodySmall)
+    Text(stringResource(R.string.av_setup_choose_hint), style = MaterialTheme.typography.bodySmall)
     Spacer(Modifier.height(16.dp))
 
     BackendChoiceCard(
-        title = "Hermes Agent",
-        subtitle = "Modern Hermes API Server. Set up by scanning a QR from your PC.",
+        title = stringResource(R.string.av_backend_hermes),
+        subtitle = stringResource(R.string.av_backend_hermes_subtitle),
         checked = pickHermes, onCheckedChange = onHermes,
     )
     Spacer(Modifier.height(12.dp))
     BackendChoiceCard(
-        title = "OpenClaw",
-        subtitle = "Classic OpenClaw Gateway / HTTP. Run `openclaw qr` on your server.",
+        title = stringResource(R.string.av_backend_openclaw),
+        subtitle = stringResource(R.string.av_backend_openclaw_subtitle),
         checked = pickOpenClaw, onCheckedChange = onOpenClaw,
     )
 }
@@ -182,31 +180,21 @@ private fun ConfigurePane(pickHermes: Boolean, pickOpenClaw: Boolean, existingBa
 private fun HermesQrCard() {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Hermes Agent · scan a QR from your PC", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.av_hermes_card_title), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
-            Text(
-                "1. On the PC that runs your Hermes API Server, install the helper tool:",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            CodeBlock("pip install hermes-pair    # one-time")
+            Text(stringResource(R.string.av_hermes_card_step1), style = MaterialTheme.typography.bodyMedium)
+            CodeBlock("pip install qrcode    # one-time")
             Spacer(Modifier.height(8.dp))
-            Text("2. Run it, pointing at your Hermes server:", style = MaterialTheme.typography.bodyMedium)
+            Text(stringResource(R.string.av_hermes_card_step2), style = MaterialTheme.typography.bodyMedium)
             CodeBlock(
-                "hermes-pair \\\n" +
+                "python hermes_pair.py \\\n" +
                     "  --url http://192.168.1.42:8642 \\\n" +
                     "  --key sk-…",
             )
             Spacer(Modifier.height(8.dp))
-            Text(
-                "3. It prints a QR. Open your phone's camera (or any QR scanner) and point at it. " +
-                    "AgentVoice will open with the config pre-filled — tap Add.",
-                style = MaterialTheme.typography.bodyMedium,
-            )
+            Text(stringResource(R.string.av_hermes_card_step3), style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(8.dp))
-            Text(
-                "The QR encodes an `agentvoice://hermes/setup?…` deep link, so any QR scanner works — no separate scanner app needed.",
-                style = MaterialTheme.typography.bodySmall,
-            )
+            Text(stringResource(R.string.av_hermes_card_note), style = MaterialTheme.typography.bodySmall)
         }
     }
 }
@@ -215,18 +203,14 @@ private fun HermesQrCard() {
 private fun OpenClawCard(onLaunch: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("OpenClaw · scan a QR from your server", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.av_openclaw_card_title), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
-            Text("1. On your OpenClaw server:", style = MaterialTheme.typography.bodyMedium)
+            Text(stringResource(R.string.av_openclaw_card_step1), style = MaterialTheme.typography.bodyMedium)
             CodeBlock("openclaw qr")
             Spacer(Modifier.height(8.dp))
-            Text(
-                "2. Open the OpenClaw setup screen and tap **Scan QR Code**. " +
-                    "OpenClaw handles pairing, TLS trust, and agent discovery itself.",
-                style = MaterialTheme.typography.bodyMedium,
-            )
+            Text(stringResource(R.string.av_openclaw_card_step2), style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(12.dp))
-            Button(onClick = onLaunch) { Text("Open OpenClaw setup") }
+            Button(onClick = onLaunch) { Text(stringResource(R.string.av_backend_open_openclaw_setup)) }
         }
     }
 }
@@ -241,13 +225,13 @@ private fun ManualHermesFallback() {
     var status by remember { mutableStateOf<String?>(null) }
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Or type it manually", style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.av_hermes_manual_title), style = MaterialTheme.typography.titleSmall)
             Spacer(Modifier.height(8.dp))
-            OutlinedTextField(value = url, onValueChange = { url = it }, label = { Text("URL (http://host:8642)") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = url, onValueChange = { url = it }, label = { Text(stringResource(R.string.av_hermes_manual_url)) }, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(8.dp))
-            OutlinedTextField(value = key, onValueChange = { key = it }, label = { Text("API key") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = key, onValueChange = { key = it }, label = { Text(stringResource(R.string.av_hermes_manual_key)) }, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(8.dp))
-            OutlinedTextField(value = model, onValueChange = { model = it }, label = { Text("Model") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = model, onValueChange = { model = it }, label = { Text(stringResource(R.string.av_hermes_manual_model)) }, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(8.dp))
             Button(
                 enabled = url.startsWith("http://") || url.startsWith("https://"),
@@ -262,9 +246,9 @@ private fun ManualHermesFallback() {
                     )
                     repo.upsert(cfg)
                     if (cfg.isPrimary) repo.setPrimary(cfg.id)
-                    status = "✓ Added"
+                    status = "✓ " + context.getString(R.string.av_hermes_manual_added)
                 },
-            ) { Text("Add Hermes") }
+            ) { Text(stringResource(R.string.av_hermes_manual_add)) }
             status?.let { Spacer(Modifier.height(8.dp)); Text(it, style = MaterialTheme.typography.bodySmall) }
         }
     }
@@ -272,24 +256,17 @@ private fun ManualHermesFallback() {
 
 @Composable
 private fun DonePane(backends: List<AgentBackendConfig>) {
-    Text("You're all set 🎉", style = MaterialTheme.typography.headlineSmall)
+    Text(stringResource(R.string.av_setup_done_title) + " 🎉", style = MaterialTheme.typography.headlineSmall)
     Spacer(Modifier.height(8.dp))
     if (backends.isEmpty()) {
-        Text("No backends configured yet. You can add one later from Settings → Backends.", style = MaterialTheme.typography.bodyMedium)
+        Text(stringResource(R.string.av_setup_done_empty), style = MaterialTheme.typography.bodyMedium)
     } else {
-        Text("Configured:", style = MaterialTheme.typography.bodyMedium)
         backends.forEach { b ->
             Text(
-                "· ${b.displayName}${if (b.isPrimary) " (Primary)" else ""}",
+                "· ${b.displayName}${if (b.isPrimary) " (" + stringResource(R.string.primary_backend) + ")" else ""}",
                 style = MaterialTheme.typography.bodySmall,
             )
         }
-        Spacer(Modifier.height(8.dp))
-        Text(
-            "Wake word, Voice Overlay, and Chat all route to the Primary backend by default. " +
-                "Switch from the Cloud icon in the top bar.",
-            style = MaterialTheme.typography.bodySmall,
-        )
     }
 }
 

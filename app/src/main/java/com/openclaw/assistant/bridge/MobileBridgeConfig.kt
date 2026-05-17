@@ -37,6 +37,22 @@ class MobileBridgeConfig internal constructor(private val prefs: SharedPreferenc
     private val _allowedCapabilityGroups = MutableStateFlow(loadAllowedGroups())
     val allowedCapabilityGroups: StateFlow<Set<String>> = _allowedCapabilityGroups.asStateFlow()
 
+    /**
+     * Package names that `apps.launch` will refuse to start. Mirrors the
+     * Hermes-Relay "per-app blocklist" concept: a user can shield banking,
+     * password, or work-profile apps even when `apps.launch` is otherwise
+     * granted.
+     */
+    private val _packageBlocklist = MutableStateFlow(loadBlocklist())
+    val packageBlocklist: StateFlow<Set<String>> = _packageBlocklist.asStateFlow()
+
+    /**
+     * If non-zero, the foreground bridge service stops itself after this many
+     * milliseconds of no successful request. 0 disables the watchdog.
+     */
+    private val _autoDisableIdleMs = MutableStateFlow(prefs.getLong(KEY_AUTO_DISABLE_IDLE_MS, 0L))
+    val autoDisableIdleMs: StateFlow<Long> = _autoDisableIdleMs.asStateFlow()
+
     fun setEnabled(value: Boolean) { prefs.edit { putBoolean(KEY_ENABLED, value) }; _enabled.value = value }
     fun setPort(value: Int) { prefs.edit { putInt(KEY_PORT, value) }; _port.value = value }
     fun setBindMode(mode: BridgeBindMode) { prefs.edit { putString(KEY_BIND_MODE, mode.name) }; _bindMode.value = mode }
@@ -45,6 +61,18 @@ class MobileBridgeConfig internal constructor(private val prefs: SharedPreferenc
         prefs.edit { putStringSet(KEY_ALLOWED_GROUPS, groups) }
         _allowedCapabilityGroups.value = groups
     }
+
+    fun setPackageBlocklist(packages: Set<String>) {
+        prefs.edit { putStringSet(KEY_PACKAGE_BLOCKLIST, packages) }
+        _packageBlocklist.value = packages
+    }
+
+    fun setAutoDisableIdleMs(ms: Long) {
+        prefs.edit { putLong(KEY_AUTO_DISABLE_IDLE_MS, ms.coerceAtLeast(0L)) }
+        _autoDisableIdleMs.value = ms.coerceAtLeast(0L)
+    }
+
+    fun isPackageBlocked(packageName: String): Boolean = _packageBlocklist.value.contains(packageName)
 
     /** Returns the existing token, generating one if absent. */
     fun getOrCreateToken(): String {
@@ -74,6 +102,8 @@ class MobileBridgeConfig internal constructor(private val prefs: SharedPreferenc
             .getOrDefault(BridgeApprovalMode.CONFIRM_MEDIUM_HIGH)
     private fun loadAllowedGroups(): Set<String> =
         prefs.getStringSet(KEY_ALLOWED_GROUPS, DEFAULT_ALLOWED_GROUPS)?.toSet() ?: DEFAULT_ALLOWED_GROUPS
+    private fun loadBlocklist(): Set<String> =
+        prefs.getStringSet(KEY_PACKAGE_BLOCKLIST, emptySet())?.toSet() ?: emptySet()
 
     companion object {
         const val DEFAULT_PORT = 8787
@@ -84,6 +114,8 @@ class MobileBridgeConfig internal constructor(private val prefs: SharedPreferenc
         private const val KEY_APPROVAL_MODE = "approvalMode"
         private const val KEY_TOKEN = "token"
         private const val KEY_ALLOWED_GROUPS = "allowedCapabilityGroups"
+        private const val KEY_PACKAGE_BLOCKLIST = "packageBlocklist"
+        private const val KEY_AUTO_DISABLE_IDLE_MS = "autoDisableIdleMs"
         private val DEFAULT_ALLOWED_GROUPS: Set<String> = setOf("device", "apps", "clipboard.read")
 
         @Volatile private var instance: MobileBridgeConfig? = null

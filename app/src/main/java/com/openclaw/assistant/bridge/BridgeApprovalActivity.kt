@@ -61,33 +61,33 @@ private fun ApprovalPane(
     onDeny: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
-        Text("Agent Voice — Mobile Bridge", style = MaterialTheme.typography.titleLarge)
+        Text("AgentVoice — " + androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.mobile_bridge_title), style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(8.dp))
         if (destructive) {
             Text(
-                "⚠ This action looks DESTRUCTIVE. Every invocation prompts — grants are not honoured.",
+                "⚠ " + androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.av_approval_destructive_warning),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error,
             )
             Spacer(Modifier.height(8.dp))
         }
-        Text("An external agent is requesting permission to run:", style = MaterialTheme.typography.bodyMedium)
+        Text(androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.av_approval_intro), style = MaterialTheme.typography.bodyMedium)
         Spacer(Modifier.height(16.dp))
         Text(capability, style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(16.dp))
-        Text("Arguments:", style = MaterialTheme.typography.labelLarge)
+        Text(androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.av_approval_args), style = MaterialTheme.typography.labelLarge)
         Text(argumentsJson, style = MaterialTheme.typography.bodySmall)
         Spacer(Modifier.height(24.dp))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            OutlinedButton(onClick = onDeny) { Text("Deny") }
-            Button(onClick = { onApprove(0L) }) { Text("Approve once") }
+            OutlinedButton(onClick = onDeny) { Text(androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.av_approval_deny)) }
+            Button(onClick = { onApprove(0L) }) { Text(androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.av_approval_once)) }
         }
         if (!destructive) {
             Spacer(Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { onApprove(10 * 60_000L) }) { Text("Approve · 10 min") }
-                OutlinedButton(onClick = { onApprove(60 * 60_000L) }) { Text("Approve · 1 hour") }
-                OutlinedButton(onClick = { onApprove(Long.MAX_VALUE) }) { Text("Always (until revoked)") }
+                OutlinedButton(onClick = { onApprove(10 * 60_000L) }) { Text(androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.av_approval_10min)) }
+                OutlinedButton(onClick = { onApprove(60 * 60_000L) }) { Text(androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.av_approval_1hr)) }
+                OutlinedButton(onClick = { onApprove(Long.MAX_VALUE) }) { Text(androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.av_approval_always)) }
             }
         }
     }

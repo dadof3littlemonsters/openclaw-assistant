@@ -60,7 +60,7 @@ fun MobileBridgeSettingsScreen() {
     var showToken by remember { mutableStateOf(false) }
     var rotated by remember { mutableStateOf(0) }
 
-    Scaffold(topBar = { TopAppBar(title = { Text("Mobile Bridge") }) }) { padding ->
+    Scaffold(topBar = { TopAppBar(title = { Text(androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.mobile_bridge_title)) }) }) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp).verticalScroll(rememberScrollState())) {
             Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                 Text("Enable Mobile Bridge", modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
@@ -183,6 +183,11 @@ fun MobileBridgeSettingsScreen() {
                 context.startActivity(android.content.Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)
                     .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
             }) { Text("Open Accessibility settings") }
+
+            Spacer(Modifier.height(16.dp))
+            Button(onClick = {
+                context.startActivity(android.content.Intent(context, com.openclaw.assistant.ui.diag.SelfCheckActivity::class.java))
+            }) { Text("Run self-check") }
 
             if (!com.openclaw.assistant.BuildConfig.IS_SIDELOAD) {
                 Spacer(Modifier.height(4.dp))

@@ -8,6 +8,8 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 /**
  * Foreground service hosting the Mobile Bridge HTTP server. The user must
@@ -22,6 +24,7 @@ import android.os.IBinder
 class MobileBridgeService : Service() {
 
     private var server: MobileBridgeServer? = null
+    private var watchdogJob: kotlinx.coroutines.Job? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -51,10 +54,31 @@ class MobileBridgeService : Service() {
         if (server != null) return
         val cfg = MobileBridgeConfig.getInstance(this)
         if (!cfg.enabled.value) return
-        server = MobileBridgeServer(this, cfg).also { it.start() }
+        val srv = MobileBridgeServer(this, cfg).also { it.start() }
+        server = srv
+
+        // Auto-disable watchdog — if cfg.autoDisableIdleMs > 0, stops the
+        // service when no request has touched the server for that long.
+        val idleMs = cfg.autoDisableIdleMs.value
+        if (idleMs > 0L) {
+            val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default + kotlinx.coroutines.SupervisorJob())
+            watchdogJob = scope.launch {
+                while (scope.isActive) {
+                    kotlinx.coroutines.delay(15_000L)
+                    val since = System.currentTimeMillis() - srv.lastActivityMs
+                    if (since >= idleMs) {
+                        stopServer()
+                        stopForeground(STOP_FOREGROUND_REMOVE)
+                        stopSelf()
+                        break
+                    }
+                }
+            }
+        }
     }
 
     private fun stopServer() {
+        watchdogJob?.cancel(); watchdogJob = null
         server?.stop()
         server = null
     }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-<string name="app_name">OpenClaw Assistant</string>
+<string name="app_name">AgentVoice</string>
 <string name="notification_channel_name">ホットワードサービス</string>
 <string name="notification_channel_description">常時音声検知サービス</string>
 <string name="notification_title">OpenClaw Assistant</string>
@@ -562,4 +562,97 @@
     <string name="action_hide_api_key">APIキーを隠す</string>
     <string name="action_show_api_key">APIキーを表示</string>
     <string name="action_refresh_agents">エージェントを更新</string>
+
+    <!-- AgentVoice setup wizard -->
+    <string name="av_setup_title">AgentVoice のセットアップ</string>
+    <string name="av_setup_welcome_title">AgentVoice へようこそ</string>
+    <string name="av_setup_welcome_body">Hermes Agent と OpenClaw に対応した Android ネイティブ音声クライアントです。セットアップは 30 秒ほど — 使う backend をチェックして、それぞれ QR を読み取れば完了です。</string>
+    <string name="av_setup_choose_title">どの backend を使いますか?</string>
+    <string name="av_setup_choose_hint">最低 1 つ選んでください。後から「設定 → Backends」で追加もできます。</string>
+    <string name="av_setup_get_started">はじめる</string>
+    <string name="av_setup_next">次へ</string>
+    <string name="av_setup_back">戻る</string>
+    <string name="av_setup_finish">完了</string>
+    <string name="av_setup_done_title">準備完了</string>
+    <string name="av_setup_done_empty">まだ backend は登録されていません。「設定 → Backends」から後で追加できます。</string>
+
+    <string name="av_backend_hermes">Hermes Agent</string>
+    <string name="av_backend_openclaw">OpenClaw</string>
+    <string name="av_backend_hermes_subtitle">最新の Hermes API Server。PC の QR をスキャンして設定します。</string>
+    <string name="av_backend_openclaw_subtitle">従来の OpenClaw Gateway / HTTP。サーバーで「openclaw qr」を実行します。</string>
+    <string name="av_backend_open_openclaw_setup">OpenClaw のセットアップを開く</string>
+
+    <string name="av_hermes_card_title">Hermes Agent · PC の QR をスキャン</string>
+    <string name="av_hermes_card_step1">1. Hermes API Server を動かしている PC でツールをインストール:</string>
+    <string name="av_hermes_card_step2">2. サーバーを指定して実行:</string>
+    <string name="av_hermes_card_step3">3. QR が表示されます。スマホのカメラ(または任意の QR スキャナ)で読み取ると、AgentVoice が設定済みの状態で開きます。「追加」を押すだけです。</string>
+    <string name="av_hermes_card_note">QR は agentvoice:// のディープリンクなので、専用スキャナアプリは不要です。</string>
+
+    <string name="av_hermes_manual_title">手入力で追加</string>
+    <string name="av_hermes_manual_url">URL (http://host:8642)</string>
+    <string name="av_hermes_manual_key">API キー</string>
+    <string name="av_hermes_manual_model">モデル名</string>
+    <string name="av_hermes_manual_add">Hermes を追加</string>
+    <string name="av_hermes_manual_added">追加しました</string>
+
+    <string name="av_openclaw_card_title">OpenClaw · サーバーの QR をスキャン</string>
+    <string name="av_openclaw_card_step1">1. OpenClaw サーバーで:</string>
+    <string name="av_openclaw_card_step2">2. OpenClaw のセットアップ画面で「QR コードをスキャン」をタップ。ペアリング・TLS・エージェント検出は OpenClaw 側が処理します。</string>
+
+    <string name="av_backends_test">接続テスト</string>
+    <string name="av_backends_edit">編集</string>
+    <string name="av_backends_set_primary">Primary に設定</string>
+    <string name="av_backends_delete">削除</string>
+    <string name="av_backends_manage">Backend を管理</string>
+
+    <string name="av_bridge_active_grants">有効な許可</string>
+    <string name="av_bridge_no_grants">なし</string>
+    <string name="av_bridge_revoke">取り消す</string>
+    <string name="av_bridge_revoke_all">すべての許可を取り消す</string>
+    <string name="av_bridge_open_pairing">ペアリング画面を開く</string>
+    <string name="av_bridge_pair_remote">リモートをペアリング</string>
+    <string name="av_bridge_a11y_section">Accessibility Bridge</string>
+    <string name="av_bridge_a11y_on">サービス有効</string>
+    <string name="av_bridge_a11y_off">無効 — 「設定 → ユーザー補助」で有効化</string>
+    <string name="av_bridge_open_a11y_settings">ユーザー補助の設定を開く</string>
+    <string name="av_bridge_rotate">再生成</string>
+    <string name="av_bridge_copy">コピー</string>
+    <string name="av_bridge_reveal">表示</string>
+    <string name="av_bridge_hide">隠す</string>
+    <string name="av_bridge_bind_mode">バインドモード</string>
+    <string name="av_bridge_bind_local">ローカルのみ</string>
+    <string name="av_bridge_bind_lan">LAN / VPN</string>
+    <string name="av_bridge_approval_mode">承認モード</string>
+    <string name="av_bridge_approval_always">常に確認</string>
+    <string name="av_bridge_approval_med_high">中・高リスクのみ確認</string>
+    <string name="av_bridge_approval_trusted">信頼モード(確認なし)</string>
+    <string name="av_bridge_allowlist">許可する Capability グループ</string>
+    <string name="av_bridge_run_self_check">セルフチェックを実行</string>
+    <string name="av_bridge_play_warning">このビルドは Play 配布向けのため、Accessibility Bridge と SMS は無効化されています。</string>
+
+    <string name="av_selfcheck_title">セルフチェック</string>
+    <string name="av_selfcheck_intro">AgentVoice の状態スナップショットです。問題を解消したら「再実行」を押してください。</string>
+    <string name="av_selfcheck_rerun">再実行</string>
+
+    <string name="av_pair_title">リモートをペアリング</string>
+    <string name="av_pair_intro">この画面で、デスクトップの Hermes CLI や別のスマホ・ノート PC に対して、本端末の Mobile Bridge への接続を許可します。</string>
+    <string name="av_pair_generate">ペアリングコードを生成</string>
+    <string name="av_pair_code_label">6 文字のコード</string>
+    <string name="av_pair_or_scan">またはスキャン / 貼り付け:</string>
+    <string name="av_pair_copy_url">URL をコピー</string>
+    <string name="av_pair_copy_code">コードをコピー</string>
+    <string name="av_pair_cancel">キャンセル</string>
+
+    <string name="av_approval_intro">外部エージェントが次の実行を要求しています:</string>
+    <string name="av_approval_args">引数:</string>
+    <string name="av_approval_destructive_warning">この操作は破壊的です。毎回確認を求め、許可は再利用されません。</string>
+    <string name="av_approval_deny">拒否</string>
+    <string name="av_approval_once">1 回だけ許可</string>
+    <string name="av_approval_10min">10 分間許可</string>
+    <string name="av_approval_1hr">1 時間許可</string>
+    <string name="av_approval_always">取り消すまで常に許可</string>
+
+    <string name="av_home_primary_backend">Primary backend</string>
+    <string name="av_home_primary_none">Primary は未設定です</string>
+    <string name="av_home_also_configured">他の設定済み backend:</string>
 </resources>
