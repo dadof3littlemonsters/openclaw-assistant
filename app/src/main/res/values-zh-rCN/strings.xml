@@ -586,13 +586,6 @@
     <string name="av_hermes_card_step3">3. 工具会显示 QR。用手机相机(或任意扫码工具)扫描后,AgentVoice 会自动打开并预填配置,点击「添加」即可。</string>
     <string name="av_hermes_card_note">QR 编码为 agentvoice:// 深链,无需安装单独的扫码 App。</string>
 
-    <string name="av_hermes_manual_title">或手动填写</string>
-    <string name="av_hermes_manual_url">URL (http://host:8642)</string>
-    <string name="av_hermes_manual_key">API 密钥</string>
-    <string name="av_hermes_manual_model">模型名</string>
-    <string name="av_hermes_manual_add">添加 Hermes</string>
-    <string name="av_hermes_manual_added">已添加</string>
-
     <string name="av_openclaw_card_title">OpenClaw · 扫描服务器上的 QR</string>
     <string name="av_openclaw_card_step1">1. 在 OpenClaw 服务器上:</string>
     <string name="av_openclaw_card_step2">2. 打开 OpenClaw 设置页,点击「扫描 QR 码」。OpenClaw 自行处理配对、TLS 信任和代理发现。</string>

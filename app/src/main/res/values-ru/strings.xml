@@ -586,13 +586,6 @@
     <string name="av_hermes_card_step3">3. Будет показан QR. Наведите камеру телефона (или любой сканер QR) — AgentVoice откроется с уже заполненной конфигурацией, нажмите «Добавить».</string>
     <string name="av_hermes_card_note">QR кодирует deep link agentvoice://, поэтому подойдёт любой сканер — отдельное приложение не нужно.</string>
 
-    <string name="av_hermes_manual_title">Или введите вручную</string>
-    <string name="av_hermes_manual_url">URL (http://host:8642)</string>
-    <string name="av_hermes_manual_key">Ключ API</string>
-    <string name="av_hermes_manual_model">Модель</string>
-    <string name="av_hermes_manual_add">Добавить Hermes</string>
-    <string name="av_hermes_manual_added">Добавлено</string>
-
     <string name="av_openclaw_card_title">OpenClaw · отсканируйте QR с сервера</string>
     <string name="av_openclaw_card_step1">1. На сервере OpenClaw:</string>
     <string name="av_openclaw_card_step2">2. Откройте экран настройки OpenClaw и нажмите «Сканировать QR-код». OpenClaw сам обработает сопряжение, доверие TLS и обнаружение агентов.</string>

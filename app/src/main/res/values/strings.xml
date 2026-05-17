@@ -44,16 +44,8 @@
     <string name="av_hermes_card_step2">2. Run the helper. It checks local Hermes, OpenClaw, and Tailscale, asks what to include, then prints one QR:</string>
     <string name="av_hermes_card_step3">3. Scan that QR in Agent Voice. Hermes and OpenClaw settings are applied together when both are included.</string>
     <string name="av_hermes_card_note">For use away from home, answer yes to the Tailscale/VPN prompt so the QR includes LAN + Tailscale endpoint candidates.</string>
-
-    <!-- Manual Hermes fallback -->
-    <string name="av_hermes_manual_title">Hermes manual fallback</string>
-    <string name="av_hermes_manual_url">URL (http://host:8642)</string>
-    <string name="av_hermes_manual_key">API key</string>
-    <string name="av_hermes_manual_model">Model</string>
     <string name="av_hermes_use_runs_api">Use Runs API</string>
     <string name="av_hermes_stream_responses">Stream responses</string>
-    <string name="av_hermes_manual_add">Add Hermes</string>
-    <string name="av_hermes_manual_added">Added</string>
 
     <!-- OpenClaw card -->
     <string name="av_openclaw_card_title">OpenClaw · pair with QR</string>

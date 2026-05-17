@@ -26,7 +26,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -42,13 +41,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import com.openclaw.assistant.OpenClawApplication
 import com.openclaw.assistant.R
 import com.openclaw.assistant.backend.AgentBackendConfig
 import com.openclaw.assistant.backend.BackendRepository
-import com.openclaw.assistant.backend.BackendType
-import com.openclaw.assistant.data.SettingsRepository
-import com.openclaw.assistant.utils.GatewayConfigUtils
 
 /**
  * Simplified first-run wizard.
@@ -161,8 +156,6 @@ private fun BackendChoiceCard(title: String, subtitle: String, checked: Boolean,
 @Composable
 private fun ConfigurePane() {
     UnifiedPairingCard()
-    Spacer(Modifier.height(16.dp))
-    ManualHermesFallback()
 }
 
 @Composable
@@ -214,118 +207,6 @@ private fun UnifiedPairingCard() {
                 Spacer(Modifier.height(8.dp))
                 Text(it, style = MaterialTheme.typography.bodySmall)
             }
-        }
-    }
-}
-
-@Composable
-private fun OpenClawCard() {
-    val context = LocalContext.current
-    val runtime = remember(context.applicationContext) {
-        (context.applicationContext as OpenClawApplication).nodeRuntime
-    }
-    val settings = remember { SettingsRepository.getInstance(context) }
-    var status by remember { mutableStateOf<String?>(null) }
-
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(stringResource(R.string.av_openclaw_card_title), style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(8.dp))
-            Text(stringResource(R.string.av_openclaw_card_step1), style = MaterialTheme.typography.bodyMedium)
-            CodeBlock("openclaw qr")
-            Spacer(Modifier.height(8.dp))
-            Text(stringResource(R.string.av_openclaw_card_step2), style = MaterialTheme.typography.bodyMedium)
-            Spacer(Modifier.height(12.dp))
-            Button(
-                onClick = {
-                    val options = GmsBarcodeScannerOptions.Builder()
-                        .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
-                        .build()
-                    GmsBarcodeScanning.getClient(context, options)
-                        .startScan()
-                        .addOnSuccessListener { barcode ->
-                            val raw = barcode.rawValue?.trim().orEmpty()
-                            val setupCode = try {
-                                org.json.JSONObject(raw)
-                                    .optString("setupCode")
-                                    .takeIf { it.isNotBlank() } ?: raw
-                            } catch (_: Exception) {
-                                raw
-                            }
-                            val decoded = GatewayConfigUtils.decodeGatewaySetupCode(setupCode)
-                            val parsed = decoded?.let { GatewayConfigUtils.parseGatewayEndpoint(it.url) }
-                            if (decoded != null && parsed != null) {
-                                runtime.setManualHost(parsed.host)
-                                runtime.setManualPort(parsed.port)
-                                runtime.setManualTls(parsed.tls)
-                                when {
-                                    decoded.bootstrapToken != null -> runtime.setGatewayBootstrapToken(decoded.bootstrapToken)
-                                    decoded.token != null -> {
-                                        runtime.prefs.saveGatewayToken(decoded.token)
-                                        settings.authToken = decoded.token
-                                    }
-                                    decoded.password != null -> runtime.setGatewayPassword(decoded.password)
-                                }
-                                GatewayConfigUtils.composeGatewayManualUrl(parsed.host, parsed.port.toString(), parsed.tls)
-                                    ?.let { url ->
-                                        if (com.openclaw.assistant.shared.utils.NetworkUtils.isUrlSecure(url)) {
-                                            settings.httpUrl = url
-                                        }
-                                    }
-                                runtime.setManualEnabled(true)
-                                settings.connectionType = SettingsRepository.CONNECTION_TYPE_GATEWAY
-                                status = context.getString(R.string.setup_code_applied)
-                            } else {
-                                status = context.getString(R.string.setup_code_invalid_code)
-                            }
-                        }
-                        .addOnFailureListener { /* cancelled */ }
-                },
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text(stringResource(R.string.qr_scan_prompt)) }
-            status?.let {
-                Spacer(Modifier.height(8.dp))
-                Text(it, style = MaterialTheme.typography.bodySmall)
-            }
-        }
-    }
-}
-
-@Composable
-private fun ManualHermesFallback() {
-    val context = LocalContext.current
-    val repo = remember { BackendRepository.getInstance(context) }
-    var url by remember { mutableStateOf("") }
-    var key by remember { mutableStateOf("") }
-    var model by remember { mutableStateOf("hermes-agent") }
-    var status by remember { mutableStateOf<String?>(null) }
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(stringResource(R.string.av_hermes_manual_title), style = MaterialTheme.typography.titleSmall)
-            Spacer(Modifier.height(8.dp))
-            OutlinedTextField(value = url, onValueChange = { url = it }, label = { Text(stringResource(R.string.av_hermes_manual_url)) }, modifier = Modifier.fillMaxWidth())
-            Spacer(Modifier.height(8.dp))
-            OutlinedTextField(value = key, onValueChange = { key = it }, label = { Text(stringResource(R.string.av_hermes_manual_key)) }, modifier = Modifier.fillMaxWidth())
-            Spacer(Modifier.height(8.dp))
-            OutlinedTextField(value = model, onValueChange = { model = it }, label = { Text(stringResource(R.string.av_hermes_manual_model)) }, modifier = Modifier.fillMaxWidth())
-            Spacer(Modifier.height(8.dp))
-            Button(
-                enabled = url.startsWith("http://") || url.startsWith("https://"),
-                onClick = {
-                    val cfg = AgentBackendConfig(
-                        displayName = "Hermes Agent",
-                        type = BackendType.HERMES_API_SERVER,
-                        baseUrl = url.trim(),
-                        apiKeyOrToken = key.trim().ifEmpty { null },
-                        modelName = model.ifBlank { "hermes-agent" },
-                        isPrimary = repo.backends.value.isEmpty(),
-                    )
-                    repo.upsert(cfg)
-                    if (cfg.isPrimary) repo.setPrimary(cfg.id)
-                    status = "✓ " + context.getString(R.string.av_hermes_manual_added)
-                },
-            ) { Text(stringResource(R.string.av_hermes_manual_add)) }
-            status?.let { Spacer(Modifier.height(8.dp)); Text(it, style = MaterialTheme.typography.bodySmall) }
         }
     }
 }

@@ -17,14 +17,8 @@ tmp="$(mktemp)"
 trap 'rm -f "$tmp"' EXIT
 
 curl -fsSL "$SCRIPT_URL" -o "$tmp"
+python3 -m py_compile "$tmp"
 install -m 0755 "$tmp" "$TARGET"
-
-if ! python3 - <<'PY' >/dev/null 2>&1
-import qrcode
-PY
-then
-  python3 -m pip install --user qrcode
-fi
 
 echo "Installed agentvoice-pair to $TARGET"
 case ":$PATH:" in

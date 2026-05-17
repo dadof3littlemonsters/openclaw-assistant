@@ -586,13 +586,6 @@ Para más detalles, consulta el sitio oficial de VOICEVOX.</string>
     <string name="av_hermes_card_step3">3. Mostrará un QR. Apunta con la cámara del teléfono (o cualquier escáner QR) y AgentVoice se abrirá con la configuración pre-rellenada: toca Añadir.</string>
     <string name="av_hermes_card_note">El QR contiene un enlace profundo agentvoice://, así que cualquier escáner QR sirve — no necesitas una app aparte.</string>
 
-    <string name="av_hermes_manual_title">O introdúcelo manualmente</string>
-    <string name="av_hermes_manual_url">URL (http://host:8642)</string>
-    <string name="av_hermes_manual_key">Clave API</string>
-    <string name="av_hermes_manual_model">Modelo</string>
-    <string name="av_hermes_manual_add">Añadir Hermes</string>
-    <string name="av_hermes_manual_added">Añadido</string>
-
     <string name="av_openclaw_card_title">OpenClaw · escanea un QR desde tu servidor</string>
     <string name="av_openclaw_card_step1">1. En tu servidor OpenClaw:</string>
     <string name="av_openclaw_card_step2">2. Abre la pantalla de configuración de OpenClaw y toca «Escanear código QR». OpenClaw se encarga del emparejado, la confianza TLS y el descubrimiento de agentes.</string>

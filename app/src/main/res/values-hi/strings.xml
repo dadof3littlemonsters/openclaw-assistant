@@ -586,13 +586,6 @@
     <string name="av_hermes_card_step3">3. एक QR दिखेगा। फ़ोन के कैमरे (या किसी भी QR स्कैनर) से उसे स्कैन करें। AgentVoice पहले से भरी कॉन्फ़िगरेशन के साथ खुलेगा। «जोड़ें» पर टैप करें।</string>
     <string name="av_hermes_card_note">QR में agentvoice:// डीप लिंक एन्कोड किया गया है, इसलिए कोई भी QR स्कैनर काम करता है। अलग ऐप की ज़रूरत नहीं।</string>
 
-    <string name="av_hermes_manual_title">या मैन्युअल रूप से दर्ज करें</string>
-    <string name="av_hermes_manual_url">URL (http://host:8642)</string>
-    <string name="av_hermes_manual_key">API कुंजी</string>
-    <string name="av_hermes_manual_model">मॉडल</string>
-    <string name="av_hermes_manual_add">Hermes जोड़ें</string>
-    <string name="av_hermes_manual_added">जोड़ा गया</string>
-
     <string name="av_openclaw_card_title">OpenClaw · सर्वर से QR स्कैन करें</string>
     <string name="av_openclaw_card_step1">1. अपने OpenClaw सर्वर पर:</string>
     <string name="av_openclaw_card_step2">2. OpenClaw सेटअप स्क्रीन खोलें और «QR कोड स्कैन करें» पर टैप करें। पेयरिंग, TLS विश्वास और एजेंट खोज OpenClaw स्वयं करता है।</string>

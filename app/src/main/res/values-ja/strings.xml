@@ -587,15 +587,8 @@
     <string name="av_hermes_card_step2">2. helperを実行します。ローカルのHermes、OpenClaw、Tailscaleを確認し、含める対象を聞いてから1つのQRを表示します:</string>
     <string name="av_hermes_card_step3">3. Agent Voice内でQRを読み取ります。HermesとOpenClawを両方含めた場合は、両方の設定がまとめて適用されます。</string>
     <string name="av_hermes_card_note">外出先でも使う場合は、Tailscale/VPNを含める質問で「はい」を選んでください。LAN + Tailscale候補をQRに入れられます。</string>
-
-    <string name="av_hermes_manual_title">Hermesの手動入力フォールバック</string>
-    <string name="av_hermes_manual_url">URL (http://host:8642)</string>
-    <string name="av_hermes_manual_key">API キー</string>
-    <string name="av_hermes_manual_model">モデル名</string>
     <string name="av_hermes_use_runs_api">Runs API を使う</string>
     <string name="av_hermes_stream_responses">レスポンスをストリーミングする</string>
-    <string name="av_hermes_manual_add">Hermes を追加</string>
-    <string name="av_hermes_manual_added">追加しました</string>
 
     <string name="av_openclaw_card_title">OpenClaw · QRでペアリング</string>
     <string name="av_openclaw_card_step1">1. OpenClawサーバーでセットアップQRを表示します:</string>

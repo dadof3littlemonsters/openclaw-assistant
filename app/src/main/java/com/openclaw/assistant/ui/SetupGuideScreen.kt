@@ -680,12 +680,6 @@ private fun ConnectionStep(
 @Composable
 private fun HermesSetupGuideContent() {
     val context = LocalContext.current
-    val repo = remember { BackendRepository.getInstance(context) }
-    var url by rememberSaveable { mutableStateOf("") }
-    var key by rememberSaveable { mutableStateOf("") }
-    var model by rememberSaveable { mutableStateOf("hermes-agent") }
-    var useRunsApi by rememberSaveable { mutableStateOf(false) }
-    var useStreaming by rememberSaveable { mutableStateOf(true) }
     var status by rememberSaveable { mutableStateOf<String?>(null) }
 
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -709,16 +703,14 @@ private fun HermesSetupGuideContent() {
                                 val raw = barcode.rawValue?.trim().orEmpty()
                                 val pairingPayload = parsePairingPayload(raw)
                                 if (pairingPayload != null) {
-                                    applyPairingPayload(context, pairingPayload)
-                                    status = context.getString(R.string.setup_code_applied)
-                                } else if (raw.startsWith("agentvoice://")) {
-                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(raw)))
-                                } else if (raw.startsWith("http://") || raw.startsWith("https://")) {
-                                    url = raw
-                                } else {
-                                    android.widget.Toast.makeText(
-                                        context,
-                                        context.getString(R.string.qr_scan_unavailable),
+                                applyPairingPayload(context, pairingPayload)
+                                status = context.getString(R.string.setup_code_applied)
+                            } else if (raw.startsWith("agentvoice://")) {
+                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(raw)))
+                            } else {
+                                android.widget.Toast.makeText(
+                                    context,
+                                    context.getString(R.string.qr_scan_unavailable),
                                         android.widget.Toast.LENGTH_LONG
                                     ).show()
                                 }
@@ -730,67 +722,7 @@ private fun HermesSetupGuideContent() {
                 ) {
                     Icon(Icons.Default.QrCodeScanner, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.qr_scan_prompt))
-                }
-            }
-        }
-
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.av_hermes_manual_title), style = MaterialTheme.typography.titleSmall)
-                OutlinedTextField(
-                    value = url,
-                    onValueChange = { url = it },
-                    label = { Text(stringResource(R.string.av_hermes_manual_url)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                    singleLine = true
-                )
-                OutlinedTextField(
-                    value = key,
-                    onValueChange = { key = it },
-                    label = { Text(stringResource(R.string.av_hermes_manual_key)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    singleLine = true
-                )
-                OutlinedTextField(
-                    value = model,
-                    onValueChange = { model = it },
-                    label = { Text(stringResource(R.string.av_hermes_manual_model)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = useRunsApi, onCheckedChange = { useRunsApi = it })
-                    Text(stringResource(R.string.av_hermes_use_runs_api))
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = useStreaming, onCheckedChange = { useStreaming = it })
-                    Text(stringResource(R.string.av_hermes_stream_responses))
-                }
-                Button(
-                    enabled = url.startsWith("http://") || url.startsWith("https://"),
-                    onClick = {
-                        val config = AgentBackendConfig(
-                            displayName = "Hermes Agent",
-                            type = BackendType.HERMES_API_SERVER,
-                            baseUrl = url.trim(),
-                            apiKeyOrToken = key.trim().ifEmpty { null },
-                            modelName = model.ifBlank { "hermes-agent" },
-                            useRunsApi = useRunsApi,
-                            useStreaming = useStreaming,
-                            isPrimary = repo.backends.value.isEmpty(),
-                        )
-                        repo.upsert(config)
-                        if (config.isPrimary) repo.setPrimary(config.id)
-                        status = context.getString(R.string.av_hermes_manual_added)
-                    },
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(stringResource(R.string.av_hermes_manual_add))
+                        Text(stringResource(R.string.qr_scan_prompt))
                 }
                 status?.let {
                     Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
