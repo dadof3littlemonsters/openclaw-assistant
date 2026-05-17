@@ -64,6 +64,19 @@ class HermesApiServerClient(
         addAll(config.secondaryUrls.filter { it.isNotBlank() })
     }
 
+    private suspend fun resolveBaseUrl(): String {
+        HermesEndpointSelection.forBackend(config.id)?.let { return it }
+        val candidates = candidateEndpoints()
+        if (candidates.size > 1) {
+            val outcome = HermesEndpointRacer().race(candidates, token)
+            if (outcome != null && outcome.ok) {
+                HermesEndpointSelection.remember(config.id, outcome.url)
+                return outcome.url
+            }
+        }
+        return config.baseUrl ?: error("Hermes backend has no baseUrl")
+    }
+
     override suspend fun testConnection(): ConnectionTestResult {
         // Race all configured endpoints. Caches the winner so subsequent
         // streaming requests don't re-probe.
@@ -119,7 +132,7 @@ class HermesApiServerClient(
         val runId = currentRunId
         if (runId != null) {
             try {
-                val req = authed(Request.Builder().url(HermesUrl.runStopUrl(baseUrl, runId)).post(EMPTY_JSON_BODY)).build()
+                val req = authed(Request.Builder().url(HermesUrl.runStopUrl(resolveBaseUrl(), runId)).post(EMPTY_JSON_BODY)).build()
                 httpClient.newCall(req).execute().close()
             } catch (_: Exception) { /* best-effort */ }
         }
@@ -147,10 +160,11 @@ class HermesApiServerClient(
         options: AgentSendOptions,
     ): Flow<AgentEvent> = flow {
         emit(AgentEvent.Started())
+        val selectedBaseUrl = resolveBaseUrl()
         val stream = options.stream && config.useStreaming
         val body = buildChatRequestBody(messages, stream).toRequestBody(JSON_MEDIA)
         val req = authed(
-            Request.Builder().url(HermesUrl.chatCompletionsUrl(baseUrl)).post(body),
+            Request.Builder().url(HermesUrl.chatCompletionsUrl(selectedBaseUrl)).post(body),
         ).also { if (stream) it.header("Accept", "text/event-stream") }.build()
 
         val call = httpClient.newCall(req)
@@ -195,6 +209,7 @@ class HermesApiServerClient(
         messages: List<AgentMessage>,
         options: AgentSendOptions,
     ): Flow<AgentEvent> = flow {
+        val selectedBaseUrl = resolveBaseUrl()
         val createBody = buildJsonObject {
             put("model", modelName)
             put("messages", buildJsonArray {
@@ -204,7 +219,7 @@ class HermesApiServerClient(
             })
         }.toString().toRequestBody(JSON_MEDIA)
 
-        val createReq = authed(Request.Builder().url(HermesUrl.runsUrl(baseUrl)).post(createBody)).build()
+        val createReq = authed(Request.Builder().url(HermesUrl.runsUrl(selectedBaseUrl)).post(createBody)).build()
         val createCall = httpClient.newCall(createReq)
         currentCall = createCall
         val runId = try {
@@ -224,7 +239,7 @@ class HermesApiServerClient(
         currentRunId = runId
         emit(AgentEvent.Started(runId))
 
-        val eventsReq = authed(Request.Builder().url(HermesUrl.runEventsUrl(baseUrl, runId)).get())
+        val eventsReq = authed(Request.Builder().url(HermesUrl.runEventsUrl(selectedBaseUrl, runId)).get())
             .header("Accept", "text/event-stream").build()
         val eventsCall = httpClient.newCall(eventsReq)
         currentCall = eventsCall

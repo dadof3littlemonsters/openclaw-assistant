@@ -5,18 +5,20 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -39,7 +41,13 @@ import com.openclaw.assistant.utils.GatewayConfigUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * Deep-link target for external-camera Agent Voice setup links. App-internal QR
@@ -86,61 +94,105 @@ private fun ImportScreen(uri: Uri?, onFinish: () -> Unit, onCancel: () -> Unit) 
     val scope = rememberCoroutineScope()
     var status by remember { mutableStateOf<String?>(null) }
 
-    Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Top,
-    ) {
-        Text("Add Agent Voice backends", style = MaterialTheme.typography.headlineSmall)
-        Spacer(Modifier.height(8.dp))
-        if (parsed == null) {
-            Text("This pairing link is missing required information.", style = MaterialTheme.typography.bodyMedium)
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.Top,
+        ) {
+            Text("Add Agent Voice backends", style = MaterialTheme.typography.headlineMedium)
+            Spacer(Modifier.height(8.dp))
+            if (parsed == null) {
+                Text("This pairing QR is missing required information.", style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.height(16.dp))
+                OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) { Text("Close") }
+                return@Column
+            }
+            Text("Review the settings found in the QR before saving them.", style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(16.dp))
-            OutlinedButton(onClick = onCancel) { Text("Close") }
-            return@Column
+            parsed.hermes?.let { HermesSummary(it) }
+            parsed.openClawSetupCode?.let { code ->
+                Spacer(Modifier.height(12.dp))
+                OpenClawSummary(code)
+            }
+            Spacer(Modifier.height(20.dp))
+            status?.let {
+                Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.height(12.dp))
+            }
+            Button(
+                onClick = {
+                    applyPairingPayload(context, parsed)
+                    onFinish()
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Add and open Agent Voice") }
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = {
+                    val hermes = parsed.hermes
+                    if (hermes == null) {
+                        status = "No Hermes backend in this QR."
+                        return@OutlinedButton
+                    }
+                    val config = hermes.toBackendConfig(isPrimary = false)
+                    scope.launch {
+                        status = "Testing…"
+                        val r = withContext(Dispatchers.IO) { AgentClientFactory.create(config).testConnection() }
+                        status = if (r.ok) "✓ ${r.message}" else "✗ ${r.message}"
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Test Hermes connection") }
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) { Text("Cancel") }
         }
-        Text("From the QR you scanned:", style = MaterialTheme.typography.bodyMedium)
-        Spacer(Modifier.height(8.dp))
-        parsed.hermes?.let { hermes ->
-            InfoRow("Hermes URL", hermes.baseUrl)
-            if (hermes.secondaryUrls.isNotEmpty()) InfoRow("Hermes extra URLs", hermes.secondaryUrls.joinToString("\n"))
-            InfoRow("Hermes API key", if (hermes.apiKey.isNullOrBlank()) "(none)" else mask(hermes.apiKey))
-            InfoRow("Hermes model", hermes.modelName)
-            InfoRow("Hermes mode", if (hermes.useRunsApi) "Runs API" else "Chat completions")
+    }
+}
+
+@Composable
+private fun HermesSummary(hermes: HermesPairingPayload) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Hermes Agent", style = MaterialTheme.typography.titleMedium)
+            InfoRow("Primary URL", hermes.baseUrl)
+            if (hermes.secondaryUrls.isNotEmpty()) InfoRow("Fallback URLs", hermes.secondaryUrls.joinToString("\n"))
+            InfoRow("API key", if (hermes.apiKey.isNullOrBlank()) "Not included" else mask(hermes.apiKey))
+            InfoRow("Model", hermes.modelName)
+            InfoRow("Mode", if (hermes.useRunsApi) "Runs API" else "Chat completions")
         }
-        parsed.openClawSetupCode?.let { code ->
-            InfoRow("OpenClaw", if (GatewayConfigUtils.decodeGatewaySetupCode(code) != null) "Setup code included" else "Invalid setup code")
-        }
-        Spacer(Modifier.height(16.dp))
-        status?.let { Text(it, style = MaterialTheme.typography.bodySmall); Spacer(Modifier.height(8.dp)) }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = {
-                applyPairingPayload(context, parsed)
-                onFinish()
-            }) { Text("Add & open Agent Voice") }
-            OutlinedButton(onClick = {
-                val hermes = parsed.hermes
-                if (hermes == null) {
-                    status = "No Hermes backend in this QR."
-                    return@OutlinedButton
-                }
-                val config = hermes.toBackendConfig(isPrimary = false)
-                scope.launch {
-                    status = "Testing…"
-                    val r = withContext(Dispatchers.IO) { AgentClientFactory.create(config).testConnection() }
-                    status = if (r.ok) "✓ ${r.message}" else "✗ ${r.message}"
-                }
-            }) { Text("Test first") }
-            OutlinedButton(onClick = onCancel) { Text("Cancel") }
+    }
+}
+
+@Composable
+private fun OpenClawSummary(setupCode: String) {
+    val decoded = GatewayConfigUtils.decodeGatewaySetupCode(setupCode)
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("OpenClaw", style = MaterialTheme.typography.titleMedium)
+            if (decoded != null) {
+                InfoRow("Gateway URL", decoded.url)
+                InfoRow("Auth", when {
+                    decoded.bootstrapToken != null -> "Bootstrap token included"
+                    decoded.token != null -> "Token included"
+                    decoded.password != null -> "Password included"
+                    else -> "No auth included"
+                })
+            } else {
+                Text("The OpenClaw setup code in this QR is invalid.", style = MaterialTheme.typography.bodyMedium)
+            }
         }
     }
 }
 
 @Composable
 private fun InfoRow(label: String, value: String) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Text(label, style = MaterialTheme.typography.labelMedium, modifier = Modifier.width(96.dp))
-        Text(value, style = MaterialTheme.typography.bodySmall)
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
@@ -183,35 +235,40 @@ internal fun parsePairingPayload(raw: String): PairingPayload? {
         return runCatching { parsePairingUri(Uri.parse(trimmed)) }.getOrNull()
     }
     return runCatching {
-        val obj = JSONObject(trimmed)
-        if (obj.optString("type") != "agent_voice_setup") return@runCatching null
-        val hermesObj = obj.optJSONObject("hermes")
+        val obj = pairingJson.parseToJsonElement(trimmed).jsonObject
+        if (obj["type"]?.jsonPrimitive?.contentOrNull != "agent_voice_setup") return@runCatching null
+        val hermesObj = obj["hermes"] as? JsonObject
         val hermes = hermesObj?.let { h ->
-            val urls = h.optJSONArray("urls")?.let { arr ->
-                (0 until arr.length()).mapNotNull { i ->
-                    arr.optString(i).takeIf { it.startsWith("http://") || it.startsWith("https://") }
+            val urls = (h["urls"] as? JsonArray)
+                ?.mapNotNull { element ->
+                    element.jsonPrimitive.contentOrNull?.takeIf { it.startsWith("http://") || it.startsWith("https://") }
                 }
-            }.orEmpty()
-            val base = urls.firstOrNull() ?: h.optString("url").takeIf { it.startsWith("http://") || it.startsWith("https://") }
+                .orEmpty()
+            val base = urls.firstOrNull()
+                ?: h["url"]?.jsonPrimitive?.contentOrNull?.takeIf { it.startsWith("http://") || it.startsWith("https://") }
             base?.let {
                 HermesPairingPayload(
                     baseUrl = it,
                     secondaryUrls = urls.drop(1),
-                    apiKey = h.optString("key").trim().ifEmpty { null },
-                    modelName = h.optString("model").trim().ifEmpty { "hermes-agent" },
-                    useRunsApi = h.optBoolean("runs", false),
-                    streaming = h.optBoolean("streaming", true),
-                    displayName = h.optString("name").trim().ifEmpty { null },
+                    apiKey = h["key"]?.jsonPrimitive?.contentOrNull?.trim()?.ifEmpty { null },
+                    modelName = h["model"]?.jsonPrimitive?.contentOrNull?.trim()?.ifEmpty { "hermes-agent" } ?: "hermes-agent",
+                    useRunsApi = h["runs"]?.jsonPrimitive?.booleanOrNull ?: false,
+                    streaming = h["streaming"]?.jsonPrimitive?.booleanOrNull ?: true,
+                    displayName = h["name"]?.jsonPrimitive?.contentOrNull?.trim()?.ifEmpty { null },
                 )
             }
         }
-        val openClawSetupCode = obj.optJSONObject("openclaw")
-            ?.optString("setupCode")
+        val openClawSetupCode = (obj["openclaw"] as? JsonObject)
+            ?.get("setupCode")
+            ?.jsonPrimitive
+            ?.contentOrNull
             ?.trim()
             ?.ifEmpty { null }
         if (hermes == null && openClawSetupCode == null) null else PairingPayload(hermes, openClawSetupCode)
     }.getOrNull()
 }
+
+private val pairingJson = Json { ignoreUnknownKeys = true; isLenient = true }
 
 private fun parseHermesParams(uri: Uri, prefix: String): HermesPairingPayload? {
     val urls = uri.getQueryParameters("${prefix}u")
@@ -271,5 +328,17 @@ internal fun applyPairingPayload(context: android.content.Context, payload: Pair
             }
         runtime.setManualEnabled(true)
         settings.connectionType = SettingsRepository.CONNECTION_TYPE_GATEWAY
+        val gatewayConfig = AgentBackendConfig(
+            displayName = "OpenClaw Gateway",
+            type = BackendType.OPENCLAW_GATEWAY,
+            host = parsed.host,
+            port = parsed.port,
+            useTls = parsed.tls,
+            baseUrl = parsed.displayUrl,
+            apiKeyOrToken = decoded.token ?: decoded.password ?: decoded.bootstrapToken,
+            isPrimary = repo.backends.value.none { it.isPrimary && it.enabled },
+        )
+        repo.upsert(gatewayConfig)
+        if (gatewayConfig.isPrimary) repo.setPrimary(gatewayConfig.id)
     }
 }

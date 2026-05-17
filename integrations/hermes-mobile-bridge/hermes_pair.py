@@ -15,6 +15,7 @@ It keeps the older Hermes-only CLI options for scripted use.
 from __future__ import annotations
 
 import argparse
+import base64
 import getpass
 import json
 import os
@@ -163,6 +164,7 @@ HERMES_ENV_PATHS = (
 OPENCLAW_JSON_PATHS = (
     Path.home() / ".config" / "openclaw" / "config.json",
     Path.home() / ".config" / "openclaw" / "settings.json",
+    Path.home() / ".openclaw" / "openclaw.json",
     Path.home() / ".openclaw" / "config.json",
     Path.home() / ".openclaw" / "settings.json",
     Path.home() / ".openclaw" / "gateway.json",
@@ -278,12 +280,79 @@ def normalize_url(raw: str) -> str:
     return raw.rstrip("/")
 
 
+def is_loopback_url(raw: str) -> bool:
+    parsed = urllib.parse.urlparse(normalize_url(raw))
+    host = (parsed.hostname or "").lower()
+    return host in {"localhost", "::1"} or host.startswith("127.")
+
+
 def append_host_variant(urls: List[str], host: Optional[str], port: int) -> None:
     if not host:
         return
     candidate = f"http://{host}:{port}"
     if candidate not in urls:
         urls.append(candidate)
+
+
+def ordered_android_urls(candidates: Iterable[str]) -> List[str]:
+    unique = comma_urls(candidates)
+    remote = [url for url in unique if not is_loopback_url(url)]
+    local = [url for url in unique if is_loopback_url(url)]
+    return remote + local
+
+
+def gateway_url_from_openclaw_config(cfg: dict) -> Optional[str]:
+    gateway = cfg.get("gateway") if isinstance(cfg.get("gateway"), dict) else {}
+    for key in ("publicUrl", "public_url", "url"):
+        value = str(gateway.get(key) or cfg.get(key) or "").strip()
+        if value.startswith(("http://", "https://", "ws://", "wss://")):
+            return value.replace("ws://", "http://").replace("wss://", "https://")
+    remote = gateway.get("remote") if isinstance(gateway.get("remote"), dict) else {}
+    value = str(remote.get("url") or "").strip()
+    if value.startswith(("http://", "https://", "ws://", "wss://")):
+        return value.replace("ws://", "http://").replace("wss://", "https://")
+    control = gateway.get("controlUi") if isinstance(gateway.get("controlUi"), dict) else {}
+    origins = control.get("allowedOrigins") if isinstance(control.get("allowedOrigins"), list) else []
+    ts_origin = next((str(origin) for origin in origins if ".ts.net" in str(origin) and str(origin).startswith("https://")), None)
+    if ts_origin:
+        return ts_origin.rstrip("/")
+    port = int(gateway.get("port") or 18789)
+    ts_ip = tailscale_ip()
+    if ts_ip:
+        return f"http://{ts_ip}:{port}"
+    lan = first_lan_ip()
+    if lan:
+        return f"http://{lan}:{port}"
+    return f"http://127.0.0.1:{port}"
+
+
+def encode_setup_code(payload: dict) -> str:
+    raw = json.dumps(payload, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+
+
+def openclaw_setup_code_from_config() -> Optional[str]:
+    for path in readable_existing(OPENCLAW_JSON_PATHS):
+        cfg = read_json(path)
+        gateway = cfg.get("gateway") if isinstance(cfg.get("gateway"), dict) else {}
+        auth = gateway.get("auth") if isinstance(gateway.get("auth"), dict) else {}
+        url = gateway_url_from_openclaw_config(cfg)
+        if not url:
+            continue
+        payload: dict = {"url": url}
+        mode = str(auth.get("mode") or "").lower()
+        token = str(auth.get("token") or "").strip()
+        password = str(auth.get("password") or "").strip()
+        if mode == "password" and password:
+            payload["password"] = password
+        elif token:
+            payload["token"] = token
+        elif password:
+            payload["password"] = password
+        else:
+            continue
+        return encode_setup_code(payload)
+    return None
 
 
 def openclaw_setup_code_from_cli() -> Optional[str]:
@@ -609,10 +678,20 @@ def qr_make_matrix(payload: str) -> List[List[bool]]:
     return [[cell is True for cell in row] for row in modules]
 
 
-def render_qr_without_dependencies(payload: str) -> None:
+def render_qr_without_dependencies(payload: str, compact: bool = True) -> None:
     modules = qr_make_matrix(payload)
-    quiet = 2
+    quiet = 1 if compact else 2
     size = len(modules)
+    if compact:
+        for y in range(-quiet, size + quiet, 2):
+            line = []
+            for x in range(-quiet, size + quiet):
+                top = 0 <= x < size and 0 <= y < size and modules[y][x]
+                bottom_y = y + 1
+                bottom = 0 <= x < size and 0 <= bottom_y < size and modules[bottom_y][x]
+                line.append("█" if top and bottom else "▀" if top else "▄" if bottom else " ")
+            print("".join(line))
+        return
     for y in range(-quiet, size + quiet):
         line = []
         for x in range(-quiet, size + quiet):
@@ -621,8 +700,8 @@ def render_qr_without_dependencies(payload: str) -> None:
         print("".join(line))
 
 
-def render_qr(payload: str) -> bool:
-    render_qr_without_dependencies(payload)
+def render_qr(payload: str, compact: bool = True) -> bool:
+    render_qr_without_dependencies(payload, compact = compact)
     return True
 
 
@@ -653,6 +732,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     p.add_argument("--yes", action="store_true", help="Accept detected defaults without prompts. This is the normal behavior.")
     p.add_argument("--no-lan", action="store_true", help="Do not add LAN endpoint candidates automatically.")
     p.add_argument("--no-tailscale", action="store_true", help="Do not add Tailscale endpoint candidates automatically.")
+    p.add_argument("--large-qr", action="store_true", help="Render a larger legacy ASCII QR instead of the compact terminal QR.")
     p.set_defaults(runs=None, streaming=None)
     args = p.parse_args(argv)
 
@@ -701,22 +781,24 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     hermes_urls: List[str] = []
     if include_hermes:
-        hermes_urls = comma_urls(args.url)
+        hermes_candidates: List[str] = []
+        hermes_candidates.extend(comma_urls(args.url))
         if discovered_hermes_url:
-            unique_append(hermes_urls, normalize_url(discovered_hermes_url))
-        if hermes_port_open:
-            unique_append(hermes_urls, "http://127.0.0.1:8642")
-        if not hermes_urls:
+            unique_append(hermes_candidates, normalize_url(discovered_hermes_url))
+        if not hermes_candidates:
             if hermes_installed:
-                unique_append(hermes_urls, "http://127.0.0.1:8642")
+                unique_append(hermes_candidates, "http://127.0.0.1:8642")
             elif args.interactive:
                 raw = input("Hermes API Server URL [http://127.0.0.1:8642]: ").strip() or "http://127.0.0.1:8642"
-                unique_append(hermes_urls, normalize_url(raw))
+                unique_append(hermes_candidates, normalize_url(raw))
+        if hermes_port_open:
+            unique_append(hermes_candidates, "http://127.0.0.1:8642")
         if include_tailscale:
-            append_host_variant(hermes_urls, tailscale_ip(), 8642)
+            append_host_variant(hermes_candidates, tailscale_ip(), 8642)
         lan = first_lan_ip()
         if lan and not args.no_lan and (not args.interactive or ask_yes_no(f"Also include LAN URL http://{lan}:8642?", True)):
-            append_host_variant(hermes_urls, lan, 8642)
+            append_host_variant(hermes_candidates, lan, 8642)
+        hermes_urls = ordered_android_urls(hermes_candidates)
         if hermes_key is None and args.interactive:
             hermes_key = getpass.getpass("Hermes API key (blank if none): ").strip() or None
         if not hermes_urls:
@@ -725,7 +807,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     openclaw_setup_code: Optional[str] = None
     if include_openclaw:
-        openclaw_setup_code = discovered_openclaw_setup_code or openclaw_setup_code_from_cli()
+        openclaw_setup_code = discovered_openclaw_setup_code or openclaw_setup_code_from_cli() or openclaw_setup_code_from_config()
         if not openclaw_setup_code and args.interactive:
             print("Could not read OpenClaw setup code automatically.")
             print("Run `openclaw qr --setup-code-only` and paste the setup code below.")
@@ -760,7 +842,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     )
 
     print("\nScan this one QR inside Agent Voice:\n")
-    rendered = render_qr(qr_payload)
+    rendered = render_qr(qr_payload, compact = not args.large_qr)
     if not rendered:
         print("(QR rendering unavailable on this machine.)")
     print("\nQR payload for Agent Voice in-app scanner:")
