@@ -24,7 +24,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.openclaw.assistant.R
 import com.openclaw.assistant.backend.AgentClientFactory
 import com.openclaw.assistant.backend.BackendManager
 import com.openclaw.assistant.backend.BackendRepository
@@ -54,11 +56,11 @@ fun PrimaryBackendCard() {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Text("Primary backend", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                Text(stringResource(R.string.av_home_primary_backend), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                 AssistChip(onClick = {}, label = { Text(primary?.let { kindShort(it.type) } ?: "—") })
             }
             Spacer(Modifier.height(4.dp))
-            Text(primary?.displayName ?: "No Primary configured", style = MaterialTheme.typography.bodyMedium)
+            Text(primary?.displayName ?: stringResource(R.string.av_home_primary_none), style = MaterialTheme.typography.bodyMedium)
             status?.let {
                 Spacer(Modifier.height(4.dp))
                 Text(
@@ -68,7 +70,7 @@ fun PrimaryBackendCard() {
             }
             if (others.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))
-                Text("Also configured:", style = MaterialTheme.typography.labelMedium)
+                Text(stringResource(R.string.av_home_also_configured), style = MaterialTheme.typography.labelMedium)
                 others.forEach { Text("· ${it.displayName}", style = MaterialTheme.typography.bodySmall) }
             }
             Spacer(Modifier.height(12.dp))
@@ -80,26 +82,27 @@ fun PrimaryBackendCard() {
                 OutlinedButton(onClick = {
                     if (primary == null) return@OutlinedButton
                     scope.launch {
-                        status = ConnectionTestResult(false, "Testing…")
+                        status = ConnectionTestResult(false, context.getString(R.string.av_connection_testing))
                         status = withContext(Dispatchers.IO) { AgentClientFactory.create(primary).testConnection() }
                     }
-                }, enabled = primary != null, modifier = Modifier.weight(1f)) { Text("Test") }
+                }, enabled = primary != null, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.av_home_test_short)) }
                 OutlinedButton(onClick = {
                     val next = others.firstOrNull() ?: return@OutlinedButton
                     repo.setPrimary(next.id)
                     status = null
-                }, enabled = others.isNotEmpty(), modifier = Modifier.weight(1f)) { Text("Switch primary") }
+                }, enabled = others.isNotEmpty(), modifier = Modifier.weight(1f)) { Text(stringResource(R.string.av_home_switch_primary)) }
                 }
                 OutlinedButton(onClick = {
                     context.startActivity(Intent(context, BackendListActivity::class.java))
-                }, modifier = Modifier.fillMaxWidth()) { Text("Manage backends") }
+                }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.av_backends_manage)) }
             }
         }
     }
 }
 
+@Composable
 private fun kindShort(type: BackendType) = when (type) {
-    BackendType.HERMES_API_SERVER -> "Hermes"
-    BackendType.OPENCLAW_GATEWAY -> "Gateway"
-    BackendType.OPENCLAW_HTTP -> "HTTP"
+    BackendType.HERMES_API_SERVER -> stringResource(R.string.av_backend_kind_hermes)
+    BackendType.OPENCLAW_GATEWAY -> stringResource(R.string.av_backend_kind_gateway)
+    BackendType.OPENCLAW_HTTP -> stringResource(R.string.av_backend_kind_http)
 }

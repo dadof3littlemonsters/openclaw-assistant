@@ -30,9 +30,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
 import com.openclaw.assistant.BuildConfig
+import com.openclaw.assistant.R
 import com.openclaw.assistant.backend.AgentClientFactory
 import com.openclaw.assistant.backend.BackendRepository
 import com.openclaw.assistant.bridge.MobileBridgeConfig
@@ -69,45 +71,65 @@ private fun SelfCheckScreen() {
     var rows by remember { mutableStateOf(listOf<CheckRow>()) }
     val scope = rememberCoroutineScope()
 
+    val backendsConfiguredLabel = stringResource(R.string.av_selfcheck_backends_configured)
+    val backendsNone = stringResource(R.string.av_selfcheck_backends_none)
+    val primaryBackendLabel = stringResource(R.string.av_home_primary_backend)
+    val primaryReachableLabel = stringResource(R.string.av_selfcheck_primary_reachable)
+    val notSet = stringResource(R.string.av_selfcheck_not_set)
+    val bridgeEnabledLabel = stringResource(R.string.av_selfcheck_mobile_bridge_enabled)
+    val bridgeTokenLabel = stringResource(R.string.av_selfcheck_bridge_token_present)
+    val notificationAccessLabel = stringResource(R.string.av_selfcheck_notification_access)
+    val accessibilityBridgeLabel = stringResource(R.string.av_selfcheck_accessibility_bridge)
+    val buildDistributionLabel = stringResource(R.string.av_selfcheck_build_distribution)
+    val off = stringResource(R.string.av_selfcheck_off)
+    val storedEncrypted = stringResource(R.string.av_selfcheck_stored_encrypted)
+    val generateBridgeSettings = stringResource(R.string.av_selfcheck_generate_bridge_settings)
+    val granted = stringResource(R.string.av_selfcheck_granted)
+    val openNotificationSettings = stringResource(R.string.av_selfcheck_open_notification_settings)
+    val serviceRunning = stringResource(R.string.av_selfcheck_service_running)
+    val openAccessibilitySettings = stringResource(R.string.av_selfcheck_open_accessibility_settings)
+    val sideloadDistribution = stringResource(R.string.av_selfcheck_sideload_distribution)
+    val playDistribution = stringResource(R.string.av_selfcheck_play_distribution)
+
     suspend fun runChecks() {
         val list = mutableListOf<CheckRow>()
         // Backend health
         val backends = repo.backends.value
         list += CheckRow(
-            "Backends configured",
+            backendsConfiguredLabel,
             backends.isNotEmpty(),
-            if (backends.isEmpty()) "None — add one in Backends" else backends.joinToString(", ") { it.displayName },
+            if (backends.isEmpty()) backendsNone else backends.joinToString(", ") { it.displayName },
         )
         val primary = backends.firstOrNull { it.isPrimary && it.enabled }
         list += CheckRow(
-            "Primary backend",
+            primaryBackendLabel,
             primary != null,
-            primary?.displayName ?: "Not set",
+            primary?.displayName ?: notSet,
         )
         primary?.let { p ->
             val r = withContext(Dispatchers.IO) { AgentClientFactory.create(p).testConnection() }
             list += CheckRow(
-                "Primary reachable",
+                primaryReachableLabel,
                 r.ok,
                 if (r.ok) "${r.message}${r.latencyMs?.let { " · ${it}ms" } ?: ""}" else r.message,
             )
         }
 
         // Bridge
-        list += CheckRow("Mobile Bridge enabled", cfg.enabled.value, if (cfg.enabled.value) "On (port ${cfg.port.value})" else "Off")
-        list += CheckRow("Bridge token present", cfg.tokenOrNull() != null, if (cfg.tokenOrNull() != null) "Stored encrypted" else "Generate from Mobile Bridge settings")
+        list += CheckRow(bridgeEnabledLabel, cfg.enabled.value, if (cfg.enabled.value) context.getString(R.string.av_selfcheck_on_port, cfg.port.value) else off)
+        list += CheckRow(bridgeTokenLabel, cfg.tokenOrNull() != null, if (cfg.tokenOrNull() != null) storedEncrypted else generateBridgeSettings)
 
         // Permissions / opt-ins
         val notifAccess = NotificationManagerCompat.getEnabledListenerPackages(context).contains(context.packageName)
-        list += CheckRow("Notification access", notifAccess, if (notifAccess) "Granted" else "Open Settings → Notifications → Special access")
+        list += CheckRow(notificationAccessLabel, notifAccess, if (notifAccess) granted else openNotificationSettings)
         val a11y = AgentVoiceAccessibilityService.isRunning()
-        list += CheckRow("Accessibility Bridge", a11y, if (a11y) "Service running" else "Off — Settings → Accessibility")
+        list += CheckRow(accessibilityBridgeLabel, a11y, if (a11y) serviceRunning else openAccessibilitySettings)
 
         // Distribution gates
         list += CheckRow(
-            "Build distribution",
+            buildDistributionLabel,
             true,
-            if (BuildConfig.IS_SIDELOAD) "Sideload (all capabilities available)" else "Play (Accessibility / SMS hidden)",
+            if (BuildConfig.IS_SIDELOAD) sideloadDistribution else playDistribution,
         )
 
         rows = list
@@ -115,10 +137,10 @@ private fun SelfCheckScreen() {
 
     LaunchedEffect(Unit) { runChecks() }
 
-    Scaffold(topBar = { TopAppBar(title = { Text(androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.av_selfcheck_title)) }) }) { padding ->
+    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.av_selfcheck_title)) }) }) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp).verticalScroll(rememberScrollState())) {
             Text(
-                "Health snapshot of Agent Voice. Tap Re-run after fixing anything below.",
+                stringResource(R.string.av_selfcheck_intro),
                 style = MaterialTheme.typography.bodyMedium,
             )
             Spacer(Modifier.height(12.dp))
@@ -140,7 +162,7 @@ private fun SelfCheckScreen() {
             }
             Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { scope.launch { runChecks() } }) { Text("Re-run") }
+                Button(onClick = { scope.launch { runChecks() } }) { Text(stringResource(R.string.av_selfcheck_rerun)) }
             }
         }
     }

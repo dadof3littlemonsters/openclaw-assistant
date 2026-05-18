@@ -15,7 +15,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.openclaw.assistant.R
 import com.openclaw.assistant.backend.BackendManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -48,15 +50,15 @@ fun ChatBackendSelector(modifier: Modifier = Modifier) {
     val primary = enabled.firstOrNull { it.isPrimary }
     val resolved = enabled.firstOrNull { it.id == selectedId } ?: primary
     val label = when {
-        resolved == null -> "No backend"
-        selectedId == null -> "Primary · ${primary?.displayName ?: "—"}"
+        resolved == null -> stringResource(R.string.av_chat_no_backend)
+        selectedId == null -> stringResource(R.string.av_chat_primary_target, primary?.displayName ?: "—")
         else -> resolved.displayName
     }
 
     Row(modifier = modifier.padding(start = 0.dp)) {
         AssistChip(onClick = { expanded = enabled.isNotEmpty() }, label = { Text(label, style = MaterialTheme.typography.labelSmall) })
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            DropdownMenuItem(text = { Text("Primary backend") }, onClick = { ChatBackendTarget.set(null); expanded = false })
+            DropdownMenuItem(text = { Text(stringResource(R.string.av_home_primary_backend)) }, onClick = { ChatBackendTarget.set(null); expanded = false })
             enabled.forEach { b ->
                 DropdownMenuItem(
                     text = { Text(b.displayName) },

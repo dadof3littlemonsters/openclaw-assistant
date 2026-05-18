@@ -103,6 +103,25 @@
     <string name="av_selfcheck_title">Self-check</string>
     <string name="av_selfcheck_intro">Health snapshot of Agent Voice. Tap Re-run after fixing anything below.</string>
     <string name="av_selfcheck_rerun">Re-run</string>
+    <string name="av_selfcheck_backends_configured">Backends configured</string>
+    <string name="av_selfcheck_backends_none">None. Add one in Backends.</string>
+    <string name="av_selfcheck_primary_reachable">Primary reachable</string>
+    <string name="av_selfcheck_not_set">Not set</string>
+    <string name="av_selfcheck_mobile_bridge_enabled">Mobile Bridge enabled</string>
+    <string name="av_selfcheck_bridge_token_present">Bridge token present</string>
+    <string name="av_selfcheck_notification_access">Notification access</string>
+    <string name="av_selfcheck_accessibility_bridge">Accessibility Bridge</string>
+    <string name="av_selfcheck_build_distribution">Build distribution</string>
+    <string name="av_selfcheck_on_port">On (port %1$d)</string>
+    <string name="av_selfcheck_off">Off</string>
+    <string name="av_selfcheck_stored_encrypted">Stored encrypted</string>
+    <string name="av_selfcheck_generate_bridge_settings">Generate from Mobile Bridge settings</string>
+    <string name="av_selfcheck_granted">Granted</string>
+    <string name="av_selfcheck_open_notification_settings">Open Settings > Notifications > Special access</string>
+    <string name="av_selfcheck_service_running">Service running</string>
+    <string name="av_selfcheck_open_accessibility_settings">Off. Open Settings > Accessibility</string>
+    <string name="av_selfcheck_sideload_distribution">Sideload (all capabilities available)</string>
+    <string name="av_selfcheck_play_distribution">Play (Accessibility / SMS hidden)</string>
 
     <!-- Pairing -->
     <string name="av_pair_title">Pair a remote</string>
@@ -128,6 +147,40 @@
     <string name="av_home_primary_backend">Primary backend</string>
     <string name="av_home_primary_none">No Primary configured</string>
     <string name="av_home_also_configured">Also configured:</string>
+    <string name="av_home_test_short">Test</string>
+    <string name="av_home_switch_primary">Switch primary</string>
+    <string name="av_backend_kind_hermes">Hermes</string>
+    <string name="av_backend_kind_gateway">Gateway</string>
+    <string name="av_backend_kind_http">HTTP</string>
+    <string name="av_connection_testing">Testing…</string>
+    <string name="av_chat_no_backend">No backend</string>
+    <string name="av_chat_primary_target">Primary: %1$s</string>
+
+    <!-- Pairing import -->
+    <string name="av_import_title">Add Agent Voice backends</string>
+    <string name="av_import_missing">This pairing QR is missing required information.</string>
+    <string name="av_import_close">Close</string>
+    <string name="av_import_review">Review the settings found in the QR before saving them.</string>
+    <string name="av_import_add_open">Add and open Agent Voice</string>
+    <string name="av_import_no_hermes">No Hermes backend in this QR.</string>
+    <string name="av_import_test_hermes">Test Hermes connection</string>
+    <string name="av_import_cancel">Cancel</string>
+    <string name="av_import_primary_url">Primary URL</string>
+    <string name="av_import_fallback_urls">Fallback URLs</string>
+    <string name="av_import_api_key">API key</string>
+    <string name="av_import_not_included">Not included</string>
+    <string name="av_import_model">Model</string>
+    <string name="av_import_mode">Mode</string>
+    <string name="av_import_mode_runs">Runs API</string>
+    <string name="av_import_mode_chat">Chat completions</string>
+    <string name="av_import_gateway_url">Gateway URL</string>
+    <string name="av_import_auth">Auth</string>
+    <string name="av_import_auth_password_pairing">Password and pairing token included</string>
+    <string name="av_import_auth_bootstrap">Bootstrap token included</string>
+    <string name="av_import_auth_token">Token included</string>
+    <string name="av_import_auth_password">Password included</string>
+    <string name="av_import_auth_none">No auth included</string>
+    <string name="av_import_openclaw_invalid">The OpenClaw setup code in this QR is invalid.</string>
     <string name="notification_content">Say \"%s\" to activate</string>
     <string name="default_session_title_format">Voice Session %s</string>
     <string name="chat_session_title_format">Chat %s</string>

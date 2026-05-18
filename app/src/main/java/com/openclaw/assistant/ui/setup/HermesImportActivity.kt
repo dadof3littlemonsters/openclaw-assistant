@@ -28,9 +28,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.openclaw.assistant.MainActivity
 import com.openclaw.assistant.OpenClawApplication
+import com.openclaw.assistant.R
 import com.openclaw.assistant.backend.AgentBackendConfig
 import com.openclaw.assistant.backend.AgentClientFactory
 import com.openclaw.assistant.backend.BackendRepository
@@ -103,15 +105,15 @@ private fun ImportScreen(uri: Uri?, onFinish: () -> Unit, onCancel: () -> Unit) 
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.Top,
         ) {
-            Text("Add Agent Voice backends", style = MaterialTheme.typography.headlineMedium)
+            Text(stringResource(R.string.av_import_title), style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.height(8.dp))
             if (parsed == null) {
-                Text("This pairing QR is missing required information.", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.av_import_missing), style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(16.dp))
-                OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) { Text("Close") }
+                OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.av_import_close)) }
                 return@Column
             }
-            Text("Review the settings found in the QR before saving them.", style = MaterialTheme.typography.bodyMedium)
+            Text(stringResource(R.string.av_import_review), style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(16.dp))
             parsed.hermes?.let { HermesSummary(it) }
             parsed.openClawSetupCode?.let { code ->
@@ -129,26 +131,26 @@ private fun ImportScreen(uri: Uri?, onFinish: () -> Unit, onCancel: () -> Unit) 
                     onFinish()
                 },
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("Add and open Agent Voice") }
+            ) { Text(stringResource(R.string.av_import_add_open)) }
             Spacer(Modifier.height(8.dp))
             OutlinedButton(
                 onClick = {
                     val hermes = parsed.hermes
                     if (hermes == null) {
-                        status = "No Hermes backend in this QR."
+                        status = context.getString(R.string.av_import_no_hermes)
                         return@OutlinedButton
                     }
                     val config = hermes.toBackendConfig(isPrimary = false)
                     scope.launch {
-                        status = "Testing…"
+                        status = context.getString(R.string.av_connection_testing)
                         val r = withContext(Dispatchers.IO) { AgentClientFactory.create(config).testConnection() }
                         status = if (r.ok) "✓ ${r.message}" else "✗ ${r.message}"
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("Test Hermes connection") }
+            ) { Text(stringResource(R.string.av_import_test_hermes)) }
             Spacer(Modifier.height(8.dp))
-            OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) { Text("Cancel") }
+            OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.av_import_cancel)) }
         }
     }
 }
@@ -157,12 +159,12 @@ private fun ImportScreen(uri: Uri?, onFinish: () -> Unit, onCancel: () -> Unit) 
 private fun HermesSummary(hermes: HermesPairingPayload) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Hermes Agent", style = MaterialTheme.typography.titleMedium)
-            InfoRow("Primary URL", hermes.baseUrl)
-            if (hermes.secondaryUrls.isNotEmpty()) InfoRow("Fallback URLs", hermes.secondaryUrls.joinToString("\n"))
-            InfoRow("API key", if (hermes.apiKey.isNullOrBlank()) "Not included" else mask(hermes.apiKey))
-            InfoRow("Model", hermes.modelName)
-            InfoRow("Mode", if (hermes.useRunsApi) "Runs API" else "Chat completions")
+            Text(stringResource(R.string.av_backend_hermes), style = MaterialTheme.typography.titleMedium)
+            InfoRow(stringResource(R.string.av_import_primary_url), hermes.baseUrl)
+            if (hermes.secondaryUrls.isNotEmpty()) InfoRow(stringResource(R.string.av_import_fallback_urls), hermes.secondaryUrls.joinToString("\n"))
+            InfoRow(stringResource(R.string.av_import_api_key), if (hermes.apiKey.isNullOrBlank()) stringResource(R.string.av_import_not_included) else mask(hermes.apiKey))
+            InfoRow(stringResource(R.string.av_import_model), hermes.modelName)
+            InfoRow(stringResource(R.string.av_import_mode), if (hermes.useRunsApi) stringResource(R.string.av_import_mode_runs) else stringResource(R.string.av_import_mode_chat))
         }
     }
 }
@@ -172,18 +174,18 @@ private fun OpenClawSummary(setupCode: String) {
     val decoded = GatewayConfigUtils.decodeGatewaySetupCode(setupCode)
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("OpenClaw", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.av_backend_openclaw), style = MaterialTheme.typography.titleMedium)
             if (decoded != null) {
-                InfoRow("Gateway URL", decoded.url)
-                InfoRow("Auth", when {
-                    decoded.bootstrapToken != null && decoded.password != null -> "Password and pairing token included"
-                    decoded.bootstrapToken != null -> "Bootstrap token included"
-                    decoded.token != null -> "Token included"
-                    decoded.password != null -> "Password included"
-                    else -> "No auth included"
+                InfoRow(stringResource(R.string.av_import_gateway_url), decoded.url)
+                InfoRow(stringResource(R.string.av_import_auth), when {
+                    decoded.bootstrapToken != null && decoded.password != null -> stringResource(R.string.av_import_auth_password_pairing)
+                    decoded.bootstrapToken != null -> stringResource(R.string.av_import_auth_bootstrap)
+                    decoded.token != null -> stringResource(R.string.av_import_auth_token)
+                    decoded.password != null -> stringResource(R.string.av_import_auth_password)
+                    else -> stringResource(R.string.av_import_auth_none)
                 })
             } else {
-                Text("The OpenClaw setup code in this QR is invalid.", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.av_import_openclaw_invalid), style = MaterialTheme.typography.bodyMedium)
             }
         }
     }
@@ -301,7 +303,26 @@ private fun HermesPairingPayload.toBackendConfig(isPrimary: Boolean): AgentBacke
 internal fun applyPairingPayload(context: android.content.Context, payload: PairingPayload) {
     val repo = BackendRepository.getInstance(context)
     payload.hermes?.let { hermes ->
-        val config = hermes.toBackendConfig(isPrimary = repo.backends.value.isEmpty())
+        val current = repo.backends.value
+        val incomingUrls = buildSet {
+            add(hermes.baseUrl)
+            addAll(hermes.secondaryUrls)
+        }
+        val displayName = hermes.displayName ?: "Hermes Agent"
+        val duplicates = current.filter { existing ->
+            existing.type == BackendType.HERMES_API_SERVER &&
+                (existing.displayName == displayName ||
+                    existing.baseUrl?.let { it in incomingUrls } == true ||
+                    existing.secondaryUrls.any { it in incomingUrls })
+        }
+        val target = duplicates.firstOrNull { it.isPrimary } ?: duplicates.firstOrNull()
+        val incomingConfig = hermes.toBackendConfig(isPrimary = target?.isPrimary ?: current.none { it.isPrimary && it.enabled })
+        val config = incomingConfig
+            .copy(
+                id = target?.id ?: incomingConfig.id,
+                createdAt = target?.createdAt ?: System.currentTimeMillis(),
+            )
+        duplicates.filterNot { it.id == config.id }.forEach { repo.delete(it.id) }
         repo.upsert(config)
         if (config.isPrimary) repo.setPrimary(config.id)
     }
@@ -331,7 +352,18 @@ internal fun applyPairingPayload(context: android.content.Context, payload: Pair
             }
         runtime.setManualEnabled(true)
         settings.connectionType = SettingsRepository.CONNECTION_TYPE_GATEWAY
+        val current = repo.backends.value
+        val duplicates = current.filter { existing ->
+            existing.type == BackendType.OPENCLAW_GATEWAY &&
+                (existing.displayName == "OpenClaw Gateway" ||
+                    (existing.host == parsed.host && existing.port == parsed.port))
+        }
+        val target = duplicates.firstOrNull { it.isPrimary } ?: duplicates.firstOrNull()
         val gatewayConfig = AgentBackendConfig(
+            id = target?.id ?: AgentBackendConfig(
+                displayName = "OpenClaw Gateway",
+                type = BackendType.OPENCLAW_GATEWAY,
+            ).id,
             displayName = "OpenClaw Gateway",
             type = BackendType.OPENCLAW_GATEWAY,
             host = parsed.host,
@@ -339,8 +371,10 @@ internal fun applyPairingPayload(context: android.content.Context, payload: Pair
             useTls = parsed.tls,
             baseUrl = parsed.displayUrl,
             apiKeyOrToken = decoded.token ?: decoded.password ?: decoded.bootstrapToken,
-            isPrimary = repo.backends.value.none { it.isPrimary && it.enabled },
+            isPrimary = target?.isPrimary ?: current.none { it.isPrimary && it.enabled },
+            createdAt = target?.createdAt ?: System.currentTimeMillis(),
         )
+        duplicates.filterNot { it.id == gatewayConfig.id }.forEach { repo.delete(it.id) }
         repo.upsert(gatewayConfig)
         if (gatewayConfig.isPrimary) repo.setPrimary(gatewayConfig.id)
     }
