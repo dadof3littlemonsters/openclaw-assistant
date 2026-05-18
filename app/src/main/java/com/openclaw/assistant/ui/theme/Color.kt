@@ -12,11 +12,12 @@ val OpenClawTextPrimary = Color(0xFFEEEEEE)
 val OpenClawTextSecondary = Color(0xFFB0B0B0)
 val OpenClawError = Color(0xFFD32F2F)
 
-// Onboarding Design Tokens
-val OnboardingGradientStart = Color(0xFFFF5722)
-val OnboardingGradientMid = Color(0xFFFF9100)
-val OnboardingGradientEnd = Color(0xFFFFD600)
-val OnboardingSurface = Color(0xFF1E1E1E)
-val OnboardingBorder = Color(0xFF333333)
-val OnboardingTextPrimary = Color(0xFFFFFFFF)
-val OnboardingTextSecondary = Color(0xFFB0B0B0)
+// Agent Voice onboarding tokens. Keep this flow calmer than the legacy lobster palette:
+// it has to read like a setup tool for OpenClaw + Hermes, not a promo screen.
+val OnboardingGradientStart = Color(0xFFF8FAFC)
+val OnboardingGradientMid = Color(0xFF4F46E5)
+val OnboardingGradientEnd = Color(0xFFE0F2FE)
+val OnboardingSurface = Color(0xFFFFFFFF)
+val OnboardingBorder = Color(0xFFE2E8F0)
+val OnboardingTextPrimary = Color(0xFF0F172A)
+val OnboardingTextSecondary = Color(0xFF475569)

@@ -48,7 +48,7 @@
 <string name="processing">Procesando…</string>
 <string name="error_label">Error</string>
 <string name="try_again_button">Inténtalo de nuevo</string>
-<string name="ask_hint">Pregunte a OpenClaw…</string>
+<string name="ask_hint">Pregunte a Agent Voice…</string>
 <string name="send_description">Enviar</string>
 <string name="stop_description">Detener</string>
     <string name="start_listening_description">Empezar a escuchar</string>

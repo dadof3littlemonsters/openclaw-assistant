@@ -1,6 +1,9 @@
 package com.openclaw.assistant.ui.setup
 
 import android.content.Intent
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.net.Uri
 import android.os.Bundle
 import com.google.mlkit.vision.barcode.common.Barcode
@@ -17,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -27,6 +31,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -40,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.openclaw.assistant.R
 import com.openclaw.assistant.backend.AgentBackendConfig
@@ -71,7 +77,7 @@ private fun SimpleSetupWizard(onDone: () -> Unit) {
     val backends by repo.backends.collectAsState()
     var step by remember { mutableStateOf(0) }
     var pickHermes by remember { mutableStateOf(true) }
-    var pickOpenClaw by remember { mutableStateOf(false) }
+    var pickOpenClaw by remember { mutableStateOf(true) }
     val totalSteps = 4
 
     Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.av_setup_title)) }) }) { padding ->
@@ -87,7 +93,7 @@ private fun SimpleSetupWizard(onDone: () -> Unit) {
                     pickHermes = pickHermes, pickOpenClaw = pickOpenClaw,
                     onHermes = { pickHermes = it }, onOpenClaw = { pickOpenClaw = it },
                 )
-                2 -> ConfigurePane()
+                2 -> ConfigurePane(includeHermes = pickHermes, includeOpenClaw = pickOpenClaw)
                 3 -> DonePane(backends)
             }
 
@@ -124,6 +130,8 @@ private fun ChooseBackendsPane(
     Text(stringResource(R.string.av_setup_choose_title), style = MaterialTheme.typography.titleMedium)
     Spacer(Modifier.height(4.dp))
     Text(stringResource(R.string.av_setup_choose_hint), style = MaterialTheme.typography.bodySmall)
+    Spacer(Modifier.height(8.dp))
+    Text(stringResource(R.string.av_setup_choose_recommended), style = MaterialTheme.typography.labelMedium)
     Spacer(Modifier.height(16.dp))
 
     BackendChoiceCard(
@@ -141,10 +149,9 @@ private fun ChooseBackendsPane(
 
 @Composable
 private fun BackendChoiceCard(title: String, subtitle: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth().toggleable(value = checked, onValueChange = onCheckedChange)) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Checkbox(checked = checked, onCheckedChange = onCheckedChange, colors = CheckboxDefaults.colors())
-            Spacer(Modifier.height(0.dp))
             Column(modifier = Modifier.padding(start = 12.dp)) {
                 Text(title, style = MaterialTheme.typography.titleMedium)
                 Text(subtitle, style = MaterialTheme.typography.bodySmall)
@@ -154,27 +161,44 @@ private fun BackendChoiceCard(title: String, subtitle: String, checked: Boolean,
 }
 
 @Composable
-private fun ConfigurePane() {
-    UnifiedPairingCard()
+private fun ConfigurePane(includeHermes: Boolean, includeOpenClaw: Boolean) {
+    UnifiedPairingCard(includeHermes = includeHermes, includeOpenClaw = includeOpenClaw)
 }
 
 @Composable
-private fun UnifiedPairingCard() {
+private fun UnifiedPairingCard(includeHermes: Boolean, includeOpenClaw: Boolean) {
     val context = LocalContext.current
     var status by remember { mutableStateOf<String?>(null) }
+    val installCommand = "curl -fsSL https://raw.githubusercontent.com/yuga-hashimoto/openclaw-assistant/main/integrations/agentvoice-pair/install.sh | bash"
+    val pairCommand = remember(includeHermes, includeOpenClaw) {
+        when {
+            includeHermes && includeOpenClaw -> "agentvoice-pair"
+            includeHermes -> "agentvoice-pair --hermes-only"
+            includeOpenClaw -> "agentvoice-pair --openclaw-only"
+            else -> "agentvoice-pair"
+        }
+    }
+    val scopeText = when {
+        includeHermes && includeOpenClaw -> stringResource(R.string.av_setup_scope_both)
+        includeHermes -> stringResource(R.string.av_setup_scope_hermes)
+        includeOpenClaw -> stringResource(R.string.av_setup_scope_openclaw)
+        else -> stringResource(R.string.av_setup_scope_both)
+    }
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(stringResource(R.string.av_hermes_card_title), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.av_pairing_card_title), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
-            Text(stringResource(R.string.av_hermes_card_step1), style = MaterialTheme.typography.bodyMedium)
-            CodeBlock("curl -fsSL https://raw.githubusercontent.com/yuga-hashimoto/openclaw-assistant/main/integrations/agentvoice-pair/install.sh | bash")
+            Text(scopeText, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(8.dp))
-            Text(stringResource(R.string.av_hermes_card_step2), style = MaterialTheme.typography.bodyMedium)
-            CodeBlock("agentvoice-pair")
+            Text(stringResource(R.string.av_pairing_card_step1), style = MaterialTheme.typography.bodyMedium)
+            CopyCommandBlock(installCommand)
             Spacer(Modifier.height(8.dp))
-            Text(stringResource(R.string.av_hermes_card_step3), style = MaterialTheme.typography.bodyMedium)
+            Text(stringResource(R.string.av_pairing_card_step2), style = MaterialTheme.typography.bodyMedium)
+            CopyCommandBlock(pairCommand)
             Spacer(Modifier.height(8.dp))
-            Text(stringResource(R.string.av_hermes_card_note), style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.av_pairing_card_step3), style = MaterialTheme.typography.bodyMedium)
+            Spacer(Modifier.height(8.dp))
+            Text(stringResource(R.string.av_pairing_card_note), style = MaterialTheme.typography.bodySmall)
             Spacer(Modifier.height(12.dp))
             OutlinedButton(
                 onClick = {
@@ -202,7 +226,7 @@ private fun UnifiedPairingCard() {
                         .addOnFailureListener { /* cancelled */ }
                 },
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text(stringResource(R.string.qr_scan_prompt)) }
+            ) { Text(stringResource(R.string.av_pairing_scan_qr)) }
             status?.let {
                 Spacer(Modifier.height(8.dp))
                 Text(it, style = MaterialTheme.typography.bodySmall)
@@ -213,7 +237,7 @@ private fun UnifiedPairingCard() {
 
 @Composable
 private fun DonePane(backends: List<AgentBackendConfig>) {
-    Text(stringResource(R.string.av_setup_done_title) + " 🎉", style = MaterialTheme.typography.headlineSmall)
+    Text(stringResource(R.string.av_setup_done_title), style = MaterialTheme.typography.headlineSmall)
     Spacer(Modifier.height(8.dp))
     if (backends.isEmpty()) {
         Text(stringResource(R.string.av_setup_done_empty), style = MaterialTheme.typography.bodyMedium)
@@ -228,12 +252,32 @@ private fun DonePane(backends: List<AgentBackendConfig>) {
 }
 
 @Composable
-private fun CodeBlock(text: String) {
-    Card(modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 4.dp)) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
-            modifier = Modifier.padding(12.dp),
-        )
+private fun CopyCommandBlock(text: String) {
+    val context = LocalContext.current
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 4.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = MaterialTheme.shapes.small,
+    ) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+            )
+            OutlinedButton(
+                onClick = {
+                    val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    cm.setPrimaryClip(ClipData.newPlainText("agentvoice command", text))
+                    android.widget.Toast.makeText(
+                        context,
+                        context.getString(R.string.av_setup_command_copied),
+                        android.widget.Toast.LENGTH_SHORT,
+                    ).show()
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.av_setup_copy_command))
+            }
+        }
     }
 }

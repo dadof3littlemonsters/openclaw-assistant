@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.openclaw.assistant.backend.AgentClientFactory
 import com.openclaw.assistant.backend.BackendManager
+import com.openclaw.assistant.backend.BackendRepository
 import com.openclaw.assistant.backend.BackendType
 import com.openclaw.assistant.backend.ConnectionTestResult
 import kotlinx.coroutines.Dispatchers
@@ -43,6 +44,7 @@ import kotlinx.coroutines.withContext
 fun PrimaryBackendCard() {
     val context = LocalContext.current
     val manager = remember { BackendManager.getInstance(context) }
+    val repo = remember { BackendRepository.getInstance(context) }
     val backends by manager.backends.collectAsState()
     val primary = backends.firstOrNull { it.isPrimary && it.enabled }
     val others = backends.filter { !it.isPrimary && it.enabled }
@@ -70,17 +72,27 @@ fun PrimaryBackendCard() {
                 others.forEach { Text("· ${it.displayName}", style = MaterialTheme.typography.bodySmall) }
             }
             Spacer(Modifier.height(12.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                 OutlinedButton(onClick = {
                     if (primary == null) return@OutlinedButton
                     scope.launch {
                         status = ConnectionTestResult(false, "Testing…")
                         status = withContext(Dispatchers.IO) { AgentClientFactory.create(primary).testConnection() }
                     }
-                }, enabled = primary != null) { Text("Test connection") }
+                }, enabled = primary != null, modifier = Modifier.weight(1f)) { Text("Test") }
+                OutlinedButton(onClick = {
+                    val next = others.firstOrNull() ?: return@OutlinedButton
+                    repo.setPrimary(next.id)
+                    status = null
+                }, enabled = others.isNotEmpty(), modifier = Modifier.weight(1f)) { Text("Switch primary") }
+                }
                 OutlinedButton(onClick = {
                     context.startActivity(Intent(context, BackendListActivity::class.java))
-                }) { Text("Manage backends") }
+                }, modifier = Modifier.fillMaxWidth()) { Text("Manage backends") }
             }
         }
     }

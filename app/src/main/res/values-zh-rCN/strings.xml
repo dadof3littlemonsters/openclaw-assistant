@@ -48,7 +48,7 @@
 <string name="processing">处理中…</string>
 <string name="error_label">错误</string>
 <string name="try_again_button">重试</string>
-<string name="ask_hint">询问 OpenClaw...</string>
+<string name="ask_hint">询问 Agent Voice...</string>
 <string name="send_description">发送</string>
 <string name="stop_description">停止</string>
     <string name="start_listening_description">开始聆听</string>

@@ -50,6 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -214,6 +215,10 @@ fun SetupGuideScreen(
     val runtime = remember(context.applicationContext) {
         (context.applicationContext as OpenClawApplication).nodeRuntime
     }
+    val backendRepository = remember(context.applicationContext) {
+        BackendRepository.getInstance(context.applicationContext)
+    }
+    val configuredBackends by backendRepository.backends.collectAsState()
 
     var currentStep by rememberSaveable { mutableStateOf(SetupStep.Welcome) }
 
@@ -307,6 +312,7 @@ fun SetupGuideScreen(
                     onManualTlsChange = { manualTls = it },
                     onAuthTokenChange = { authToken = it },
                     onManualPasswordChange = { manualPassword = it },
+                    configuredBackendCount = configuredBackends.size,
                     onNext = {
                         if (connectionMode == ConnectionMode.Hermes) {
                             currentStep = SetupStep.Permissions
@@ -443,7 +449,8 @@ private fun WelcomeStep(onNext: () -> Unit) {
         Button(
             onClick = onNext,
             modifier = Modifier.fillMaxWidth().height(56.dp),
-            shape = RoundedCornerShape(16.dp)
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = OnboardingGradientMid)
         ) {
             Text(stringResource(R.string.setup_guide_next), fontSize = 18.sp)
         }
@@ -484,10 +491,12 @@ private fun ConnectionStep(
     onManualTlsChange: (Boolean) -> Unit,
     onAuthTokenChange: (String) -> Unit,
     onManualPasswordChange: (String) -> Unit,
+    configuredBackendCount: Int,
     onNext: () -> Unit
 ) {
     val context = LocalContext.current
     val effectiveMode = if (mode == ConnectionMode.Manual) ConnectionMode.SetupCode else mode
+    var pairingStatus by rememberSaveable { mutableStateOf<String?>(null) }
 
     Column(modifier = Modifier.fillMaxSize()) {
         // スクロール可能なコンテンツ部分
@@ -512,7 +521,7 @@ private fun ConnectionStep(
         Spacer(modifier = Modifier.height(24.dp))
 
         if (effectiveMode == ConnectionMode.Hermes) {
-            HermesSetupGuideContent()
+            AgentVoiceUnifiedPairingContent(configuredBackendCount = configuredBackendCount)
         } else {
             val decodedSetupCode = GatewayConfigUtils.decodeGatewaySetupCode(setupCode)
             val isCodeValid = decodedSetupCode != null
@@ -660,75 +669,134 @@ private fun ConnectionStep(
 
         // --- 次へボタン・画面下部に固定 ---
         val canContinue = when (mode) {
-            ConnectionMode.Hermes -> true
+            ConnectionMode.Hermes -> configuredBackendCount > 0
             ConnectionMode.SetupCode -> GatewayConfigUtils.decodeGatewaySetupCode(setupCode) != null
             ConnectionMode.Manual -> GatewayConfigUtils.decodeGatewaySetupCode(setupCode) != null
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
+        if (mode == ConnectionMode.Hermes) {
+            PairingScanButton(
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                onImported = {
+                    pairingStatus = context.getString(R.string.setup_code_applied)
+                }
+            )
+            val readyText = pairingStatus ?: if (configuredBackendCount > 0) {
+                stringResource(R.string.setup_guide_connection_ready, configuredBackendCount)
+            } else {
+                stringResource(R.string.setup_guide_connection_waiting)
+            }
+            Text(
+                text = readyText,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (configuredBackendCount > 0 || pairingStatus != null) MaterialTheme.colorScheme.primary else OnboardingTextSecondary,
+                modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
+            )
+        } else {
+            Spacer(modifier = Modifier.height(16.dp))
+        }
         Button(
             onClick = onNext,
             enabled = canContinue,
             modifier = Modifier.fillMaxWidth().height(56.dp),
-            shape = RoundedCornerShape(16.dp)
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = OnboardingGradientMid)
         ) {
-            Text(stringResource(R.string.setup_guide_next), fontSize = 18.sp)
+            Text(
+                stringResource(
+                    if (mode == ConnectionMode.Hermes && configuredBackendCount == 0) {
+                        R.string.setup_guide_next_after_qr
+                    } else {
+                        R.string.setup_guide_next
+                    }
+                ),
+                fontSize = 18.sp
+            )
         }
     } // end of Column(fillMaxSize)
 }
 
 @Composable
-private fun HermesSetupGuideContent() {
-    val context = LocalContext.current
-    var status by rememberSaveable { mutableStateOf<String?>(null) }
-
+private fun AgentVoiceUnifiedPairingContent(configuredBackendCount: Int) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.av_hermes_card_title), style = MaterialTheme.typography.titleMedium)
-                Text(stringResource(R.string.av_hermes_card_step1), style = MaterialTheme.typography.bodyMedium)
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = OnboardingSurface),
+            border = androidx.compose.foundation.BorderStroke(1.dp, OnboardingBorder)
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    stringResource(R.string.av_pairing_card_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = OnboardingTextPrimary,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(stringResource(R.string.av_pairing_card_step1), style = MaterialTheme.typography.bodyMedium, color = OnboardingTextPrimary)
                 CommandBlock("curl -fsSL https://raw.githubusercontent.com/yuga-hashimoto/openclaw-assistant/main/integrations/agentvoice-pair/install.sh | bash")
-                Text(stringResource(R.string.av_hermes_card_step2), style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.av_pairing_card_step2), style = MaterialTheme.typography.bodyMedium, color = OnboardingTextPrimary)
                 CommandBlock("agentvoice-pair")
-                Text(stringResource(R.string.av_hermes_card_step3), style = MaterialTheme.typography.bodyMedium)
-                Text(stringResource(R.string.av_hermes_card_note), style = MaterialTheme.typography.bodySmall)
-                OutlinedButton(
-                    onClick = {
-                        val options = GmsBarcodeScannerOptions.Builder()
-                            .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
-                            .build()
-                        val scanner = GmsBarcodeScanning.getClient(context, options)
-                        scanner.startScan()
-                            .addOnSuccessListener { barcode ->
-                                val raw = barcode.rawValue?.trim().orEmpty()
-                                val pairingPayload = parsePairingPayload(raw)
-                                if (pairingPayload != null) {
-                                applyPairingPayload(context, pairingPayload)
-                                status = context.getString(R.string.setup_code_applied)
-                            } else if (raw.startsWith("agentvoice://")) {
-                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(raw)))
-                            } else {
-                                android.widget.Toast.makeText(
-                                    context,
-                                    context.getString(R.string.qr_scan_unavailable),
-                                        android.widget.Toast.LENGTH_LONG
-                                    ).show()
-                                }
-                            }
-                            .addOnFailureListener { /* scan cancelled or unavailable */ }
-                    },
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                    shape = RoundedCornerShape(12.dp),
-                ) {
-                    Icon(Icons.Default.QrCodeScanner, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                        Text(stringResource(R.string.qr_scan_prompt))
-                }
-                status?.let {
-                    Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                Text(stringResource(R.string.av_pairing_card_step3), style = MaterialTheme.typography.bodyMedium, color = OnboardingTextPrimary)
+                Text(stringResource(R.string.av_pairing_card_note), style = MaterialTheme.typography.bodySmall, color = OnboardingTextSecondary)
+                if (configuredBackendCount > 0) {
+                    AssistChip(
+                        onClick = {},
+                        label = { Text(stringResource(R.string.setup_guide_configured_backends, configuredBackendCount)) },
+                        leadingIcon = {
+                            Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
+                        }
+                    )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun PairingScanButton(
+    modifier: Modifier = Modifier,
+    onImported: () -> Unit
+) {
+    val context = LocalContext.current
+    OutlinedButton(
+        onClick = {
+            val options = GmsBarcodeScannerOptions.Builder()
+                .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+                .build()
+            val scanner = GmsBarcodeScanning.getClient(context, options)
+            scanner.startScan()
+                .addOnSuccessListener { barcode ->
+                    val raw = barcode.rawValue?.trim().orEmpty()
+                    val pairingPayload = parsePairingPayload(raw)
+                    if (pairingPayload != null) {
+                        applyPairingPayload(context, pairingPayload)
+                        onImported()
+                    } else if (raw.startsWith("agentvoice://")) {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(raw)))
+                    } else {
+                        android.widget.Toast.makeText(
+                            context,
+                            context.getString(R.string.qr_scan_unavailable),
+                            android.widget.Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+                .addOnFailureListener {
+                    android.widget.Toast.makeText(
+                        context,
+                        context.getString(R.string.qr_scan_unavailable),
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                }
+        },
+        modifier = modifier,
+        shape = RoundedCornerShape(14.dp),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = OnboardingGradientMid),
+        border = androidx.compose.foundation.BorderStroke(1.dp, OnboardingGradientMid)
+    ) {
+        Icon(Icons.Default.QrCodeScanner, contentDescription = null)
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(stringResource(R.string.av_pairing_scan_qr))
     }
 }
 
@@ -869,7 +937,8 @@ private fun PermissionsStep(onNext: () -> Unit) {
         Button(
             onClick = onNext,
             modifier = Modifier.fillMaxWidth().height(56.dp),
-            shape = RoundedCornerShape(16.dp)
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = OnboardingGradientMid)
         ) {
             Text(stringResource(R.string.setup_guide_next), fontSize = 18.sp)
         }
@@ -1146,7 +1215,8 @@ private fun FinalCheckStep(
                 onClick = finishWithHttpTest,
                 enabled = !isFinishing,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = OnboardingGradientMid)
             ) {
                 if (isFinishing) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
@@ -1163,7 +1233,7 @@ private fun FinalCheckStep(
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                colors = ButtonDefaults.buttonColors(containerColor = OnboardingGradientMid)
             ) {
                 Text(stringResource(R.string.test_connection_button), fontSize = 18.sp)
             }
@@ -1190,7 +1260,6 @@ private fun HermesFinalStep(onFinish: () -> Unit) {
     val context = LocalContext.current
     val repo = remember { BackendRepository.getInstance(context) }
     val backends by repo.backends.collectAsState()
-    val hermesBackends = backends.filter { it.type == BackendType.HERMES_API_SERVER }
 
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         Column(
@@ -1212,37 +1281,76 @@ private fun HermesFinalStep(onFinish: () -> Unit) {
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(16.dp))
-            if (hermesBackends.isEmpty()) {
+            Text(
+                text = stringResource(R.string.setup_guide_final_check_desc),
+                style = MaterialTheme.typography.bodyMedium,
+                color = OnboardingTextSecondary,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            if (backends.isEmpty()) {
                 Text(
-                    text = stringResource(R.string.av_setup_done_empty),
+                    text = stringResource(R.string.setup_guide_no_backends_yet),
                     style = MaterialTheme.typography.bodyMedium,
                     color = OnboardingTextSecondary,
                     textAlign = TextAlign.Center
                 )
             } else {
-                hermesBackends.forEach { backend ->
-                    Text(
-                        text = backend.displayName,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = OnboardingTextPrimary,
-                        fontWeight = FontWeight.Medium
-                    )
-                    backend.baseUrl?.let {
-                        Text(
-                            text = it,
-                            style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
-                            color = OnboardingTextSecondary
-                        )
+                backends.forEach { backend ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+                        colors = CardDefaults.cardColors(containerColor = OnboardingSurface),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, OnboardingBorder)
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = backend.displayName,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = OnboardingTextPrimary,
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                if (backend.isPrimary) {
+                                    AssistChip(onClick = {}, label = { Text(stringResource(R.string.primary_backend)) })
+                                }
+                            }
+                            Text(
+                                text = when (backend.type) {
+                                    BackendType.HERMES_API_SERVER -> "Hermes Agent"
+                                    BackendType.OPENCLAW_GATEWAY -> "OpenClaw Gateway"
+                                    BackendType.OPENCLAW_HTTP -> "OpenClaw HTTP"
+                                },
+                                style = MaterialTheme.typography.labelMedium,
+                                color = OnboardingGradientMid
+                            )
+                            val endpoint = backend.baseUrl ?: backend.host?.let { host ->
+                                "${if (backend.useTls) "https" else "http"}://$host:${backend.port ?: 18789}"
+                            }
+                            endpoint?.let {
+                                Text(
+                                    text = it,
+                                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+                                    color = OnboardingTextSecondary
+                                )
+                            }
+                        }
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
                 }
+                Text(
+                    text = stringResource(R.string.setup_guide_connection_ready, backends.size),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center
+                        )
             }
         }
 
         Button(
             onClick = onFinish,
             modifier = Modifier.fillMaxWidth().height(56.dp),
-            shape = RoundedCornerShape(16.dp)
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = OnboardingGradientMid)
         ) {
             Text(stringResource(R.string.setup_guide_finish), fontSize = 18.sp)
         }
@@ -1303,11 +1411,20 @@ private fun CommandBlock(command: String) {
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        val displayCommand = remember(command) {
+            command.replace(
+                "https://raw.githubusercontent.com/yuga-hashimoto/openclaw-assistant/main/",
+                "https://raw.githubusercontent.com/.../"
+            )
+        }
         Text(
-            text = command,
+            text = displayCommand,
             color = Color(0xFF58A6FF),
             fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-            fontSize = 13.sp,
+            fontSize = 12.sp,
+            lineHeight = 18.sp,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f)
         )
         Spacer(modifier = Modifier.width(8.dp))

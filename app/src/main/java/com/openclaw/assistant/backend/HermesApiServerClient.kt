@@ -172,7 +172,8 @@ class HermesApiServerClient(
         try {
             call.execute().use { resp ->
                 if (!resp.isSuccessful) {
-                    emit(AgentEvent.Error("HTTP ${resp.code}: ${resp.message}"))
+                    val errorText = resp.body?.string()?.let(::extractErrorMessage).orEmpty()
+                    emit(AgentEvent.Error(listOf("HTTP ${resp.code}", errorText.ifBlank { resp.message }).filter { it.isNotBlank() }.joinToString(": ")))
                     return@flow
                 }
                 val source = resp.body?.source() ?: run {
@@ -317,6 +318,14 @@ class HermesApiServerClient(
             ?: first?.get("text")?.jsonPrimitive?.content
             ?: ""
     }.getOrDefault("")
+
+    private fun extractErrorMessage(text: String): String = runCatching {
+        val obj = json.parseToJsonElement(text).jsonObject
+        val err = obj["error"]?.jsonObject
+        err?.get("message")?.jsonPrimitive?.contentOrNullSafe()
+            ?: obj["message"]?.jsonPrimitive?.contentOrNullSafe()
+            ?: text
+    }.getOrDefault(text).take(500)
 
     private fun authed(builder: Request.Builder): Request.Builder {
         token?.let { builder.header("Authorization", "Bearer $it") }

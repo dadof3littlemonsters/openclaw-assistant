@@ -146,7 +146,17 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             android.content.IntentFilter("com.openclaw.assistant.ACTION_INTERRUPT_TTS"),
             androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
         )
-        _uiState.update { it.copy(isNodeChatMode = useNodeChat) }
+        _uiState.update { it.copy(isNodeChatMode = shouldUseNodeChatForCurrentTarget()) }
+        viewModelScope.launch {
+            combine(
+                com.openclaw.assistant.backend.BackendRepository.getInstance(app).backends,
+                com.openclaw.assistant.ui.backend.ChatBackendTarget.selectedId,
+            ) { _, _ -> shouldUseNodeChatForCurrentTarget() }
+                .distinctUntilChanged()
+                .collect { isNodeTarget ->
+                    _uiState.update { it.copy(isNodeChatMode = isNodeTarget) }
+                }
+        }
         if (useNodeChat) {
             // Remote sessions/messages via NodeRuntime
             viewModelScope.launch {
@@ -478,10 +488,21 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         return if (default.isNotBlank() && default != "main") default else null
     }
 
+    private fun shouldUseNodeChatForCurrentTarget(): Boolean {
+        if (!useNodeChat) return false
+        val app = getApplication<Application>()
+        val backends = com.openclaw.assistant.backend.BackendRepository.getInstance(app).backends.value
+        if (backends.isEmpty()) return true
+        val selectedId = com.openclaw.assistant.ui.backend.ChatBackendTarget.selectedId.value
+        val target = selectedId?.let { id -> backends.firstOrNull { it.id == id && it.enabled } }
+            ?: backends.firstOrNull { it.isPrimary && it.enabled }
+        return target?.type == com.openclaw.assistant.backend.BackendType.OPENCLAW_GATEWAY
+    }
+
     fun sendMessage(text: String) {
         if (text.isBlank() && _uiState.value.attachments.isEmpty()) return
 
-        if (useNodeChat) {
+        if (shouldUseNodeChatForCurrentTarget()) {
             // Check gateway health before sending; if not ready, show a clear error
             // instead of letting the message silently fail inside ChatController.
             if (!nodeRuntime.chatHealthOk.value) {
@@ -529,7 +550,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         // Ensure we have a session
-        val sessionId = _currentSessionId.value ?: return
+        val sessionId = _currentSessionId.value ?: settings.sessionId.ifBlank { "agentvoice-chat" }
 
         val httpAttachments = _uiState.value.attachments
         _uiState.update { it.copy(isThinking = true, attachments = emptyList()) }
@@ -542,6 +563,10 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
         viewModelScope.launch {
             try {
+                if (useNodeChat) {
+                    sendViaSelectedBackendInline(sessionId, text, httpAttachments)
+                    return@launch
+                }
                 // Save User Message
                 chatRepository.addMessage(sessionId, text, isUser = true)
                 sendViaHttp(sessionId, text, httpAttachments)
@@ -552,6 +577,31 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 _uiState.update { it.copy(isThinking = false, error = e.message) }
             }
         }
+    }
+
+    private suspend fun sendViaSelectedBackendInline(
+        sessionId: String,
+        text: String,
+        attachments: List<PendingFileAttachment>,
+    ) {
+        if (attachments.isNotEmpty()) {
+            throw IllegalStateException("Attachments are only supported with OpenClaw chat in this build.")
+        }
+        val userMessage = ChatMessage(text = text, isUser = true)
+        _uiState.update { state ->
+            state.copy(messages = state.messages + userMessage, error = null)
+        }
+        val effectiveAgentId = getEffectiveAgentId()
+        val backendText = trySendViaSelectedBackend(sessionId, text, effectiveAgentId)
+            ?: throw IllegalStateException("No backend selected")
+        _uiState.update { state ->
+            state.copy(
+                messages = state.messages + ChatMessage(text = backendText, isUser = false),
+                isThinking = false,
+            )
+        }
+        stopThinkingSound()
+        afterResponseReceived(backendText)
     }
 
     private fun sendViaHttp(sessionId: String, text: String, attachments: List<PendingFileAttachment> = emptyList()) {

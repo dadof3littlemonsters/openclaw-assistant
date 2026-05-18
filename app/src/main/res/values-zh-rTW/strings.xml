@@ -48,7 +48,7 @@
 <string name="processing">加工…</string>
 <string name="error_label">錯誤</string>
 <string name="try_again_button">再試一次</string>
-<string name="ask_hint">詢問 OpenClaw...</string>
+<string name="ask_hint">詢問 Agent Voice...</string>
 <string name="send_description">傳送</string>
 <string name="stop_description">停止</string>
     <string name="start_listening_description">開始聆聽</string>

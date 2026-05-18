@@ -59,6 +59,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
@@ -1095,18 +1096,23 @@ fun SystemStatusCard(
                 }
                 StatusIndicator(state = state)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = stringResource(R.string.app_name),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.app_name),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = statusText,
+                        fontSize = 13.sp,
+                        color = contentColor.copy(alpha = 0.8f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = statusText,
-                    fontSize = 13.sp,
-                    color = contentColor.copy(alpha = 0.8f),
-                    modifier = Modifier.weight(1f)
-                )
                 IconButton(onClick = onOpenSettings, modifier = Modifier.size(24.dp)) {
                     Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings_title), tint = contentColor.copy(alpha = 0.6f))
                 }

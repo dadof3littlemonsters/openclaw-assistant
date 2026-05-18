@@ -85,6 +85,9 @@ object PrimaryBackendDispatcher {
                 else -> Unit
             }
         }
+        if (collected.isBlank()) {
+            throw IllegalStateException("${target.displayName} returned an empty response. Check the backend model/provider configuration.")
+        }
         return Reply(text = collected.toString(), sourceDisplayName = target.displayName)
     }
 

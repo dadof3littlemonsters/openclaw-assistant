@@ -48,7 +48,7 @@
 <string name="processing">प्रसंस्करण…</string>
 <string name="error_label">गलती</string>
 <string name="try_again_button">पुनः प्रयास करें</string>
-<string name="ask_hint">ओपनक्लॉ से पूछें...</string>
+<string name="ask_hint">Agent Voice से पूछें...</string>
 <string name="send_description">भेजना</string>
 <string name="stop_description">रुकना</string>
     <string name="start_listening_description">सुनना शुरू करें</string>
