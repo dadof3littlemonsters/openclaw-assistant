@@ -478,6 +478,18 @@ fun MainNavHost(
     var showSettingsCredits by rememberSaveable { mutableStateOf(false) }
 
     val sessionListViewModel: SessionListViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+    val context = LocalContext.current
+    val nodeRuntime = remember(context.applicationContext) {
+        (context.applicationContext as OpenClawApplication).nodeRuntime
+    }
+    val isOpenClawGatewayConnected by nodeRuntime.isConnected.collectAsState()
+    val availableTabs = remember(isOpenClawGatewayConnected) {
+        if (isOpenClawGatewayConnected) {
+            AppTab.ALL
+        } else {
+            AppTab.ALL.filterNot { it == AppTab.Canvas }
+        }
+    }
 
     LaunchedEffect(selectedTab) {
         if (selectedTab == AppTab.Chat) sessionListViewModel.refreshSessions()
@@ -485,11 +497,16 @@ fun MainNavHost(
     LaunchedEffect(chatRefreshTrigger) {
         sessionListViewModel.refreshSessions()
     }
+    LaunchedEffect(isOpenClawGatewayConnected, selectedTab) {
+        if (!isOpenClawGatewayConnected && selectedTab == AppTab.Canvas) {
+            selectedTab = AppTab.Home
+        }
+    }
 
     Scaffold(
         bottomBar = {
             NavigationBar {
-                AppTab.ALL.forEach { tab ->
+                availableTabs.forEach { tab ->
                     NavigationBarItem(
                         selected  = selectedTab == tab,
                         onClick   = { selectedTab = tab },
@@ -548,13 +565,8 @@ fun MainNavHost(
                     )
                 }
                 AppTab.Canvas -> {
-                    val context = LocalContext.current
-                    val (canvasController, nodeRuntime) = remember(context.applicationContext) {
-                        val nr = (context.applicationContext as OpenClawApplication).nodeRuntime
-                        nr.canvas to nr
-                    }
                     com.openclaw.assistant.ui.CanvasScreen(
-                        canvasController = canvasController,
+                        canvasController = nodeRuntime.canvas,
                         nodeRuntime = nodeRuntime,
                         modifier = Modifier.fillMaxSize()
                     )
