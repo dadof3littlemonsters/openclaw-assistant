@@ -707,6 +707,12 @@
     <string name="av_connection_testing">テスト中…</string>
     <string name="av_chat_no_backend">接続先なし</string>
     <string name="av_chat_primary_target">メイン: %1$s</string>
+    <string name="chat_settings_title">チャット設定</string>
+    <string name="chat_settings_backend">送信先</string>
+    <string name="chat_settings_primary_backend">メイン接続先を使う</string>
+    <string name="chat_settings_openclaw_agent">OpenClawエージェント</string>
+    <string name="chat_settings_hermes_model">Hermesモデル</string>
+    <string name="chat_settings_hermes_model_help">通常は default のままで問題ありません。Hermesのプロファイルやモデルを指定する場合だけ変更します。</string>
 
     <string name="av_import_title">Agent Voice の接続先を追加</string>
     <string name="av_import_missing">このペアリングQRには必要な情報がありません。</string>

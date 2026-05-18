@@ -2,6 +2,7 @@ package com.openclaw.assistant.backend
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -91,6 +92,14 @@ class HermesApiServerClientTest {
         )
         assertTrue(mapped is AgentEvent.TokenDelta)
         assertEquals("Hi", collected.toString())
+    }
+
+    @Test fun `reasoning events are not shown as tool progress`() {
+        val mapped = client().mapSseEvent(
+            SseEvent(null, """{"event":"reasoning.available","text":"internal thoughts"}"""),
+            StringBuilder(),
+        )
+        assertNull(mapped)
     }
 
     @Test fun `runs failed event maps to error`() {

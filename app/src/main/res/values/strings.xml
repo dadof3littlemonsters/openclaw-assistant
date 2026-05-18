@@ -155,6 +155,12 @@
     <string name="av_connection_testing">Testing…</string>
     <string name="av_chat_no_backend">No backend</string>
     <string name="av_chat_primary_target">Primary: %1$s</string>
+    <string name="chat_settings_title">Chat settings</string>
+    <string name="chat_settings_backend">Backend</string>
+    <string name="chat_settings_primary_backend">Use primary backend</string>
+    <string name="chat_settings_openclaw_agent">OpenClaw agent</string>
+    <string name="chat_settings_hermes_model">Hermes model</string>
+    <string name="chat_settings_hermes_model_help">Usually keep default. Change it only for a specific Hermes profile or model.</string>
 
     <!-- Pairing import -->
     <string name="av_import_title">Add Agent Voice backends</string>

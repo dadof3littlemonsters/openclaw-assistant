@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -60,6 +61,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.openclaw.assistant.speech.TTSUtils
@@ -76,6 +78,8 @@ import com.openclaw.assistant.ui.chat.ChatViewModel
 import com.openclaw.assistant.ui.chat.PendingFileAttachment
 import com.openclaw.assistant.ui.chat.ChatMessage
 import com.openclaw.assistant.gateway.AgentInfo
+import com.openclaw.assistant.backend.BackendRepository
+import com.openclaw.assistant.backend.BackendType
 import com.openclaw.assistant.ui.theme.OpenClawAssistantTheme
 import androidx.compose.material3.TextButton
 import kotlinx.coroutines.launch
@@ -87,6 +91,7 @@ import android.content.ContentResolver
 import com.openclaw.assistant.data.SettingsRepository
 import com.openclaw.assistant.service.HotwordService
 import com.openclaw.assistant.ui.GatewayTrustDialog
+import com.openclaw.assistant.ui.backend.ChatBackendTarget
 
 private const val TAG = "ChatActivity"
 
@@ -390,6 +395,7 @@ fun ChatScreen(
     }
 
     val snackbarHostState = remember { SnackbarHostState() }
+    var showChatSettings by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(uiState.error) {
         uiState.error?.let { error ->
@@ -418,19 +424,16 @@ fun ChatScreen(
                                     modifier = Modifier.weight(1f, fill = false)
                                 )
                             }
-                            AgentSelector(
-                                agents = uiState.availableAgents,
-                                selectedAgentId = uiState.selectedAgentId,
-                                defaultAgentId = uiState.defaultAgentId,
-                                onAgentSelected = onAgentSelected,
-                                isReadOnly = uiState.isNodeChatMode
-                            )
-                            com.openclaw.assistant.ui.backend.ChatBackendSelector()
                         }
                     },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { showChatSettings = true }) {
+                            Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.chat_settings_title))
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -565,6 +568,13 @@ fun ChatScreen(
                 }
             }
         }
+    if (showChatSettings) {
+        ChatSettingsDialog(
+            uiState = uiState,
+            onDismiss = { showChatSettings = false },
+            onAgentSelected = onAgentSelected,
+        )
+    }
 }
 
 @Composable
@@ -866,6 +876,136 @@ fun PendingToolsIndicator(toolCalls: List<String>) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+fun ChatSettingsDialog(
+    uiState: ChatUiState,
+    onDismiss: () -> Unit,
+    onAgentSelected: (String?) -> Unit,
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val repo = remember { BackendRepository.getInstance(context) }
+    val backends by repo.backends.collectAsState()
+    val selectedId by ChatBackendTarget.selectedId.collectAsState()
+    val enabledBackends = backends.filter { it.enabled }
+    val primary = enabledBackends.firstOrNull { it.isPrimary }
+    var pendingSelectedId by remember(selectedId) { mutableStateOf(selectedId) }
+    val selectedBackend = enabledBackends.firstOrNull { it.id == pendingSelectedId } ?: primary
+    var modelName by remember(selectedBackend?.id, selectedBackend?.modelName) {
+        mutableStateOf(selectedBackend?.modelName?.ifBlank { null } ?: "default")
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.chat_settings_title)) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.chat_settings_backend),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                )
+                ChatTargetRadioRow(
+                    selected = pendingSelectedId == null,
+                    title = stringResource(R.string.chat_settings_primary_backend),
+                    subtitle = primary?.displayName ?: stringResource(R.string.av_chat_no_backend),
+                    onClick = { pendingSelectedId = null },
+                )
+                enabledBackends.forEach { backend ->
+                    ChatTargetRadioRow(
+                        selected = pendingSelectedId == backend.id,
+                        title = backend.displayName,
+                        subtitle = when (backend.type) {
+                            BackendType.HERMES_API_SERVER -> "Hermes Agent"
+                            BackendType.OPENCLAW_GATEWAY -> "OpenClaw Gateway"
+                            BackendType.OPENCLAW_HTTP -> "OpenClaw HTTP"
+                        },
+                        onClick = { pendingSelectedId = backend.id },
+                    )
+                }
+
+                if (!uiState.isNodeChatMode && uiState.availableAgents.isNotEmpty()) {
+                    HorizontalDivider()
+                    Text(
+                        text = stringResource(R.string.chat_settings_openclaw_agent),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                    )
+                    AgentSelector(
+                        agents = uiState.availableAgents,
+                        selectedAgentId = uiState.selectedAgentId,
+                        defaultAgentId = uiState.defaultAgentId,
+                        onAgentSelected = onAgentSelected,
+                    )
+                }
+
+                if (selectedBackend?.type == BackendType.HERMES_API_SERVER) {
+                    HorizontalDivider()
+                    OutlinedTextField(
+                        value = modelName,
+                        onValueChange = { modelName = it },
+                        label = { Text(stringResource(R.string.chat_settings_hermes_model)) },
+                        supportingText = { Text(stringResource(R.string.chat_settings_hermes_model_help)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    ChatBackendTarget.set(pendingSelectedId)
+                    val target = selectedBackend
+                    if (target?.type == BackendType.HERMES_API_SERVER) {
+                        repo.upsert(target.copy(modelName = modelName.trim().ifBlank { "default" }))
+                    }
+                    onDismiss()
+                },
+            ) {
+                Text(stringResource(R.string.save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+    )
+}
+
+@Composable
+private fun ChatTargetRadioRow(
+    selected: Boolean,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButton(selected = selected, onClick = onClick)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun AgentSelector(
     agents: List<AgentInfo>,
     selectedAgentId: String?,
@@ -881,7 +1021,7 @@ fun AgentSelector(
     val displayName = if (selectedAgent != null) {
         selectedAgent.name
     } else {
-        if (effectiveId == "main" || effectiveId.isBlank()) stringResource(R.string.agent_default)
+        if (effectiveId == "main" || effectiveId.isBlank()) stringResource(R.string.default_agent_label)
         else effectiveId
     }
 

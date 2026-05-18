@@ -334,11 +334,7 @@ class HermesApiServerClient(
                     ?: obj["result_preview"]?.jsonPrimitive?.contentOrNullSafe()
                 AgentEvent.ToolProgress(tool, eventType.substringAfter('.'), detail)
             }
-            "reasoning.available", "reasoning.delta", "thinking.delta" -> {
-                val detail = obj["text"]?.jsonPrimitive?.contentOrNullSafe()
-                    ?: obj["delta"]?.jsonPrimitive?.contentOrNullSafe()
-                if (detail.isNullOrBlank()) null else AgentEvent.ToolProgress("reasoning", eventType.substringAfter('.'), detail)
-            }
+            "reasoning.available", "reasoning.delta", "thinking.delta" -> null
             "run.completed", "response.completed", "done" -> {
                 val finalText = obj["output"]?.jsonPrimitive?.contentOrNullSafe()
                     ?: obj["message"]?.jsonPrimitive?.contentOrNullSafe()
