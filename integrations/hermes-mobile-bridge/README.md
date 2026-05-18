@@ -9,8 +9,10 @@ agentvoice-pair
 ```
 
 The helper checks whether Hermes, OpenClaw, and Tailscale are installed locally,
-asks which backends to include, and prints one Agent Voice setup JSON QR.
-Scanning that single QR in Agent Voice can configure both Hermes and OpenClaw.
+asks which backends to include, and creates one Agent Voice setup QR. If the QR
+is too large for the current terminal, it opens a generated SVG QR image instead
+of printing an unreadable terminal block. Scanning that single QR in Agent Voice
+can configure both Hermes and OpenClaw.
 If you want the phone to work outside your LAN, answer yes when it asks about
 Tailscale/VPN endpoint candidates.
 

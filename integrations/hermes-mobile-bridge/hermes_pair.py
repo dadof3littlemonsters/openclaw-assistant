@@ -25,6 +25,7 @@ import shutil
 import socket
 import subprocess
 import sys
+import tempfile
 import urllib.parse
 from pathlib import Path
 from typing import Any, Iterable, List, Optional
@@ -737,6 +738,55 @@ def render_qr(payload: str, compact: bool = True) -> bool:
     return True
 
 
+def terminal_qr_size(payload: str, compact: bool = True) -> tuple[int, int]:
+    modules = qr_make_matrix(payload)
+    quiet = 1 if compact else 2
+    size = len(modules) + quiet * 2
+    if compact:
+        return size, (size + 1) // 2
+    return size * 2, size
+
+
+def write_qr_svg(payload: str, path: Path) -> Path:
+    modules = qr_make_matrix(payload)
+    quiet = 4
+    size = len(modules) + quiet * 2
+    cell = 10
+    parts = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {size} {size}" width="{size * cell}" height="{size * cell}" shape-rendering="crispEdges">',
+        f'<rect width="{size}" height="{size}" fill="#fff"/>',
+    ]
+    for y, row in enumerate(modules):
+        start: Optional[int] = None
+        for x, dark in enumerate(row + [False]):
+            if dark and start is None:
+                start = x
+            elif not dark and start is not None:
+                parts.append(f'<rect x="{start + quiet}" y="{y + quiet}" width="{x - start}" height="1" fill="#000"/>')
+                start = None
+    parts.append("</svg>")
+    path.write_text("\n".join(parts) + "\n", encoding="utf-8")
+    return path
+
+
+def open_file(path: Path) -> bool:
+    openers = []
+    if sys.platform == "darwin":
+        openers.append(["open", str(path)])
+    elif os.name == "nt":
+        openers.append(["cmd", "/c", "start", "", str(path)])
+    else:
+        openers.append(["xdg-open", str(path)])
+    for cmd in openers:
+        try:
+            subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            return True
+        except Exception:
+            continue
+    return False
+
+
 def comma_urls(values: Iterable[str]) -> List[str]:
     urls: List[str] = []
     for value in values:
@@ -765,6 +815,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     p.add_argument("--no-lan", action="store_true", help="Do not add LAN endpoint candidates automatically.")
     p.add_argument("--no-tailscale", action="store_true", help="Do not add Tailscale endpoint candidates automatically.")
     p.add_argument("--large-qr", action="store_true", help="Render a larger legacy ASCII QR instead of the compact terminal QR.")
+    p.add_argument("--terminal-qr", action="store_true", help="Always print the terminal QR even when it does not fit the current terminal.")
+    p.add_argument("--no-open", action="store_true", help="Do not open the generated QR image automatically.")
     p.set_defaults(runs=None, streaming=None)
     args = p.parse_args(argv)
 
@@ -873,10 +925,25 @@ def main(argv: Optional[List[str]] = None) -> int:
         openclaw_setup_code=openclaw_setup_code,
     )
 
-    print("\nScan this one QR inside Agent Voice:\n")
-    rendered = render_qr(qr_payload, compact = not args.large_qr)
-    if not rendered:
-        print("(QR rendering unavailable on this machine.)")
+    qr_path = write_qr_svg(qr_payload, Path(tempfile.gettempdir()) / "agentvoice-pair-qr.svg")
+    terminal_width, terminal_height = terminal_qr_size(qr_payload, compact = not args.large_qr)
+    cols, rows = shutil.get_terminal_size(fallback=(80, 24))
+    fits_terminal = terminal_width <= cols and terminal_height + 8 <= rows
+
+    print("\nScan this one QR inside Agent Voice:")
+    opened = False if args.no_open else open_file(qr_path)
+    print(f"  QR image: {qr_path}")
+    if opened:
+        print("  Opened the QR image in your desktop viewer.")
+    else:
+        print("  Open this file if the terminal QR does not fit on screen.")
+    if fits_terminal or args.terminal_qr or args.large_qr:
+        print()
+        rendered = render_qr(qr_payload, compact = not args.large_qr)
+        if not rendered:
+            print("(QR rendering unavailable on this machine.)")
+    else:
+        print(f"  Terminal QR omitted because it is {terminal_width}x{terminal_height} cells and your terminal is {cols}x{rows}.")
     print("\nQR payload for Agent Voice in-app scanner:")
     print(f"  {qr_payload}\n")
     print("External-camera fallback link:")
