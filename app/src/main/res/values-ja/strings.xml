@@ -221,7 +221,10 @@
 <string name="delete">削除</string>
 <string name="menu">メニュー</string>
 <string name="back">戻る</string>
-<string name="select_chat_type">チャット形式を選択</string>
+<string name="select_chat_type">接続先を選択</string>
+<string name="select_chat_backend_desc">このチャットの送信先を選んでください。</string>
+<string name="chat_type_openclaw">OpenClaw</string>
+<string name="chat_type_hermes">Hermes</string>
 <string name="chat_type_gateway">Gateway Chat</string>
 <string name="chat_type_http">HTTP Chat</string>
 

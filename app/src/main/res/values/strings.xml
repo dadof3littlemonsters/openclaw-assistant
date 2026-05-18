@@ -426,7 +426,10 @@
     <string name="delete">Delete</string>
     <string name="menu">Menu</string>
     <string name="back">Back</string>
-    <string name="select_chat_type">Select Chat Type</string>
+    <string name="select_chat_type">Choose backend</string>
+    <string name="select_chat_backend_desc">Choose where this chat should be sent.</string>
+    <string name="chat_type_openclaw">OpenClaw</string>
+    <string name="chat_type_hermes">Hermes</string>
     <string name="chat_type_gateway">Gateway Chat</string>
     <string name="chat_type_http">HTTP Chat</string>
 

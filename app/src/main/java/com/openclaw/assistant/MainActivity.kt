@@ -549,7 +549,8 @@ fun MainNavHost(
                                 }
                             )
                         },
-                        onCreateSession     = { name, isGateway, agentId ->
+                        onCreateSession     = { name, isGateway, agentId, targetBackendId ->
+                            com.openclaw.assistant.ui.backend.ChatBackendTarget.set(targetBackendId)
                             sessionListViewModel.setUseNodeChat(isGateway)
                             sessionListViewModel.createSession(name, isGateway, agentId) { sessionId, _ ->
                                 context.startActivity(

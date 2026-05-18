@@ -222,7 +222,10 @@ Para más detalles, consulta el sitio oficial de VOICEVOX.</string>
 <string name="delete">Eliminar</string>
 <string name="menu">Menú</string>
 <string name="back">Volver</string>
-<string name="select_chat_type">Seleccione el tipo de chat</string>
+<string name="select_chat_type">Elegir backend</string>
+<string name="select_chat_backend_desc">Elige a dónde se enviará este chat.</string>
+<string name="chat_type_openclaw">OpenClaw</string>
+<string name="chat_type_hermes">Hermes</string>
 <string name="chat_type_gateway">Chat de puerta de enlace</string>
 <string name="chat_type_http">Chat HTTP</string>
 <!-- Session List -->

@@ -222,7 +222,10 @@
 <string name="delete">मिटाना</string>
 <string name="menu">मेनू</string>
 <string name="back">पीछे</string>
-<string name="select_chat_type">चैट प्रकार चुनें</string>
+<string name="select_chat_type">बैकएंड चुनें</string>
+<string name="select_chat_backend_desc">चुनें कि यह चैट कहाँ भेजी जाए।</string>
+<string name="chat_type_openclaw">OpenClaw</string>
+<string name="chat_type_hermes">Hermes</string>
 <string name="chat_type_gateway">गेटवे चैट</string>
 <string name="chat_type_http">HTTP चैट</string>
 <!-- Session List -->

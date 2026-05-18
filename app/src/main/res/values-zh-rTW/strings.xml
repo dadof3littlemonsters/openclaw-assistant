@@ -221,7 +221,10 @@
 <string name="delete">刪除</string>
 <string name="menu">選單</string>
 <string name="back">後退</string>
-<string name="select_chat_type">選擇聊天類型</string>
+<string name="select_chat_type">選擇連線目標</string>
+<string name="select_chat_backend_desc">請選擇此聊天要傳送到哪裡。</string>
+<string name="chat_type_openclaw">OpenClaw</string>
+<string name="chat_type_hermes">Hermes</string>
 <string name="chat_type_gateway">網關聊天</string>
 <string name="chat_type_http">HTTP 聊天</string>
 <!-- Session List -->

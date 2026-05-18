@@ -60,7 +60,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.openclaw.assistant.data.local.entity.SessionEntity
+import com.openclaw.assistant.backend.AgentBackendConfig
+import com.openclaw.assistant.backend.BackendRepository
+import com.openclaw.assistant.backend.BackendType
 import com.openclaw.assistant.gateway.AgentInfo
+import com.openclaw.assistant.ui.backend.ChatBackendTarget
 import com.openclaw.assistant.ui.theme.OpenClawAssistantTheme
 
 class SessionListActivity : ComponentActivity() {
@@ -102,7 +106,8 @@ class SessionListActivity : ComponentActivity() {
                             putExtra(ChatActivity.EXTRA_SESSION_ID, session.id)
                         })
                     },
-                    onCreateSession = { name, isGateway, agentId ->
+                    onCreateSession = { name, isGateway, agentId, targetBackendId ->
+                        ChatBackendTarget.set(targetBackendId)
                         viewModel.setUseNodeChat(isGateway)
                         viewModel.createSession(name, isGateway, agentId) { sessionId, createdAsGateway ->
                             startActivity(Intent(this, ChatActivity::class.java).apply {
@@ -138,7 +143,7 @@ fun SessionListScreen(
     defaultAgentId: String = "main",
     onBack: () -> Unit,
     onSessionClick: (SessionUiModel) -> Unit,
-    onCreateSession: (String, Boolean, String?) -> Unit,
+    onCreateSession: (String, Boolean, String?, String?) -> Unit,
     onDeleteSession: (String, Boolean) -> Unit,
     onRenameSession: (String, String, Boolean) -> Unit = { _, _, _ -> }
 ) {
@@ -148,7 +153,36 @@ fun SessionListScreen(
     var showTypeSelectionDialog by remember { mutableStateOf(false) }
     var showNameInputDialog by remember { mutableStateOf(false) }
     var showGatewayCreateDialog by remember { mutableStateOf(false) }
+    var pendingTargetBackendId by remember { mutableStateOf<String?>(null) }
     val context = androidx.compose.ui.platform.LocalContext.current
+    val backendRepo = remember { BackendRepository.getInstance(context) }
+    val backends by backendRepo.backends.collectAsState()
+    val enabledBackends = backends.filter { it.enabled }
+    val openClawBackends = enabledBackends.filter {
+        it.type == BackendType.OPENCLAW_GATEWAY || it.type == BackendType.OPENCLAW_HTTP
+    }
+    val hermesBackends = enabledBackends.filter { it.type == BackendType.HERMES_API_SERVER }
+    val preferredOpenClawBackend = openClawBackends.preferredOpenClawBackend()
+    val preferredHermesBackend = hermesBackends.firstOrNull { it.isPrimary } ?: hermesBackends.firstOrNull()
+    val hasOpenClaw = preferredOpenClawBackend != null || isGatewayConfigured || isHttpConfigured
+    val hasHermes = preferredHermesBackend != null
+
+    fun beginOpenClawChat() {
+        val backend = preferredOpenClawBackend
+        pendingTargetBackendId = backend?.id
+        val useGateway = backend?.type == BackendType.OPENCLAW_GATEWAY ||
+            (backend == null && isGatewayConfigured && !isHttpConfigured)
+        if (useGateway) {
+            showGatewayCreateDialog = true
+        } else {
+            showNameInputDialog = true
+        }
+    }
+
+    fun beginHermesChat() {
+        pendingTargetBackendId = preferredHermesBackend?.id
+        showNameInputDialog = true
+    }
 
     val listState = rememberLazyListState()
     var scrollTrigger by remember { mutableIntStateOf(0) }
@@ -186,12 +220,17 @@ fun SessionListScreen(
         floatingActionButton = {
             val newSessionName = stringResource(R.string.new_chat)
             FloatingActionButton(onClick = { 
-                if (isGatewayConfigured && isHttpConfigured) {
+                if (hasOpenClaw && hasHermes) {
                     showTypeSelectionDialog = true
-                } else if (isHttpConfigured && !isGatewayConfigured) {
+                } else if (hasHermes) {
+                    beginHermesChat()
+                } else if (hasOpenClaw) {
+                    beginOpenClawChat()
+                } else if (isHttpConfigured) {
+                    pendingTargetBackendId = null
                     showNameInputDialog = true
-                } else {
-                    // Gateway only
+                } else if (isGatewayConfigured) {
+                    pendingTargetBackendId = null
                     showGatewayCreateDialog = true
                 }
             }) {
@@ -232,26 +271,26 @@ fun SessionListScreen(
         }
     }
 
-    // Type selection dialog (Gateway vs HTTP)
+    // Product selection dialog (OpenClaw vs Hermes)
     if (showTypeSelectionDialog) {
         AlertDialog(
             onDismissRequest = { showTypeSelectionDialog = false },
             title = { Text(stringResource(R.string.select_chat_type)) },
-            text = { Text(stringResource(R.string.select_chat_type)) },
+            text = { Text(stringResource(R.string.select_chat_backend_desc)) },
             dismissButton = {
                 TextButton(onClick = {
                     showTypeSelectionDialog = false
-                    showNameInputDialog = true
+                    beginOpenClawChat()
                 }) {
-                    Text(stringResource(R.string.chat_type_http))
+                    Text(stringResource(R.string.chat_type_openclaw))
                 }
             },
             confirmButton = {
                 TextButton(onClick = {
                     showTypeSelectionDialog = false
-                    showGatewayCreateDialog = true
+                    beginHermesChat()
                 }) {
-                    Text(stringResource(R.string.chat_type_gateway))
+                    Text(stringResource(R.string.chat_type_hermes))
                 }
             }
         )
@@ -339,7 +378,7 @@ fun SessionListScreen(
                     val ts = java.text.SimpleDateFormat("MM/dd HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
                     val finalName = if (inputName.isNotBlank()) inputName else context.getString(R.string.chat_session_title_format, ts)
                     val agentId = selectedAgentId ?: if (defaultAgentId != "main" && defaultAgentId.isNotBlank()) defaultAgentId else null
-                    onCreateSession(finalName, true, agentId)
+                    onCreateSession(finalName, true, agentId, pendingTargetBackendId)
                 }) {
                     Text(stringResource(R.string.create))
                 }
@@ -376,7 +415,7 @@ fun SessionListScreen(
                 TextButton(onClick = {
                     showNameInputDialog = false
                     val finalName = if (inputName.isNotBlank()) inputName else "New Conversation"
-                    onCreateSession(finalName, false, null)
+                    onCreateSession(finalName, false, null, pendingTargetBackendId)
                 }) {
                     Text(stringResource(R.string.create))
                 }
@@ -471,6 +510,12 @@ fun SessionListScreen(
     }
 }
 
+private fun List<AgentBackendConfig>.preferredOpenClawBackend(): AgentBackendConfig? {
+    return firstOrNull { it.isPrimary }
+        ?: firstOrNull { it.type == BackendType.OPENCLAW_GATEWAY }
+        ?: firstOrNull()
+}
+
 @Composable
 private fun SessionListItem(
     session: SessionUiModel,
@@ -526,4 +571,3 @@ private fun SessionListItem(
         }
     }
 }
-
