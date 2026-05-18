@@ -76,7 +76,7 @@ fun BackendEditorScreen(existingId: String?, onDone: () -> Unit) {
     var host by remember { mutableStateOf(existing?.host.orEmpty()) }
     var port by remember { mutableStateOf(existing?.port?.toString().orEmpty()) }
     var useTls by remember { mutableStateOf(existing?.useTls ?: true) }
-    var modelName by remember { mutableStateOf(existing?.modelName ?: "hermes-agent") }
+    var modelName by remember { mutableStateOf(existing?.modelName ?: "default") }
     var useRunsApi by remember { mutableStateOf(existing?.useRunsApi ?: true) }
     var useStreaming by remember { mutableStateOf(existing?.useStreaming ?: true) }
     var setPrimary by remember { mutableStateOf(existing?.isPrimary ?: backends.isEmpty()) }
@@ -118,6 +118,7 @@ fun BackendEditorScreen(existingId: String?, onDone: () -> Unit) {
                     OutlinedTextField(value = token, onValueChange = { token = it }, label = { Text("API key") }, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(value = modelName, onValueChange = { modelName = it }, label = { Text(androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.av_import_model)) }, modifier = Modifier.fillMaxWidth())
+                    Text(androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.av_import_model_help), style = MaterialTheme.typography.bodySmall)
                     Spacer(Modifier.height(8.dp))
                     Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                         Checkbox(checked = useRunsApi, onCheckedChange = { useRunsApi = it }); Text(androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.av_hermes_use_runs_api))

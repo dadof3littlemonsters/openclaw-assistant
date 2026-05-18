@@ -57,7 +57,7 @@ class HermesApiServerClient(
     private val token: String?
         get() = config.apiKeyOrToken?.takeIf { it.isNotBlank() }
     private val modelName: String
-        get() = config.modelName?.takeIf { it.isNotBlank() } ?: "hermes-agent"
+        get() = config.modelName?.takeIf { it.isNotBlank() } ?: "default"
 
     private fun candidateEndpoints(): List<String> = buildList {
         config.baseUrl?.takeIf { it.isNotBlank() }?.let { add(it) }

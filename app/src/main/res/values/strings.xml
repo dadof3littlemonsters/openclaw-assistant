@@ -169,7 +169,8 @@
     <string name="av_import_fallback_urls">Fallback URLs</string>
     <string name="av_import_api_key">API key</string>
     <string name="av_import_not_included">Not included</string>
-    <string name="av_import_model">Hermes API model ID</string>
+    <string name="av_import_model">Hermes target</string>
+    <string name="av_import_model_help">Usually keep default. Change it only when you intentionally target a Hermes profile or model.</string>
     <string name="av_import_mode">Mode</string>
     <string name="av_import_mode_runs">Runs API</string>
     <string name="av_import_mode_chat">Chat completions</string>

@@ -695,7 +695,8 @@ Pour plus de détails, consultez le site officiel de VOICEVOX.</string>
     <string name="av_import_fallback_urls">URLs de secours</string>
     <string name="av_import_api_key">Clé API</string>
     <string name="av_import_not_included">Non incluse</string>
-    <string name="av_import_model">ID de modèle API Hermes</string>
+    <string name="av_import_model">Cible Hermes</string>
+    <string name="av_import_model_help">Gardez généralement default. Changez cette valeur seulement pour viser un profil ou modèle Hermes précis.</string>
     <string name="av_import_mode">Mode</string>
     <string name="av_import_mode_runs">Runs API</string>
     <string name="av_import_mode_chat">Chat Completions</string>

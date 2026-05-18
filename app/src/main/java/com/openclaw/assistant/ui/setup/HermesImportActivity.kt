@@ -75,7 +75,7 @@ import java.util.Base64
  *   u  — base URL. Multiple `u=` params are stored as
  *        secondary URLs for the endpoint racer (LAN + Tailscale + public).
  *   k  — API key (optional but recommended).
- *   m  — model name (optional, defaults to `hermes-agent`).
+ *   m  — Hermes model/profile target (optional, defaults to `default`).
  *   r  — `1` to default to Runs API, `0` for chat completions.
  *   s  — `1` to enable streaming (default), `0` to disable.
  *   n  — display name (optional).
@@ -259,7 +259,7 @@ internal fun PairingPayload.toEditablePairingPayload(): EditablePairingPayload {
         hermesBaseUrl = hermes?.baseUrl.orEmpty(),
         hermesFallbackUrls = hermes?.secondaryUrls?.joinToString("\n").orEmpty(),
         hermesApiKey = hermes?.apiKey.orEmpty(),
-        hermesModelName = hermes?.modelName ?: "hermes-agent",
+        hermesModelName = hermes?.modelName ?: "default",
         hermesUseRunsApi = hermes?.useRunsApi ?: true,
         hermesStreaming = hermes?.streaming ?: true,
         hermesDisplayName = hermes?.displayName.orEmpty(),
@@ -280,7 +280,7 @@ internal fun EditablePairingPayload.toPairingPayload(): PairingPayload? {
                 .distinct()
                 .filterNot { it == hermesBaseUrl.trim() },
             apiKey = hermesApiKey.trim().ifEmpty { null },
-            modelName = hermesModelName.trim().ifEmpty { "hermes-agent" },
+            modelName = hermesModelName.trim().ifEmpty { "default" },
             useRunsApi = hermesUseRunsApi,
             streaming = hermesStreaming,
             displayName = hermesDisplayName.trim().ifEmpty { null },
@@ -357,6 +357,7 @@ internal fun PairingPayloadReviewEditor(
                         value = value.hermesModelName,
                         onValueChange = { onChange(value.copy(hermesModelName = it)) },
                         label = { Text(stringResource(R.string.av_import_model)) },
+                        supportingText = { Text(stringResource(R.string.av_import_model_help)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                     )
@@ -523,7 +524,7 @@ private fun parseAgentVoiceSetupJson(obj: JsonObject): PairingPayload? {
                     baseUrl = it,
                     secondaryUrls = urls.drop(1),
                     apiKey = h["key"]?.jsonPrimitive?.contentOrNull?.trim()?.ifEmpty { null },
-                    modelName = h["model"]?.jsonPrimitive?.contentOrNull?.trim()?.ifEmpty { "hermes-agent" } ?: "hermes-agent",
+                    modelName = h["model"]?.jsonPrimitive?.contentOrNull?.trim()?.ifEmpty { "default" } ?: "default",
                     useRunsApi = h["runs"]?.jsonPrimitive?.booleanOrNull ?: true,
                     streaming = h["streaming"]?.jsonPrimitive?.booleanOrNull ?: true,
                     displayName = h["name"]?.jsonPrimitive?.contentOrNull?.trim()?.ifEmpty { null },
@@ -550,7 +551,7 @@ private fun parseHermesRelayJson(obj: JsonObject): PairingPayload? {
             baseUrl = base,
             secondaryUrls = urls.drop(1),
             apiKey = obj["key"]?.jsonPrimitive?.contentOrNull?.trim()?.ifEmpty { null },
-            modelName = obj["model"]?.jsonPrimitive?.contentOrNull?.trim()?.ifEmpty { "hermes-agent" } ?: "hermes-agent",
+            modelName = obj["model"]?.jsonPrimitive?.contentOrNull?.trim()?.ifEmpty { "default" } ?: "default",
             useRunsApi = obj["runs"]?.jsonPrimitive?.booleanOrNull ?: true,
             streaming = obj["streaming"]?.jsonPrimitive?.booleanOrNull ?: true,
             displayName = obj["name"]?.jsonPrimitive?.contentOrNull?.trim()?.ifEmpty { null } ?: "Hermes Relay",
@@ -591,7 +592,7 @@ private fun parseHermesParams(uri: Uri, prefix: String): HermesPairingPayload? {
         baseUrl = base,
         secondaryUrls = secondary,
         apiKey = uri.getQueryParameter("${prefix}k"),
-        modelName = uri.getQueryParameter("${prefix}m")?.ifBlank { null } ?: "hermes-agent",
+        modelName = uri.getQueryParameter("${prefix}m")?.ifBlank { null } ?: "default",
         useRunsApi = uri.getQueryParameter("${prefix}r") != "0",
         streaming = uri.getQueryParameter("${prefix}s") != "0",
         displayName = uri.getQueryParameter("${prefix}n"),

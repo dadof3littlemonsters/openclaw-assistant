@@ -452,7 +452,7 @@ def build_pairing_json(
     if hermes_urls:
         hermes: dict = {
             "urls": hermes_urls,
-            "model": model or "hermes-agent",
+            "model": model or "default",
             "runs": use_runs_api,
             "streaming": streaming,
         }
@@ -801,7 +801,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     p = argparse.ArgumentParser(prog="agentvoice-pair", description=__doc__.splitlines()[0])
     p.add_argument("--url", action="append", default=[], help="Hermes URL. Repeat or comma-separate for LAN/Tailscale/public.")
     p.add_argument("--key", help="Hermes API key. Defaults to common env/config values, then prompts.")
-    p.add_argument("--model", help="Hermes model name. Defaults to detected config, then hermes-agent.")
+    p.add_argument("--model", help="Hermes model name. Defaults to detected config, then default.")
     p.add_argument("--runs", action="store_true", help="Use Hermes Runs API mode.")
     p.add_argument("--chat", dest="runs", action="store_false", help="Use Hermes Chat Completions mode.")
     p.add_argument("--no-stream", dest="streaming", action="store_false", help="Disable Hermes streaming responses.")
@@ -826,7 +826,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     hermes_port_open = is_port_open("127.0.0.1", 8642)
     openclaw_port_open = is_port_open("127.0.0.1", 18789)
     hermes_key = args.key or discover_hermes_key()
-    hermes_model = args.model or discover_hermes_model() or "hermes-agent"
+    hermes_model = args.model or discover_hermes_model() or "default"
     discovered_runs = discover_hermes_runs_api()
     hermes_runs = args.runs if args.runs is not None else (True if discovered_runs is None else discovered_runs)
     discovered_streaming = discover_hermes_streaming()

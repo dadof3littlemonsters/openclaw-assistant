@@ -718,7 +718,8 @@
     <string name="av_import_fallback_urls">予備URL</string>
     <string name="av_import_api_key">APIキー</string>
     <string name="av_import_not_included">含まれていません</string>
-    <string name="av_import_model">Hermes APIモデルID</string>
+    <string name="av_import_model">Hermesターゲット</string>
+    <string name="av_import_model_help">通常は default のままで問題ありません。Hermesのプロファイルやモデルを明示指定する場合だけ変更します。</string>
     <string name="av_import_mode">モード</string>
     <string name="av_import_mode_runs">Runs API</string>
     <string name="av_import_mode_chat">Chat Completions</string>

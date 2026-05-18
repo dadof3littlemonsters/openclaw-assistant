@@ -40,7 +40,7 @@ class PairingUriParserTest {
         val p = parsePairingUri(u)!!.hermes!!
         assertEquals("http://h:8642", p.baseUrl)
         assertTrue(p.secondaryUrls.isEmpty())
-        assertEquals("hermes-agent", p.modelName)
+        assertEquals("default", p.modelName)
         assertEquals(true, p.useRunsApi)
         assertEquals(true, p.streaming)
         assertNull(p.apiKey)
@@ -73,7 +73,7 @@ class PairingUriParserTest {
             scheme = "agentvoice",
             host = "setup",
             u = listOf("http://tail:8642", "http://lan:8642", "http://127.0.0.1:8642"),
-            params = mapOf("hm" to "hermes-agent", "hr" to "0", "hs" to "1", "oc" to "abc")
+            params = mapOf("hm" to "default", "hr" to "0", "hs" to "1", "oc" to "abc")
         )
 
         val p = parsePairingUri(u)!!
@@ -90,7 +90,7 @@ class PairingUriParserTest {
               "version": 1,
               "hermes": {
                 "urls": ["http://tail:8642", "http://lan:8642", "http://127.0.0.1:8642"],
-                "model": "hermes-agent",
+                "model": "default",
                 "runs": false,
                 "streaming": true
               },
@@ -105,7 +105,7 @@ class PairingUriParserTest {
         val h = p.hermes!!
         assertEquals("http://tail:8642", h.baseUrl)
         assertEquals(listOf("http://lan:8642", "http://127.0.0.1:8642"), h.secondaryUrls)
-        assertEquals("hermes-agent", h.modelName)
+        assertEquals("default", h.modelName)
         assertEquals(false, h.useRunsApi)
         assertEquals(true, h.streaming)
     }

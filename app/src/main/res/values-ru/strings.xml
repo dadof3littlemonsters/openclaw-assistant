@@ -695,7 +695,8 @@
     <string name="av_import_fallback_urls">Резервные URL</string>
     <string name="av_import_api_key">API key</string>
     <string name="av_import_not_included">Не включено</string>
-    <string name="av_import_model">ID модели API Hermes</string>
+    <string name="av_import_model">Цель Hermes</string>
+    <string name="av_import_model_help">Обычно оставьте default. Меняйте только если нужно явно выбрать профиль или модель Hermes.</string>
     <string name="av_import_mode">Режим</string>
     <string name="av_import_mode_runs">Runs API</string>
     <string name="av_import_mode_chat">Chat Completions</string>

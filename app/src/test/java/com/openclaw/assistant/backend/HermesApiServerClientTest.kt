@@ -20,7 +20,7 @@ class HermesApiServerClientTest {
 
     @Test fun `chat body uses default model when none provided`() {
         val body = client().buildChatRequestBody(listOf(AgentMessage.user("hi")), stream = true)
-        assertTrue(body.contains("\"model\":\"hermes-agent\""))
+        assertTrue(body.contains("\"model\":\"default\""))
         assertTrue(body.contains("\"stream\":true"))
         assertTrue(body.contains("\"role\":\"user\""))
         assertTrue(body.contains("\"content\":\"hi\""))
@@ -41,7 +41,7 @@ class HermesApiServerClientTest {
                 AgentMessage.user("latest"),
             ),
         )
-        assertTrue(body.contains("\"model\":\"hermes-agent\""))
+        assertTrue(body.contains("\"model\":\"default\""))
         assertTrue(body.contains("\"input\":\"latest\""))
         assertTrue(body.contains("\"role\":\"system\""))
         assertTrue(body.contains("\"content\":\"first\""))

@@ -17,7 +17,7 @@ class HermesLiveLocalTest {
                 displayName = "Local Hermes",
                 type = BackendType.HERMES_API_SERVER,
                 baseUrl = "http://127.0.0.1:8642",
-                modelName = "hermes-agent",
+                modelName = "default",
                 useRunsApi = true,
                 useStreaming = true,
             ),

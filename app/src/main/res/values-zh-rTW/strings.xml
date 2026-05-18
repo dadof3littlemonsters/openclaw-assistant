@@ -694,7 +694,8 @@
     <string name="av_import_fallback_urls">備用 URL</string>
     <string name="av_import_api_key">API key</string>
     <string name="av_import_not_included">未包含</string>
-    <string name="av_import_model">Hermes API 模型 ID</string>
+    <string name="av_import_model">Hermes 目標</string>
+    <string name="av_import_model_help">通常保留 default 即可。只有需要指定某個 Hermes 設定檔或模型時才修改。</string>
     <string name="av_import_mode">模式</string>
     <string name="av_import_mode_runs">Runs API</string>
     <string name="av_import_mode_chat">Chat Completions</string>
