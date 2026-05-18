@@ -398,6 +398,7 @@ Para más detalles, consulta el sitio oficial de VOICEVOX.</string>
 <string name="update_available">Nueva versión (%s) disponible</string>
 <string name="up_to_date">La aplicación está actualizada</string>
 <string name="update_action">Actualizar</string>
+<string name="update_dismiss_action">Cerrar</string>
 <string name="setup_guide_first_run">PRIMERA EJECUCIÓN</string>
     <string name="setup_guide_title">Agent Voice\nfor Android</string>
 <string name="setup_guide_step_format">Paso %1$d de %2$d</string>
@@ -746,4 +747,18 @@ Para más detalles, consulta el sitio oficial de VOICEVOX.</string>
     <string name="av_home_disconnected">Desconectado</string>
     <string name="av_home_test_ok_short">OK</string>
     <string name="av_home_test_failed_short">Error</string>
+    <string name="settings_category_backend">Backend</string>
+    <string name="settings_category_chat">Chat</string>
+    <string name="settings_category_connections">Conexiones</string>
+    <string name="settings_category_connections_desc">Cambiar o administrar conexiones del servidor</string>
+    <string name="settings_category_chat_desc">Razonamiento, vista de herramientas, endpoints, longitud de mensajes</string>
+    <string name="settings_category_voice_mode">Modo de voz</string>
+    <string name="settings_category_voice_desc">Modo de interaccion, umbral de silencio, proveedores</string>
+    <string name="settings_category_mobile_bridge">Mobile Bridge</string>
+    <string name="settings_category_mobile_bridge_desc">Emparejamiento, seguridad del bridge, lista de funciones permitidas</string>
+    <string name="settings_category_wake_word_desc">Frase de activacion, sensibilidad, boton multimedia</string>
+    <string name="settings_category_language_desc">Idioma de pantalla e idioma de reconocimiento de voz</string>
+    <string name="settings_category_support_desc">Informes de problemas, comprobacion de actualizaciones, version, enlaces de soporte</string>
+    <string name="settings_category_credits_desc">Licencias, creditos y apoyo al proyecto</string>
+    <string name="tab_nav_terminal">Terminal</string>
 </resources>

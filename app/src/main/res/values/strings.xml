@@ -222,6 +222,17 @@
     <string name="settings_title">Settings</string>
     <string name="settings_category_backend">Backend</string>
     <string name="settings_category_chat">Chat</string>
+    <string name="settings_category_connections">Connections</string>
+    <string name="settings_category_connections_desc">Switch or manage server connections</string>
+    <string name="settings_category_chat_desc">Reasoning, tool display, endpoints, message length</string>
+    <string name="settings_category_voice_mode">Voice mode</string>
+    <string name="settings_category_voice_desc">Interaction mode, silence threshold, providers</string>
+    <string name="settings_category_mobile_bridge">Mobile Bridge</string>
+    <string name="settings_category_mobile_bridge_desc">Pairing, bridge security, capability allowlist</string>
+    <string name="settings_category_wake_word_desc">Activation phrase, sensitivity, media button</string>
+    <string name="settings_category_language_desc">Display language and speech recognition language</string>
+    <string name="settings_category_support_desc">Issue reports, update checks, version, support links</string>
+    <string name="settings_category_credits_desc">Licenses, attribution, and project support</string>
     <string name="webhook_url_label">Server URL</string>
     <string name="webhook_url_hint">https://your-server</string>
     <string name="auth_token_label">Auth Token (optional)</string>
@@ -659,6 +670,7 @@
     <string name="update_available">New version (%s) available</string>
     <string name="up_to_date">App is up to date</string>
     <string name="update_action">Update</string>
+    <string name="update_dismiss_action">Dismiss</string>
 
     <!-- Setup Guide -->
     <string name="setup_guide_first_run">FIRST RUN</string>
@@ -814,6 +826,8 @@
     <!-- Bottom Navigation Tabs -->
     <string name="tab_nav_home">Home</string>
     <string name="tab_nav_chat">Chat</string>
+    <string name="tab_nav_terminal">Terminal</string>
+    <string name="tab_nav_bridge">Bridge</string>
     <string name="tab_nav_canvas">Canvas</string>
     <string name="tab_nav_settings">Settings</string>
     <string name="attach_file">Attach file</string>

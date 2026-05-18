@@ -8,8 +8,10 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.*
@@ -52,6 +54,7 @@ import com.openclaw.assistant.ui.components.PairingRequiredCard
 import com.openclaw.assistant.ui.components.StatusIndicator
 import com.openclaw.assistant.gateway.AgentInfo
 import com.openclaw.assistant.ui.backend.BackendListActivity
+import com.openclaw.assistant.ui.bridge.MobileBridgeSettingsActivity
 import com.openclaw.assistant.ui.theme.OpenClawAssistantTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.openclaw.assistant.utils.GatewayConfigUtils
@@ -417,10 +420,13 @@ fun SettingsScreen(
         SettingsRepository.WAKE_WORD_CUSTOM to stringResource(R.string.wake_word_custom)
     )
 
-    var selectedSettingsCategoryName by rememberSaveable { mutableStateOf(SettingsCategory.Backend.name) }
+    var selectedSettingsCategoryName by rememberSaveable { mutableStateOf(SettingsCategory.Overview.name) }
     val selectedSettingsCategory = remember(selectedSettingsCategoryName) {
         runCatching { SettingsCategory.valueOf(selectedSettingsCategoryName) }
-            .getOrDefault(SettingsCategory.Backend)
+            .getOrDefault(SettingsCategory.Overview)
+    }
+    BackHandler(enabled = selectedSettingsCategory != SettingsCategory.Overview) {
+        selectedSettingsCategoryName = SettingsCategory.Overview.name
     }
 
     var backendSettingsTabIndex by rememberSaveable { mutableStateOf(0) }
@@ -430,98 +436,100 @@ fun SettingsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.settings_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_button))
+            if (selectedSettingsCategory != SettingsCategory.Overview) {
+                TopAppBar(
+                    title = { Text(selectedSettingsCategory.title()) },
+                    navigationIcon = {
+                        IconButton(onClick = { selectedSettingsCategoryName = SettingsCategory.Overview.name }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_button))
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = onCredits) {
+                            Icon(Icons.Default.Info, contentDescription = stringResource(R.string.credits_title))
+                        }
+                        TextButton(
+                            onClick = {
+                                settings.connectionType = if (openClawTabIndex == 0) {
+                                    SettingsRepository.CONNECTION_TYPE_GATEWAY
+                                } else {
+                                    SettingsRepository.CONNECTION_TYPE_HTTP
+                                }
+
+                                // Save Gateway Settings
+                                runtime.setManualEnabled(true)
+                                runtime.setManualHost(gatewayHost.trim())
+                                runtime.setManualPort(gatewayPort.toIntOrNull() ?: 18789)
+                                runtime.setManualTls(gatewayTls)
+                                if (gatewayBootstrapToken.isNotBlank()) {
+                                    runtime.setGatewayBootstrapToken(gatewayBootstrapToken.trim())
+                                    runtime.setGatewayToken("")
+                                    runtime.setGatewayPassword("")
+                                } else if (usePasswordAuth) {
+                                    runtime.setGatewayBootstrapToken("")
+                                    runtime.setGatewayToken("")
+                                    runtime.setGatewayPassword(gatewayPassword.trim())
+                                } else {
+                                    runtime.setGatewayBootstrapToken("")
+                                    runtime.setGatewayToken(gatewayToken.trim())
+                                    runtime.setGatewayPassword("")
+                                }
+
+                                // Save HTTP Settings
+                                if (httpInputUrl.trim().isNotBlank() && !com.openclaw.assistant.shared.utils.NetworkUtils.isUrlSecure(httpInputUrl.trim())) {
+                                    testResult = TestResult(success = false, message = "Insecure URL: Only HTTPS or local HTTP allowed.")
+                                } else {
+                                    settings.httpUrl = httpInputUrl.trim()
+                                }
+                                settings.authToken = httpToken.trim()
+
+                                settings.defaultAgentId = defaultAgentId
+                                settings.ttsEnabled = ttsEnabled
+                                settings.ttsSpeed = ttsSpeed
+                                settings.ttsEngine = ttsEngine
+                                settings.ttsType = ttsType
+                                settings.elevenLabsApiKey = elevenLabsApiKey
+                                settings.elevenLabsVoiceId = elevenLabsVoiceId
+                                settings.elevenLabsSpeed = elevenLabsSpeed
+                                settings.openAiApiKey = openAiApiKey
+                                settings.openAiVoice = openAiVoice
+                                settings.voiceVoxStyleId = voiceVoxStyleId
+                                settings.voiceVoxTermsAccepted = voiceVoxTermsAccepted
+                                settings.continuousMode = continuousMode
+                                settings.resumeLatestSession = resumeLatestSession
+                                settings.wakeWordPreset = wakeWordPreset
+                                settings.customWakeWord = customWakeWord
+                                settings.wakeWordSensitivity = wakeWordSensitivity
+                                settings.wakewordConnectionType = wakewordConnectionType
+                                settings.speechSilenceTimeout = speechSilenceTimeout.toLong()
+                                settings.speechLanguage = speechLanguage
+                                settings.appLanguage = appLanguage
+                                settings.thinkingSoundEnabled = thinkingSoundEnabled
+                                settings.fillerPhrasesEnabled = fillerPhrasesEnabled
+                                settings.ttsBargeInEnabled = ttsBargeInEnabled
+                                settings.wakeWordDebugEnabled = wakeWordDebugEnabled
+                                settings.mediaButtonEnabled = mediaButtonEnabled
+                                applyAppLanguage(appLanguage)
+
+                                // Stop/Restart services
+                                HotwordService.stop(context)
+
+                                if (settings.connectionType == SettingsRepository.CONNECTION_TYPE_GATEWAY) {
+                                    runtime.connectManual()
+                                }
+
+                                if (settings.hotwordEnabled) {
+                                    HotwordService.start(context)
+                                }
+                                onSave()
+                            },
+                            enabled = gatewayHost.isNotBlank() || httpInputUrl.isNotBlank()
+                        ) {
+                            Text(stringResource(R.string.save_button))
+                        }
                     }
-                },
-                actions = {
-                    IconButton(onClick = onCredits) {
-                        Icon(Icons.Default.Info, contentDescription = stringResource(R.string.credits_title))
-                    }
-                    TextButton(
-                        onClick = {
-                            settings.connectionType = if (openClawTabIndex == 0) {
-                                SettingsRepository.CONNECTION_TYPE_GATEWAY
-                            } else {
-                                SettingsRepository.CONNECTION_TYPE_HTTP
-                            }
-
-                            // Save Gateway Settings
-                            runtime.setManualEnabled(true)
-                            runtime.setManualHost(gatewayHost.trim())
-                            runtime.setManualPort(gatewayPort.toIntOrNull() ?: 18789)
-                            runtime.setManualTls(gatewayTls)
-                            if (gatewayBootstrapToken.isNotBlank()) {
-                                runtime.setGatewayBootstrapToken(gatewayBootstrapToken.trim())
-                                runtime.setGatewayToken("")
-                                runtime.setGatewayPassword("")
-                            } else if (usePasswordAuth) {
-                                runtime.setGatewayBootstrapToken("")
-                                runtime.setGatewayToken("")
-                                runtime.setGatewayPassword(gatewayPassword.trim())
-                            } else {
-                                runtime.setGatewayBootstrapToken("")
-                                runtime.setGatewayToken(gatewayToken.trim())
-                                runtime.setGatewayPassword("")
-                            }
-
-                            // Save HTTP Settings
-                            if (httpInputUrl.trim().isNotBlank() && !com.openclaw.assistant.shared.utils.NetworkUtils.isUrlSecure(httpInputUrl.trim())) {
-                                testResult = TestResult(success = false, message = "Insecure URL: Only HTTPS or local HTTP allowed.")
-                            } else {
-                                settings.httpUrl = httpInputUrl.trim()
-                            }
-                            settings.authToken = httpToken.trim()
-
-                            settings.defaultAgentId = defaultAgentId
-                            settings.ttsEnabled = ttsEnabled
-                            settings.ttsSpeed = ttsSpeed
-                            settings.ttsEngine = ttsEngine
-                            settings.ttsType = ttsType
-                            settings.elevenLabsApiKey = elevenLabsApiKey
-                            settings.elevenLabsVoiceId = elevenLabsVoiceId
-                            settings.elevenLabsSpeed = elevenLabsSpeed
-                            settings.openAiApiKey = openAiApiKey
-                            settings.openAiVoice = openAiVoice
-                            settings.voiceVoxStyleId = voiceVoxStyleId
-                            settings.voiceVoxTermsAccepted = voiceVoxTermsAccepted
-                            settings.continuousMode = continuousMode
-                            settings.resumeLatestSession = resumeLatestSession
-                            settings.wakeWordPreset = wakeWordPreset
-                            settings.customWakeWord = customWakeWord
-                            settings.wakeWordSensitivity = wakeWordSensitivity
-                            settings.wakewordConnectionType = wakewordConnectionType
-                            settings.speechSilenceTimeout = speechSilenceTimeout.toLong()
-                            settings.speechLanguage = speechLanguage
-                            settings.appLanguage = appLanguage
-                            settings.thinkingSoundEnabled = thinkingSoundEnabled
-                            settings.fillerPhrasesEnabled = fillerPhrasesEnabled
-                            settings.ttsBargeInEnabled = ttsBargeInEnabled
-                            settings.wakeWordDebugEnabled = wakeWordDebugEnabled
-                            settings.mediaButtonEnabled = mediaButtonEnabled
-                            applyAppLanguage(appLanguage)
-
-                            // Stop/Restart services
-                            HotwordService.stop(context)
-
-                            if (settings.connectionType == SettingsRepository.CONNECTION_TYPE_GATEWAY) {
-                                runtime.connectManual()
-                            }
-
-                            if (settings.hotwordEnabled) {
-                                HotwordService.start(context)
-                            }
-                            onSave()
-                        },
-                        enabled = gatewayHost.isNotBlank() || httpInputUrl.isNotBlank()
-                    ) {
-                        Text(stringResource(R.string.save_button))
-                    }
-                }
-            )
+                )
+            }
         }
     ) { paddingValues ->
         Column(
@@ -537,12 +545,19 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.height(24.dp))
                 }
 
-            SettingsCategoryMenu(
-                selected = selectedSettingsCategory,
-                onSelected = { selectedSettingsCategoryName = it.name }
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
+            if (selectedSettingsCategory == SettingsCategory.Overview) {
+                Text(
+                    text = stringResource(R.string.settings_title),
+                    style = MaterialTheme.typography.displaySmall,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(bottom = 24.dp)
+                )
+                SettingsOverviewMenu(
+                    onSelected = { selectedSettingsCategoryName = it.name },
+                    onCredits = onCredits,
+                )
+                Spacer(modifier = Modifier.height(32.dp))
+            }
 
             // === UNIFIED CONNECTION SECTION ===
             if (selectedSettingsCategory == SettingsCategory.Backend) {
@@ -1862,6 +1877,7 @@ data class TestResult(
 )
 
 private enum class SettingsCategory {
+    Overview,
     Backend,
     Chat,
     Voice,
@@ -1871,69 +1887,134 @@ private enum class SettingsCategory {
 }
 
 @Composable
-private fun SettingsCategoryMenu(
-    selected: SettingsCategory,
+private fun SettingsCategory.title(): String = when (this) {
+    SettingsCategory.Overview -> stringResource(R.string.settings_title)
+    SettingsCategory.Backend -> stringResource(R.string.settings_category_connections)
+    SettingsCategory.Chat -> stringResource(R.string.settings_category_chat)
+    SettingsCategory.Voice -> stringResource(R.string.settings_category_voice_mode)
+    SettingsCategory.WakeWord -> stringResource(R.string.wake_word)
+    SettingsCategory.Language -> stringResource(R.string.language_section)
+    SettingsCategory.Support -> stringResource(R.string.support_section)
+}
+
+@Composable
+private fun SettingsOverviewMenu(
     onSelected: (SettingsCategory) -> Unit,
+    onCredits: () -> Unit,
 ) {
-    val rows = listOf(
-        listOf(SettingsCategory.Backend, SettingsCategory.Chat, SettingsCategory.Voice),
-        listOf(SettingsCategory.WakeWord, SettingsCategory.Language, SettingsCategory.Support),
+    val context = LocalContext.current
+    val items = listOf(
+        SettingsOverviewItem(
+            title = stringResource(R.string.settings_category_connections),
+            subtitle = stringResource(R.string.settings_category_connections_desc),
+            icon = Icons.Default.Devices,
+            onClick = { onSelected(SettingsCategory.Backend) },
+        ),
+        SettingsOverviewItem(
+            title = stringResource(R.string.settings_category_chat),
+            subtitle = stringResource(R.string.settings_category_chat_desc),
+            icon = Icons.Default.Chat,
+            onClick = { onSelected(SettingsCategory.Chat) },
+        ),
+        SettingsOverviewItem(
+            title = stringResource(R.string.settings_category_voice_mode),
+            subtitle = stringResource(R.string.settings_category_voice_desc),
+            icon = Icons.Default.GraphicEq,
+            onClick = { onSelected(SettingsCategory.Voice) },
+        ),
+        SettingsOverviewItem(
+            title = stringResource(R.string.settings_category_mobile_bridge),
+            subtitle = stringResource(R.string.settings_category_mobile_bridge_desc),
+            icon = Icons.Default.Security,
+            onClick = { context.startActivity(Intent(context, MobileBridgeSettingsActivity::class.java)) },
+        ),
+        SettingsOverviewItem(
+            title = stringResource(R.string.wake_word),
+            subtitle = stringResource(R.string.settings_category_wake_word_desc),
+            icon = Icons.Default.Mic,
+            onClick = { onSelected(SettingsCategory.WakeWord) },
+        ),
+        SettingsOverviewItem(
+            title = stringResource(R.string.language_section),
+            subtitle = stringResource(R.string.settings_category_language_desc),
+            icon = Icons.Default.Language,
+            onClick = { onSelected(SettingsCategory.Language) },
+        ),
+        SettingsOverviewItem(
+            title = stringResource(R.string.support_section),
+            subtitle = stringResource(R.string.settings_category_support_desc),
+            icon = Icons.Default.HelpOutline,
+            onClick = { onSelected(SettingsCategory.Support) },
+        ),
+        SettingsOverviewItem(
+            title = stringResource(R.string.credits_title),
+            subtitle = stringResource(R.string.settings_category_credits_desc),
+            icon = Icons.Default.Info,
+            onClick = onCredits,
+        ),
     )
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        rows.forEach { row ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                row.forEach { category ->
-                    SettingsCategoryButton(
-                        category = category,
-                        selected = selected == category,
-                        onClick = { onSelected(category) },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        items.forEach { item ->
+            SettingsOverviewCard(item)
         }
     }
 }
 
-@Composable
-private fun SettingsCategoryButton(
-    category: SettingsCategory,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val label = when (category) {
-        SettingsCategory.Backend -> stringResource(R.string.settings_category_backend)
-        SettingsCategory.Chat -> stringResource(R.string.settings_category_chat)
-        SettingsCategory.Voice -> stringResource(R.string.voice)
-        SettingsCategory.WakeWord -> stringResource(R.string.wake_word)
-        SettingsCategory.Language -> stringResource(R.string.language_section)
-        SettingsCategory.Support -> stringResource(R.string.support_section)
-    }
-    val icon = when (category) {
-        SettingsCategory.Backend -> Icons.Default.Storage
-        SettingsCategory.Chat -> Icons.Default.Chat
-        SettingsCategory.Voice -> Icons.Default.RecordVoiceOver
-        SettingsCategory.WakeWord -> Icons.Default.Mic
-        SettingsCategory.Language -> Icons.Default.Language
-        SettingsCategory.Support -> Icons.Default.HelpOutline
-    }
+private data class SettingsOverviewItem(
+    val title: String,
+    val subtitle: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val onClick: () -> Unit,
+)
 
-    if (selected) {
-        Button(onClick = onClick, modifier = modifier.heightIn(min = 48.dp)) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-    } else {
-        OutlinedButton(onClick = onClick, modifier = modifier.heightIn(min = 48.dp)) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis)
+@Composable
+private fun SettingsOverviewCard(item: SettingsOverviewItem) {
+    Card(
+        onClick = item.onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
+        ),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 92.dp)
+                .padding(horizontal = 24.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = item.icon,
+                contentDescription = null,
+                modifier = Modifier.size(34.dp),
+                tint = MaterialTheme.colorScheme.primary,
+            )
+            Spacer(modifier = Modifier.width(20.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = item.title,
+                    style = MaterialTheme.typography.headlineSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = item.subtitle,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

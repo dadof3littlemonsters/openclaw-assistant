@@ -398,6 +398,7 @@
 <string name="update_available">Доступна новая версия (%s)</string>
 <string name="up_to_date">Приложение обновлено</string>
 <string name="update_action">Обновление</string>
+<string name="update_dismiss_action">Закрыть</string>
 <string name="setup_guide_first_run">ПЕРВЫЙ ЗАПУСК</string>
     <string name="setup_guide_title">Agent Voice\nfor Android</string>
 <string name="setup_guide_step_format">Шаг %1$d из %2$d</string>
@@ -746,4 +747,18 @@
     <string name="av_home_disconnected">Не подключено</string>
     <string name="av_home_test_ok_short">OK</string>
     <string name="av_home_test_failed_short">Ошибка</string>
+    <string name="settings_category_backend">Backend</string>
+    <string name="settings_category_chat">Чат</string>
+    <string name="settings_category_connections">Подключения</string>
+    <string name="settings_category_connections_desc">Переключение и управление подключениями к серверу</string>
+    <string name="settings_category_chat_desc">Рассуждение, показ инструментов, endpoints, длина сообщений</string>
+    <string name="settings_category_voice_mode">Голосовой режим</string>
+    <string name="settings_category_voice_desc">Режим взаимодействия, порог тишины, провайдеры</string>
+    <string name="settings_category_mobile_bridge">Mobile Bridge</string>
+    <string name="settings_category_mobile_bridge_desc">Сопряжение, безопасность bridge, список разрешенных функций</string>
+    <string name="settings_category_wake_word_desc">Фраза активации, чувствительность, кнопка мультимедиа</string>
+    <string name="settings_category_language_desc">Язык интерфейса и язык распознавания речи</string>
+    <string name="settings_category_support_desc">Отчеты о проблемах, проверка обновлений, версия, ссылки поддержки</string>
+    <string name="settings_category_credits_desc">Лицензии, благодарности и поддержка проекта</string>
+    <string name="tab_nav_terminal">Терминал</string>
 </resources>

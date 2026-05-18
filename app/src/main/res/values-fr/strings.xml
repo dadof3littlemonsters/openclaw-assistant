@@ -398,6 +398,7 @@ Pour plus de détails, consultez le site officiel de VOICEVOX.</string>
 <string name="update_available">Nouvelle version (%s) disponible</string>
 <string name="up_to_date">L\'application est à jour</string>
 <string name="update_action">Mise à jour</string>
+<string name="update_dismiss_action">Fermer</string>
 <string name="setup_guide_first_run">PREMIÈRE EXÉCUTION</string>
     <string name="setup_guide_title">Agent Voice\nfor Android</string>
 <string name="setup_guide_step_format">Étape %1$d de %2$d</string>
@@ -746,4 +747,18 @@ Pour plus de détails, consultez le site officiel de VOICEVOX.</string>
     <string name="av_home_disconnected">Déconnecté</string>
     <string name="av_home_test_ok_short">OK</string>
     <string name="av_home_test_failed_short">Échec</string>
+    <string name="settings_category_backend">Backend</string>
+    <string name="settings_category_chat">Chat</string>
+    <string name="settings_category_connections">Connexions</string>
+    <string name="settings_category_connections_desc">Changer ou gerer les connexions serveur</string>
+    <string name="settings_category_chat_desc">Raisonnement, affichage des outils, endpoints, longueur des messages</string>
+    <string name="settings_category_voice_mode">Mode vocal</string>
+    <string name="settings_category_voice_desc">Mode interaction, seuil de silence, fournisseurs</string>
+    <string name="settings_category_mobile_bridge">Mobile Bridge</string>
+    <string name="settings_category_mobile_bridge_desc">Appairage, securite du bridge, liste des fonctions autorisees</string>
+    <string name="settings_category_wake_word_desc">Phrase activation, sensibilite, bouton multimedia</string>
+    <string name="settings_category_language_desc">Langue affichage et langue de reconnaissance vocale</string>
+    <string name="settings_category_support_desc">Signalements, recherche de mises a jour, version, liens de support</string>
+    <string name="settings_category_credits_desc">Licences, credits et soutien du projet</string>
+    <string name="tab_nav_terminal">Terminal</string>
 </resources>

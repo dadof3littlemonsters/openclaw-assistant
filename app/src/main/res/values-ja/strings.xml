@@ -34,8 +34,19 @@
 <string name="error_start_failed">起動エラー: %s</string>
 <string name="notification_text">「%s」と話しかけて起動</string>
 <string name="settings_title">設定</string>
-<string name="settings_category_backend">Backend</string>
-<string name="settings_category_chat">Chat</string>
+<string name="settings_category_backend">バックエンド</string>
+<string name="settings_category_chat">チャット</string>
+<string name="settings_category_connections">コネクション</string>
+<string name="settings_category_connections_desc">サーバー接続の切り替えと管理</string>
+<string name="settings_category_chat_desc">推論、ツール表示、エンドポイント、メッセージ長</string>
+<string name="settings_category_voice_mode">ボイスモード</string>
+<string name="settings_category_voice_desc">対話モード、無音判定、プロバイダー</string>
+<string name="settings_category_mobile_bridge">モバイルブリッジ</string>
+<string name="settings_category_mobile_bridge_desc">ペアリング、ブリッジ安全設定、機能許可リスト</string>
+<string name="settings_category_wake_word_desc">起動フレーズ、感度、メディアボタン</string>
+<string name="settings_category_language_desc">表示言語と音声認識言語</string>
+<string name="settings_category_support_desc">問題報告、更新確認、バージョン、サポートリンク</string>
+<string name="settings_category_credits_desc">ライセンス、クレジット、プロジェクト支援</string>
 <string name="webhook_url_label">サーバーURL</string>
 <string name="webhook_url_hint">https://your-server</string>
 <string name="auth_token_label">認証トークン（任意）</string>
@@ -402,6 +413,7 @@
 <string name="update_available">新しいバージョン (%s) が利用可能です</string>
 <string name="up_to_date">最新バージョンです</string>
 <string name="update_action">更新</string>
+<string name="update_dismiss_action">閉じる</string>
 <string name="setup_guide_first_run">初回起動</string>
 <string name="setup_guide_title">Agent Voice\nfor Android</string>
 <string name="setup_guide_step_format">ステップ %1$d / %2$d</string>
@@ -544,6 +556,8 @@
     <!-- Bottom tab navigation -->
     <string name="tab_nav_home">ホーム</string>
     <string name="tab_nav_chat">チャット</string>
+    <string name="tab_nav_terminal">ターミナル</string>
+    <string name="tab_nav_bridge">Bridge</string>
     <string name="tab_nav_canvas">Canvas</string>
     <string name="tab_nav_settings">設定</string>
     <string name="attach_file">ファイルを添付</string>

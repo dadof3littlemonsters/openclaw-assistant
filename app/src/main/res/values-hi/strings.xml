@@ -398,6 +398,7 @@
 <string name="update_available">नया संस्करण (%s) उपलब्ध है</string>
 <string name="up_to_date">ऐप अद्यतित है</string>
 <string name="update_action">अद्यतन</string>
+<string name="update_dismiss_action">बंद करें</string>
 <string name="setup_guide_first_run">पहली दौड़</string>
     <string name="setup_guide_title">Agent Voice\nfor Android</string>
 <string name="setup_guide_step_format">%2$d का चरण %1$d</string>
@@ -746,4 +747,18 @@
     <string name="av_home_disconnected">कनेक्टेड नहीं</string>
     <string name="av_home_test_ok_short">OK</string>
     <string name="av_home_test_failed_short">विफल</string>
+    <string name="settings_category_backend">बैकएंड</string>
+    <string name="settings_category_chat">चैट</string>
+    <string name="settings_category_connections">कनेक्शन</string>
+    <string name="settings_category_connections_desc">सर्वर कनेक्शन बदलें या प्रबंधित करें</string>
+    <string name="settings_category_chat_desc">रीजनिंग, टूल डिस्प्ले, एंडपॉइंट, संदेश लंबाई</string>
+    <string name="settings_category_voice_mode">वॉइस मोड</string>
+    <string name="settings_category_voice_desc">इंटरैक्शन मोड, मौन सीमा, प्रदाता</string>
+    <string name="settings_category_mobile_bridge">मोबाइल ब्रिज</string>
+    <string name="settings_category_mobile_bridge_desc">पेयरिंग, ब्रिज सुरक्षा, सुविधा अनुमति सूची</string>
+    <string name="settings_category_wake_word_desc">एक्टिवेशन वाक्यांश, संवेदनशीलता, मीडिया बटन</string>
+    <string name="settings_category_language_desc">डिस्प्ले भाषा और वॉइस पहचान भाषा</string>
+    <string name="settings_category_support_desc">समस्या रिपोर्ट, अपडेट जांच, संस्करण, सहायता लिंक</string>
+    <string name="settings_category_credits_desc">लाइसेंस, आभार, और प्रोजेक्ट सहायता</string>
+    <string name="tab_nav_terminal">टर्मिनल</string>
 </resources>

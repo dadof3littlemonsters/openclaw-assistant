@@ -398,6 +398,7 @@
 <string name="update_available">新版本 (%s) 可用</string>
 <string name="up_to_date">应用程序是最新的</string>
 <string name="update_action">更新</string>
+<string name="update_dismiss_action">关闭</string>
 <string name="setup_guide_first_run">首次运行</string>
     <string name="setup_guide_title">Agent Voice\nfor Android</string>
 <string name="setup_guide_step_format">%2$d 的步骤 %1$d</string>
@@ -746,4 +747,18 @@
     <string name="av_home_disconnected">未连接</string>
     <string name="av_home_test_ok_short">成功</string>
     <string name="av_home_test_failed_short">失败</string>
+    <string name="settings_category_backend">后端</string>
+    <string name="settings_category_chat">聊天</string>
+    <string name="settings_category_connections">连接</string>
+    <string name="settings_category_connections_desc">切换或管理服务器连接</string>
+    <string name="settings_category_chat_desc">推理、工具显示、端点、消息长度</string>
+    <string name="settings_category_voice_mode">语音模式</string>
+    <string name="settings_category_voice_desc">交互模式、静音阈值、提供商</string>
+    <string name="settings_category_mobile_bridge">移动桥接</string>
+    <string name="settings_category_mobile_bridge_desc">配对、桥接安全、功能允许列表</string>
+    <string name="settings_category_wake_word_desc">唤醒短语、灵敏度、媒体按钮</string>
+    <string name="settings_category_language_desc">显示语言和语音识别语言</string>
+    <string name="settings_category_support_desc">问题报告、更新检查、版本、支持链接</string>
+    <string name="settings_category_credits_desc">许可、致谢和项目支持</string>
+    <string name="tab_nav_terminal">终端</string>
 </resources>
