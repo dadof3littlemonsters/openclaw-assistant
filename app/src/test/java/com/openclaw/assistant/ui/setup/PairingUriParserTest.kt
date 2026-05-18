@@ -7,6 +7,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.Base64
 
 /**
  * `android.net.Uri` is a stub in JVM unit tests, so we mock it. The parser
@@ -107,5 +108,80 @@ class PairingUriParserTest {
         assertEquals("hermes-agent", h.modelName)
         assertEquals(false, h.useRunsApi)
         assertEquals(true, h.streaming)
+    }
+
+    @Test fun `Hermes Relay v1 QR payload is accepted directly`() {
+        val raw = """
+            {
+              "hermes": 1,
+              "host": "192.168.3.11",
+              "port": 8642,
+              "key": "api-key",
+              "tls": false,
+              "relay": {
+                "url": "ws://192.168.3.11:8767",
+                "code": "ABC123"
+              }
+            }
+        """.trimIndent()
+
+        val p = parsePairingPayload(raw)!!
+        assertNull(p.openClawSetupCode)
+        val h = p.hermes!!
+        assertEquals("http://192.168.3.11:8642", h.baseUrl)
+        assertTrue(h.secondaryUrls.isEmpty())
+        assertEquals("api-key", h.apiKey)
+        assertEquals("Hermes Relay", h.displayName)
+    }
+
+    @Test fun `Hermes Relay v3 endpoints are imported in priority order`() {
+        val raw = """
+            {
+              "hermes": 3,
+              "host": "127.0.0.1",
+              "port": 8642,
+              "key": "",
+              "tls": false,
+              "endpoints": [
+                {
+                  "role": "public",
+                  "priority": 2,
+                  "api": { "host": "relay.example.com", "port": 443, "tls": true }
+                },
+                {
+                  "role": "tailscale",
+                  "priority": 1,
+                  "api": { "host": "100.79.200.127", "port": 8642, "tls": false }
+                },
+                {
+                  "role": "lan",
+                  "priority": 0,
+                  "api": { "host": "192.168.3.11", "port": 8642, "tls": false }
+                }
+              ],
+              "sig": "ignored-by-agent-voice"
+            }
+        """.trimIndent()
+
+        val h = parsePairingPayload(raw)!!.hermes!!
+        assertEquals("http://192.168.3.11:8642", h.baseUrl)
+        assertEquals(
+            listOf(
+                "http://100.79.200.127:8642",
+                "https://relay.example.com:443",
+                "http://127.0.0.1:8642",
+            ),
+            h.secondaryUrls,
+        )
+        assertNull(h.apiKey)
+    }
+
+    @Test fun `base64 encoded Hermes Relay QR payload is accepted`() {
+        val json = """{"hermes":1,"host":"[fd7a:115c:a1e0::1]","port":8642,"key":"k","tls":true}"""
+        val encoded = Base64.getUrlEncoder().withoutPadding().encodeToString(json.toByteArray(Charsets.UTF_8))
+
+        val h = parsePairingPayload(encoded)!!.hermes!!
+        assertEquals("https://[fd7a:115c:a1e0::1]:8642", h.baseUrl)
+        assertEquals("k", h.apiKey)
     }
 }

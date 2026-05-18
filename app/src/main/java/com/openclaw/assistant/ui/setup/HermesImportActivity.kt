@@ -55,8 +55,10 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import java.util.Base64
 
 /**
  * Deep-link target for external-camera Agent Voice setup links. App-internal QR
@@ -474,9 +476,39 @@ internal fun parsePairingPayload(raw: String): PairingPayload? {
     if (trimmed.startsWith("agentvoice://")) {
         return runCatching { parsePairingUri(Uri.parse(trimmed)) }.getOrNull()
     }
+    return pairingPayloadCandidates(trimmed).firstNotNullOfOrNull { candidate ->
+        runCatching { parsePairingJson(candidate) }.getOrNull()
+    }
+}
+
+private fun pairingPayloadCandidates(trimmed: String): List<String> = buildList {
+    add(trimmed)
+    decodeUrlSafeBase64(trimmed)?.let { decoded ->
+        if (decoded != trimmed) add(decoded)
+    }
+}
+
+private fun decodeUrlSafeBase64(raw: String): String? {
+    if (raw.startsWith("{") || raw.startsWith("[")) return null
+    val compact = raw.trim().replace("\\s".toRegex(), "")
+    if (compact.isEmpty()) return null
     return runCatching {
-        val obj = pairingJson.parseToJsonElement(trimmed).jsonObject
-        if (obj["type"]?.jsonPrimitive?.contentOrNull != "agent_voice_setup") return@runCatching null
+        val padded = compact + "=".repeat((4 - compact.length % 4) % 4)
+        val bytes = runCatching { Base64.getUrlDecoder().decode(padded) }
+            .getOrElse { Base64.getDecoder().decode(padded) }
+        String(bytes, Charsets.UTF_8)
+    }.getOrNull()?.takeIf { it.trim().startsWith("{") }
+}
+
+private fun parsePairingJson(raw: String): PairingPayload? {
+    return runCatching {
+        val obj = pairingJson.parseToJsonElement(raw.trim()).jsonObject
+        parseAgentVoiceSetupJson(obj) ?: parseHermesRelayJson(obj)
+    }.getOrNull()
+}
+
+private fun parseAgentVoiceSetupJson(obj: JsonObject): PairingPayload? {
+    if (obj["type"]?.jsonPrimitive?.contentOrNull != "agent_voice_setup") return null
         val hermesObj = obj["hermes"] as? JsonObject
         val hermes = hermesObj?.let { h ->
             val urls = (h["urls"] as? JsonArray)
@@ -498,14 +530,55 @@ internal fun parsePairingPayload(raw: String): PairingPayload? {
                 )
             }
         }
-        val openClawSetupCode = (obj["openclaw"] as? JsonObject)
-            ?.get("setupCode")
-            ?.jsonPrimitive
-            ?.contentOrNull
-            ?.trim()
-            ?.ifEmpty { null }
-        if (hermes == null && openClawSetupCode == null) null else PairingPayload(hermes, openClawSetupCode)
-    }.getOrNull()
+    val openClawSetupCode = (obj["openclaw"] as? JsonObject)
+        ?.get("setupCode")
+        ?.jsonPrimitive
+        ?.contentOrNull
+        ?.trim()
+        ?.ifEmpty { null }
+    return if (hermes == null && openClawSetupCode == null) null else PairingPayload(hermes, openClawSetupCode)
+}
+
+private fun parseHermesRelayJson(obj: JsonObject): PairingPayload? {
+    obj["hermes"]?.jsonPrimitive?.intOrNull ?: return null
+    val endpointUrls = parseHermesRelayEndpointUrls(obj)
+    val topLevelUrl = parseHermesRelayApiUrl(obj)
+    val urls = (endpointUrls + listOfNotNull(topLevelUrl)).distinct()
+    val base = urls.firstOrNull() ?: return null
+    return PairingPayload(
+        hermes = HermesPairingPayload(
+            baseUrl = base,
+            secondaryUrls = urls.drop(1),
+            apiKey = obj["key"]?.jsonPrimitive?.contentOrNull?.trim()?.ifEmpty { null },
+            modelName = obj["model"]?.jsonPrimitive?.contentOrNull?.trim()?.ifEmpty { "hermes-agent" } ?: "hermes-agent",
+            useRunsApi = obj["runs"]?.jsonPrimitive?.booleanOrNull ?: false,
+            streaming = obj["streaming"]?.jsonPrimitive?.booleanOrNull ?: true,
+            displayName = obj["name"]?.jsonPrimitive?.contentOrNull?.trim()?.ifEmpty { null } ?: "Hermes Relay",
+        ),
+        openClawSetupCode = null,
+    )
+}
+
+private fun parseHermesRelayEndpointUrls(obj: JsonObject): List<String> {
+    val endpoints = obj["endpoints"] as? JsonArray ?: return emptyList()
+    return endpoints.mapNotNull { element ->
+        val endpoint = element as? JsonObject ?: return@mapNotNull null
+        val api = endpoint["api"] as? JsonObject ?: return@mapNotNull null
+        val priority = endpoint["priority"]?.jsonPrimitive?.intOrNull ?: Int.MAX_VALUE
+        priority to parseHermesRelayApiUrl(api)
+    }
+        .filter { (_, url) -> url != null }
+        .sortedBy { (priority, _) -> priority }
+        .mapNotNull { (_, url) -> url }
+}
+
+private fun parseHermesRelayApiUrl(obj: JsonObject): String? {
+    val host = obj["host"]?.jsonPrimitive?.contentOrNull?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+    val port = obj["port"]?.jsonPrimitive?.intOrNull ?: 8642
+    val tls = obj["tls"]?.jsonPrimitive?.booleanOrNull ?: false
+    val scheme = if (tls) "https" else "http"
+    val hostForUrl = if (":" in host && !host.startsWith("[")) "[$host]" else host
+    return "$scheme://$hostForUrl:$port"
 }
 
 private val pairingJson = Json { ignoreUnknownKeys = true; isLenient = true }
