@@ -1404,7 +1404,18 @@ private fun HermesFinalStep(onFinish: () -> Unit) {
                                     modifier = Modifier.weight(1f)
                                 )
                                 if (backend.isPrimary) {
-                                    AssistChip(onClick = {}, label = { Text(stringResource(R.string.primary_backend)) })
+                                    Surface(
+                                        color = OnboardingGradientMid,
+                                        contentColor = Color.White,
+                                        shape = RoundedCornerShape(999.dp),
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.primary_backend),
+                                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
+                                            style = MaterialTheme.typography.labelLarge,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                    }
                                 }
                             }
                             Text(
