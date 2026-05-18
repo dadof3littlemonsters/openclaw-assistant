@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import base64
 import getpass
+import ipaddress
 import json
 import os
 import re
@@ -81,7 +82,16 @@ def tailscale_ip() -> Optional[str]:
     if not cmd:
         return None
     out = run([*cmd, "ip", "-4"])
-    return out.splitlines()[0].strip() if out else None
+    if not out:
+        return None
+    for line in out.splitlines():
+        candidate = line.strip()
+        try:
+            ipaddress.ip_address(candidate)
+        except ValueError:
+            continue
+        return candidate
+    return None
 
 
 def read_json(path: Path) -> dict:
@@ -374,6 +384,28 @@ def openclaw_setup_code_from_cli() -> Optional[str]:
         if first and " " not in first and "{" not in first:
             return first
     return None
+
+
+def openclaw_setup_code_from_local_install() -> Optional[str]:
+    # Prefer local config credentials when available. Current OpenClaw `qr`
+    # emits a bootstrapToken for device pairing; Agent Voice also opens an
+    # operator session, so include both the local password and bootstrapToken
+    # when we can resolve them on the user's own machine.
+    config_code = openclaw_setup_code_from_config()
+    cli_code = openclaw_setup_code_from_cli()
+    if not config_code:
+        return cli_code
+    if not cli_code:
+        return config_code
+    try:
+        config_payload = json.loads(base64.urlsafe_b64decode(config_code + "=" * ((4 - len(config_code) % 4) % 4)).decode("utf-8"))
+        cli_payload = json.loads(base64.urlsafe_b64decode(cli_code + "=" * ((4 - len(cli_code) % 4) % 4)).decode("utf-8"))
+    except Exception:
+        return config_code
+    merged = dict(config_payload)
+    if cli_payload.get("bootstrapToken"):
+        merged["bootstrapToken"] = cli_payload["bootstrapToken"]
+    return encode_setup_code(merged)
 
 
 def build_pairing_uri(
@@ -749,7 +781,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         True if discovered_streaming is None else discovered_streaming
     )
     discovered_hermes_url = discover_hermes_url()
-    discovered_openclaw_setup_code = args.openclaw_setup_code or discover_openclaw_setup_code()
+    discovered_openclaw_setup_code = args.openclaw_setup_code or discover_openclaw_setup_code() or openclaw_setup_code_from_local_install()
 
     print("Agent Voice pairing helper")
     print(f"  Hermes:   {'found' if hermes_installed else 'not found'}; API port {'open' if hermes_port_open else 'not detected'}")
@@ -807,7 +839,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     openclaw_setup_code: Optional[str] = None
     if include_openclaw:
-        openclaw_setup_code = discovered_openclaw_setup_code or openclaw_setup_code_from_cli() or openclaw_setup_code_from_config()
+        openclaw_setup_code = discovered_openclaw_setup_code or openclaw_setup_code_from_local_install()
         if not openclaw_setup_code and args.interactive:
             print("Could not read OpenClaw setup code automatically.")
             print("Run `openclaw qr --setup-code-only` and paste the setup code below.")

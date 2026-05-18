@@ -1,6 +1,6 @@
 package com.openclaw.assistant.gateway
 
-const val GATEWAY_PROTOCOL_VERSION = 3
+const val GATEWAY_PROTOCOL_VERSION = 4
 
 /** WebSocket connection state. */
 enum class ConnectionState {

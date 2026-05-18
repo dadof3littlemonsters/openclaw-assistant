@@ -343,6 +343,7 @@ class NodeRuntime(context: Context) {
         _isPairingRequired.value = false
         updateStatus()
         scope.launch { refreshNodeCanvasCapabilityAndNavigate() }
+        scope.launch { connectOperatorAfterNodeBootstrap() }
       },
       onDisconnected = { message ->
         nodeConnected = false
@@ -712,9 +713,13 @@ class NodeRuntime(context: Context) {
     val bootstrapToken = prefs.loadGatewayBootstrapToken()
     val tls = connectionManager.resolveTlsParams(endpoint)
     // bootstrapToken is single-use and issued for the node role only — do not pass to operatorSession.
-    operatorSession.connect(endpoint, token, password, null, connectionManager.buildOperatorConnectOptions(), tls)
+    if (bootstrapToken.isNullOrBlank()) {
+      operatorSession.connect(endpoint, token, password, null, connectionManager.buildOperatorConnectOptions(), tls)
+    }
     nodeSession.connect(endpoint, token, password, bootstrapToken, connectionManager.buildNodeConnectOptions(), tls)
-    operatorSession.reconnect()
+    if (bootstrapToken.isNullOrBlank()) {
+      operatorSession.reconnect()
+    }
     nodeSession.reconnect()
   }
 
@@ -744,8 +749,21 @@ class NodeRuntime(context: Context) {
     val password = prefs.loadGatewayPassword()
     val bootstrapToken = prefs.loadGatewayBootstrapToken()
     // bootstrapToken is single-use and issued for the node role only — do not pass to operatorSession.
-    operatorSession.connect(endpoint, token, password, null, connectionManager.buildOperatorConnectOptions(), tls)
+    if (bootstrapToken.isNullOrBlank()) {
+      operatorSession.connect(endpoint, token, password, null, connectionManager.buildOperatorConnectOptions(), tls)
+    }
     nodeSession.connect(endpoint, token, password, bootstrapToken, connectionManager.buildNodeConnectOptions(), tls)
+  }
+
+  private suspend fun connectOperatorAfterNodeBootstrap() {
+    val endpoint = connectedEndpoint ?: return
+    if (operatorConnected) return
+    if (prefs.loadGatewayBootstrapToken().isNullOrBlank()) return
+    delay(250)
+    val token = prefs.loadGatewayToken()
+    val password = prefs.loadGatewayPassword()
+    val tls = connectionManager.resolveTlsParams(endpoint)
+    operatorSession.connect(endpoint, token, password, null, connectionManager.buildOperatorConnectOptions(), tls)
   }
 
   fun acceptGatewayTrustPrompt() {

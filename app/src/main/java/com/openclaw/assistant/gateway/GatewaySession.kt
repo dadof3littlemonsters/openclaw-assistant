@@ -424,8 +424,8 @@ class GatewaySession(
       // Avoids trying token/password which would fail and potentially rate-limit.
       // Prioritize bootstrapToken if provided. The bootstrapToken is single-use
       // and gets invalidated after first use; the deviceToken takes over for reconnections.
-      if (trimmedToken.isEmpty() && trimmedPassword.isEmpty() && trimmedBootstrapToken.isNotEmpty()) {
-        Log.d(TAG, "No token/password configured, using bootstrapToken auth directly")
+      if (storedToken.isNullOrBlank() && trimmedToken.isEmpty() && trimmedBootstrapToken.isNotEmpty() && options.role == "node") {
+        Log.d(TAG, "Using bootstrapToken auth for node pairing")
         val payload = buildConnectParams(identity, connectNonce, "", null, authBootstrapToken = trimmedBootstrapToken)
         val res = request("connect", payload, timeoutMs = 8_000)
         if (res.ok) {
@@ -433,12 +433,13 @@ class GatewaySession(
           return
         }
         val msg = res.error?.message ?: "connect failed"
-        Log.w(TAG, "BootstrapToken auth failed (code=${res.error?.code})")
-        // The server consumed the bootstrapToken on first use. Clear it from the desired connection
-        // so subsequent retries don't loop on the same expired token. The consumer is notified via
-        // onBootstrapTokenInvalid to also clear it from persistent storage.
-        this@GatewaySession.desired = this@GatewaySession.desired?.copy(bootstrapToken = null)
-        onBootstrapTokenInvalid?.invoke()
+        val errorCode = res.error?.code
+        Log.w(TAG, "BootstrapToken auth failed (code=$errorCode)")
+        if (errorCode != "NOT_PAIRED") {
+          // Invalid or expired bootstrap tokens should not be retried indefinitely.
+          this@GatewaySession.desired = this@GatewaySession.desired?.copy(bootstrapToken = null)
+          onBootstrapTokenInvalid?.invoke()
+        }
         throw IllegalStateException(msg)
       }
 
@@ -530,6 +531,15 @@ class GatewaySession(
       if (!deviceToken.isNullOrBlank()) {
         deviceAuthStore.saveToken(identityId, authRole, deviceToken)
       }
+      val deviceTokens = authObj?.get("deviceTokens") as? JsonArray
+      deviceTokens?.forEach { entry ->
+        val tokenObj = entry.asObjectOrNull() ?: return@forEach
+        val role = tokenObj["role"].asStringOrNull()?.trim().orEmpty()
+        val token = tokenObj["deviceToken"].asStringOrNull()?.trim().orEmpty()
+        if (role.isNotEmpty() && token.isNotEmpty()) {
+          deviceAuthStore.saveToken(identityId, role, token)
+        }
+      }
       val rawCanvas = obj["canvasHostUrl"].asStringOrNull()
       canvasHostUrl = normalizeCanvasHostUrl(rawCanvas, endpoint, isTlsConnection = tls != null)
       val sessionDefaults =
@@ -564,6 +574,9 @@ class GatewaySession(
 
       val password = authPassword?.trim().orEmpty()
       val bootstrapTokenTrimmed = authBootstrapToken?.trim().orEmpty()
+      val connectScopes =
+        if (bootstrapTokenTrimmed.isNotEmpty() && options.role == "node") emptyList()
+        else options.scopes
       val authJson =
         when {
           authToken.isNotEmpty() ->
@@ -588,7 +601,7 @@ class GatewaySession(
           clientId = client.id,
           clientMode = client.mode,
           role = options.role,
-          scopes = options.scopes,
+          scopes = connectScopes,
           signedAtMs = signedAtMs,
           token =
             when {
@@ -632,7 +645,7 @@ class GatewaySession(
           )
         }
         put("role", JsonPrimitive(options.role))
-        if (options.scopes.isNotEmpty()) put("scopes", JsonArray(options.scopes.map(::JsonPrimitive)))
+        if (connectScopes.isNotEmpty()) put("scopes", JsonArray(connectScopes.map(::JsonPrimitive)))
         authJson?.let { put("auth", it) }
         deviceJson?.let { put("device", it) }
         put("locale", JsonPrimitive(locale))

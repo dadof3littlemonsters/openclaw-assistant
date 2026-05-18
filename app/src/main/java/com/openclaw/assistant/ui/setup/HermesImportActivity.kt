@@ -176,6 +176,7 @@ private fun OpenClawSummary(setupCode: String) {
             if (decoded != null) {
                 InfoRow("Gateway URL", decoded.url)
                 InfoRow("Auth", when {
+                    decoded.bootstrapToken != null && decoded.password != null -> "Password and pairing token included"
                     decoded.bootstrapToken != null -> "Bootstrap token included"
                     decoded.token != null -> "Token included"
                     decoded.password != null -> "Password included"
@@ -312,13 +313,15 @@ internal fun applyPairingPayload(context: android.content.Context, payload: Pair
         runtime.setManualHost(parsed.host)
         runtime.setManualPort(parsed.port)
         runtime.setManualTls(parsed.tls)
-        when {
-            decoded.bootstrapToken != null -> runtime.setGatewayBootstrapToken(decoded.bootstrapToken)
-            decoded.token != null -> {
-                runtime.prefs.saveGatewayToken(decoded.token)
-                settings.authToken = decoded.token
-            }
-            decoded.password != null -> runtime.setGatewayPassword(decoded.password)
+        runtime.setGatewayBootstrapToken(decoded.bootstrapToken.orEmpty())
+        runtime.setGatewayPassword(decoded.password.orEmpty())
+        runtime.setGatewayToken("")
+        runtime.prefs.saveGatewayToken(decoded.token.orEmpty())
+        settings.authToken = decoded.token.orEmpty()
+        if (decoded.token != null && decoded.password != null) {
+            // Token takes precedence in GatewaySession; keep imported setup codes
+            // deterministic by not retaining a lower-priority password alongside it.
+            runtime.setGatewayPassword("")
         }
         GatewayConfigUtils.composeGatewayManualUrl(parsed.host, parsed.port.toString(), parsed.tls)
             ?.let { url ->
