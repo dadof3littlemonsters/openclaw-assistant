@@ -441,6 +441,16 @@
 <string name="setup_guide_gateway_label">द्वार</string>
 <string name="setup_guide_auth_label">प्रमाणीकरण</string>
 <string name="setup_guide_test_connection_desc">गेटवे पहुंच योग्यता को सत्यापित करने के लिए टेस्ट कनेक्शन दबाएँ।</string>
+<string name="setup_guide_e2e_title">आवश्यक लाइव टेस्ट</string>
+<string name="setup_guide_e2e_target">प्राथमिक backend: %1$s</string>
+<string name="setup_guide_e2e_openclaw_tls_note">यदि OpenClaw certificate prompt दिखाए, तो chat test जारी रखने के लिए fingerprint approve करें।</string>
+<string name="setup_guide_e2e_button">कनेक्शन और chat टेस्ट करें</string>
+<string name="setup_guide_e2e_testing_connection">%1$s कनेक्शन टेस्ट हो रहा है...</string>
+<string name="setup_guide_e2e_waiting_tls">certificate approval की प्रतीक्षा है...</string>
+<string name="setup_guide_e2e_sending_chat">%1$s को setup check message भेजा जा रहा है...</string>
+<string name="setup_guide_e2e_success">%1$s ने जवाब दिया। अब setup पूरा किया जा सकता है।</string>
+<string name="setup_guide_e2e_failed">Setup test failed: %1$s</string>
+<string name="setup_guide_e2e_reply_preview">जवाब: %1$s</string>
 <string name="setup_guide_connected_to">%s से कनेक्टेड</string>
 <string name="setup_guide_pairing_required">जोड़ी बनाना आवश्यक है</string>
 <string name="setup_guide_pairing_run_on_host">इन्हें गेटवे होस्ट पर चलाएँ:</string>

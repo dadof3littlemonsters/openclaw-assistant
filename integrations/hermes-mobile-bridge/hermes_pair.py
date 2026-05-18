@@ -827,7 +827,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     openclaw_port_open = is_port_open("127.0.0.1", 18789)
     hermes_key = args.key or discover_hermes_key()
     hermes_model = args.model or discover_hermes_model() or "hermes-agent"
-    hermes_runs = args.runs if args.runs is not None else (discover_hermes_runs_api() or False)
+    discovered_runs = discover_hermes_runs_api()
+    hermes_runs = args.runs if args.runs is not None else (True if discovered_runs is None else discovered_runs)
     discovered_streaming = discover_hermes_streaming()
     hermes_streaming = args.streaming if args.streaming is not None else (
         True if discovered_streaming is None else discovered_streaming

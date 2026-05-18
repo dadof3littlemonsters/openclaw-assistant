@@ -441,6 +441,16 @@ Pour plus de détails, consultez le site officiel de VOICEVOX.</string>
 <string name="setup_guide_gateway_label">Passerelle</string>
 <string name="setup_guide_auth_label">Authentification</string>
 <string name="setup_guide_test_connection_desc">Appuyez sur Test Connection pour vérifier l’accessibilité de la passerelle.</string>
+<string name="setup_guide_e2e_title">Test réel obligatoire</string>
+<string name="setup_guide_e2e_target">Backend principal : %1$s</string>
+<string name="setup_guide_e2e_openclaw_tls_note">Si OpenClaw affiche un certificat, approuvez l’empreinte ici pour poursuivre le test de chat.</string>
+<string name="setup_guide_e2e_button">Tester connexion et chat</string>
+<string name="setup_guide_e2e_testing_connection">Test de connexion à %1$s...</string>
+<string name="setup_guide_e2e_waiting_tls">En attente de l’approbation du certificat...</string>
+<string name="setup_guide_e2e_sending_chat">Envoi du message de vérification à %1$s...</string>
+<string name="setup_guide_e2e_success">%1$s a répondu. Vous pouvez terminer la configuration.</string>
+<string name="setup_guide_e2e_failed">Échec du test de configuration : %1$s</string>
+<string name="setup_guide_e2e_reply_preview">Réponse : %1$s</string>
 <string name="setup_guide_connected_to">Connecté à %s</string>
 <string name="setup_guide_pairing_required">Couplage requis</string>
 <string name="setup_guide_pairing_run_on_host">Exécutez-les sur l\'hôte de la passerelle :</string>

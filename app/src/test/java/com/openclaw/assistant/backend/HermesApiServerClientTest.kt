@@ -32,6 +32,21 @@ class HermesApiServerClientTest {
         assertTrue(body.contains("\"stream\":false"))
     }
 
+    @Test fun `runs body includes Hermes input and message history`() {
+        val body = client(useRunsApi = true).buildRunsRequestBody(
+            listOf(
+                AgentMessage.system("be concise"),
+                AgentMessage.user("first"),
+                AgentMessage.assistant("ok"),
+                AgentMessage.user("latest"),
+            ),
+        )
+        assertTrue(body.contains("\"model\":\"hermes-agent\""))
+        assertTrue(body.contains("\"input\":\"latest\""))
+        assertTrue(body.contains("\"role\":\"system\""))
+        assertTrue(body.contains("\"content\":\"first\""))
+    }
+
     @Test fun `tool progress event is parsed to ToolProgress`() {
         val ev = SseEvent(event = "hermes.tool.progress", data = """{"tool":"web.search","stage":"started","detail":"q=hi"}""")
         val collected = StringBuilder()
@@ -65,5 +80,25 @@ class HermesApiServerClientTest {
         val ev = SseEvent(null, """{"choices":[{"finish_reason":"stop","delta":{}}]}""")
         val mapped = client().mapSseEvent(ev, collected)
         assertTrue(mapped is AgentEvent.Completed)
+    }
+
+    @Test fun `runs message delta accumulates content`() {
+        val collected = StringBuilder()
+        val mapped = client().mapSseEvent(
+            SseEvent(null, """{"event":"message.delta","run_id":"r1","delta":"Hi"}"""),
+            collected,
+            runIdHint = "r1",
+        )
+        assertTrue(mapped is AgentEvent.TokenDelta)
+        assertEquals("Hi", collected.toString())
+    }
+
+    @Test fun `runs failed event maps to error`() {
+        val mapped = client().mapSseEvent(
+            SseEvent(null, """{"event":"run.failed","error":"bad provider"}"""),
+            StringBuilder(),
+        )
+        assertTrue(mapped is AgentEvent.Error)
+        assertEquals("bad provider", (mapped as AgentEvent.Error).message)
     }
 }

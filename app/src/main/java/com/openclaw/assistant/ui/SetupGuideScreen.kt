@@ -57,9 +57,14 @@ import androidx.core.content.ContextCompat
 import com.openclaw.assistant.OpenClawApplication
 import com.openclaw.assistant.R
 import com.openclaw.assistant.api.OpenClawClient
+import com.openclaw.assistant.backend.AgentClientFactory
+import com.openclaw.assistant.backend.AgentEvent
+import com.openclaw.assistant.backend.AgentMessage
+import com.openclaw.assistant.backend.AgentSendOptions
 import com.openclaw.assistant.backend.AgentBackendConfig
 import com.openclaw.assistant.backend.BackendRepository
 import com.openclaw.assistant.backend.BackendType
+import com.openclaw.assistant.backend.PrimaryBackendDispatcher
 import com.openclaw.assistant.data.SettingsRepository
 import com.openclaw.assistant.ui.components.ConnectionState
 import com.openclaw.assistant.ui.components.StatusIndicator
@@ -75,7 +80,11 @@ import com.openclaw.assistant.ui.theme.*
 import com.openclaw.assistant.utils.GatewayConfigUtils
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontFamily
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 private enum class SetupStep(val index: Int) {
     Welcome(1),
@@ -1259,20 +1268,6 @@ private fun FinalCheckStep(
             ) {
                 Text(stringResource(R.string.test_connection_button), fontSize = 18.sp)
             }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            TextButton(
-                onClick = finishWithHttpTest,
-                enabled = !isFinishing,
-                modifier = Modifier.fillMaxWidth().height(48.dp)
-            ) {
-                if (isFinishing) {
-                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                } else {
-                    Text(stringResource(R.string.setup_guide_finish), fontSize = 16.sp)
-                }
-            }
         }
     } // end of Column(fillMaxSize)
 }
@@ -1282,6 +1277,78 @@ private fun HermesFinalStep(onFinish: () -> Unit) {
     val context = LocalContext.current
     val repo = remember { BackendRepository.getInstance(context) }
     val backends by repo.backends.collectAsState()
+    val runtime = remember(context.applicationContext) {
+        (context.applicationContext as OpenClawApplication).nodeRuntime
+    }
+    val isGatewayConnected by runtime.isConnected.collectAsState()
+    val statusText by runtime.statusText.collectAsState()
+    val primaryBackend = remember(backends) {
+        backends.firstOrNull { it.enabled && it.isPrimary } ?: backends.firstOrNull { it.enabled }
+    }
+    val scope = rememberCoroutineScope()
+    var isTesting by remember { mutableStateOf(false) }
+    var verified by remember { mutableStateOf(false) }
+    var testStatus by remember { mutableStateOf<String?>(null) }
+    var replyPreview by remember { mutableStateOf<String?>(null) }
+    var testedBackendId by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(primaryBackend?.id) {
+        verified = false
+        testStatus = null
+        replyPreview = null
+        testedBackendId = null
+    }
+
+    fun runEndToEndTest() {
+        val target = primaryBackend ?: return
+        scope.launch {
+            isTesting = true
+            verified = false
+            replyPreview = null
+            testedBackendId = target.id
+            testStatus = context.getString(R.string.setup_guide_e2e_testing_connection, target.displayName)
+            try {
+                if (target.type == BackendType.OPENCLAW_GATEWAY) {
+                    runtime.connectManual()
+                    val connected = withTimeoutOrNull(45_000L) {
+                        while (!runtime.isConnected.value) {
+                            if (runtime.pendingGatewayTrust.value != null) {
+                                testStatus = context.getString(R.string.setup_guide_e2e_waiting_tls)
+                            }
+                            delay(500L)
+                        }
+                        true
+                    } == true
+                    if (!connected) {
+                        testStatus = context.getString(R.string.setup_guide_e2e_failed, statusText.ifBlank { "OpenClaw Gateway timeout" })
+                        return@launch
+                    }
+                } else {
+                    val result = withContext(Dispatchers.IO) { AgentClientFactory.create(target).testConnection() }
+                    if (!result.ok) {
+                        testStatus = context.getString(R.string.setup_guide_e2e_failed, result.message)
+                        return@launch
+                    }
+                }
+
+                testStatus = context.getString(R.string.setup_guide_e2e_sending_chat, target.displayName)
+                val reply = withContext(Dispatchers.IO) {
+                    sendSetupProbeMessage(context, target)
+                }
+                if (reply.isBlank()) {
+                    testStatus = context.getString(R.string.setup_guide_e2e_failed, context.getString(R.string.error_no_response))
+                    return@launch
+                }
+                replyPreview = reply.take(240)
+                verified = true
+                testStatus = context.getString(R.string.setup_guide_e2e_success, target.displayName)
+            } catch (e: Throwable) {
+                testStatus = context.getString(R.string.setup_guide_e2e_failed, e.message ?: e.javaClass.simpleName)
+            } finally {
+                isTesting = false
+            }
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         Column(
@@ -1365,16 +1432,109 @@ private fun HermesFinalStep(onFinish: () -> Unit) {
                     color = MaterialTheme.colorScheme.primary,
                     textAlign = TextAlign.Center
                         )
+                Spacer(modifier = Modifier.height(16.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = OnboardingSurface),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, OnboardingBorder),
+                ) {
+                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = stringResource(R.string.setup_guide_e2e_title),
+                            style = MaterialTheme.typography.titleSmall,
+                            color = OnboardingTextPrimary,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Text(
+                            text = primaryBackend?.let { stringResource(R.string.setup_guide_e2e_target, it.displayName) }
+                                ?: stringResource(R.string.setup_guide_no_backends_yet),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = OnboardingTextSecondary,
+                        )
+                        if (primaryBackend?.type == BackendType.OPENCLAW_GATEWAY) {
+                            Text(
+                                text = stringResource(R.string.setup_guide_e2e_openclaw_tls_note),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = OnboardingTextSecondary,
+                            )
+                            if (isGatewayConnected) {
+                                Text(
+                                    text = stringResource(R.string.setup_guide_connected_to, primaryBackend?.displayName.orEmpty()),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+                        }
+                        testStatus?.let {
+                            Text(
+                                text = it,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (verified) MaterialTheme.colorScheme.primary else OnboardingTextSecondary,
+                            )
+                        }
+                        replyPreview?.let {
+                            Text(
+                                text = stringResource(R.string.setup_guide_e2e_reply_preview, it),
+                                style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+                                color = OnboardingTextSecondary,
+                            )
+                        }
+                    }
+                }
             }
         }
 
         Button(
+            onClick = { runEndToEndTest() },
+            enabled = !isTesting && primaryBackend != null,
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = OnboardingGradientMid)
+        ) {
+            if (isTesting) {
+                CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
+            } else {
+                Text(stringResource(R.string.setup_guide_e2e_button), fontSize = 18.sp)
+            }
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        Button(
             onClick = onFinish,
+            enabled = verified && testedBackendId == primaryBackend?.id,
             modifier = Modifier.fillMaxWidth().height(56.dp),
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(containerColor = OnboardingGradientMid)
         ) {
             Text(stringResource(R.string.setup_guide_finish), fontSize = 18.sp)
+        }
+    }
+}
+
+private suspend fun sendSetupProbeMessage(
+    context: Context,
+    target: AgentBackendConfig,
+): String {
+    val prompt = "Setup check: reply with a short confirmation that Agent Voice can reach you."
+    return when (target.type) {
+        BackendType.OPENCLAW_GATEWAY -> {
+            PrimaryBackendDispatcher.send(context, prompt, backendId = target.id, sessionId = "agent-voice-setup-check")?.text.orEmpty()
+        }
+        BackendType.HERMES_API_SERVER,
+        BackendType.OPENCLAW_HTTP -> {
+            val collected = StringBuilder()
+            AgentClientFactory.create(target).sendMessage(
+                messages = listOf(AgentMessage.user(prompt)),
+                options = AgentSendOptions(sessionId = "agent-voice-setup-check", stream = target.useStreaming),
+            ).collect { event ->
+                when (event) {
+                    is AgentEvent.TokenDelta -> collected.append(event.text)
+                    is AgentEvent.MessageDelta -> collected.append(event.text)
+                    is AgentEvent.Completed -> if (collected.isEmpty()) collected.append(event.finalText)
+                    is AgentEvent.Error -> throw RuntimeException(event.message, event.cause)
+                    else -> Unit
+                }
+            }
+            collected.toString()
         }
     }
 }

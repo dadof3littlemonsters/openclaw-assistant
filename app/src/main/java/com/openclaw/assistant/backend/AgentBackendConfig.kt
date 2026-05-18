@@ -18,7 +18,7 @@ data class AgentBackendConfig(
     val port: Int? = null,
     val useTls: Boolean = false,
     val modelName: String? = null,
-    val useRunsApi: Boolean = false,
+    val useRunsApi: Boolean = true,
     val useStreaming: Boolean = true,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),

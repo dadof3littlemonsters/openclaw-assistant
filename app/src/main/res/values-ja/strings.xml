@@ -448,6 +448,16 @@
 <string name="setup_guide_gateway_label">Gateway</string>
 <string name="setup_guide_auth_label">認証</string>
 <string name="setup_guide_test_connection_desc">接続テストを押して、Gatewayへの到達性を確認してください。</string>
+<string name="setup_guide_e2e_title">必須の実接続テスト</string>
+<string name="setup_guide_e2e_target">メイン接続先: %1$s</string>
+<string name="setup_guide_e2e_openclaw_tls_note">OpenClawで証明書確認が出た場合は、ここでfingerprintを許可するとチャットテストが続行されます。</string>
+<string name="setup_guide_e2e_button">接続とチャットをテスト</string>
+<string name="setup_guide_e2e_testing_connection">%1$s への接続をテスト中...</string>
+<string name="setup_guide_e2e_waiting_tls">証明書の許可を待っています...</string>
+<string name="setup_guide_e2e_sending_chat">%1$s にセットアップ確認メッセージを送信中...</string>
+<string name="setup_guide_e2e_success">%1$s から返信がありました。セットアップを完了できます。</string>
+<string name="setup_guide_e2e_failed">セットアップテスト失敗: %1$s</string>
+<string name="setup_guide_e2e_reply_preview">返信: %1$s</string>
 <string name="setup_guide_connected_to">%s に接続しました</string>
 <string name="setup_guide_pairing_required">ペアリングが必要です</string>
 <string name="setup_guide_pairing_run_on_host">Gatewayホストで以下を実行してください：</string>

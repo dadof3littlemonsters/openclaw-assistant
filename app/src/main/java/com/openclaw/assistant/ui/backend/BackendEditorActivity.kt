@@ -77,7 +77,7 @@ fun BackendEditorScreen(existingId: String?, onDone: () -> Unit) {
     var port by remember { mutableStateOf(existing?.port?.toString().orEmpty()) }
     var useTls by remember { mutableStateOf(existing?.useTls ?: true) }
     var modelName by remember { mutableStateOf(existing?.modelName ?: "hermes-agent") }
-    var useRunsApi by remember { mutableStateOf(existing?.useRunsApi ?: false) }
+    var useRunsApi by remember { mutableStateOf(existing?.useRunsApi ?: true) }
     var useStreaming by remember { mutableStateOf(existing?.useStreaming ?: true) }
     var setPrimary by remember { mutableStateOf(existing?.isPrimary ?: backends.isEmpty()) }
     var lanUrl by remember { mutableStateOf(existing?.secondaryUrls?.getOrNull(0).orEmpty()) }

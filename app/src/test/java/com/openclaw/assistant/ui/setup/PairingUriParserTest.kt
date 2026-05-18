@@ -41,7 +41,7 @@ class PairingUriParserTest {
         assertEquals("http://h:8642", p.baseUrl)
         assertTrue(p.secondaryUrls.isEmpty())
         assertEquals("hermes-agent", p.modelName)
-        assertEquals(false, p.useRunsApi)
+        assertEquals(true, p.useRunsApi)
         assertEquals(true, p.streaming)
         assertNull(p.apiKey)
     }
@@ -131,6 +131,7 @@ class PairingUriParserTest {
         assertEquals("http://192.168.3.11:8642", h.baseUrl)
         assertTrue(h.secondaryUrls.isEmpty())
         assertEquals("api-key", h.apiKey)
+        assertEquals(true, h.useRunsApi)
         assertEquals("Hermes Relay", h.displayName)
     }
 
@@ -174,6 +175,7 @@ class PairingUriParserTest {
             h.secondaryUrls,
         )
         assertNull(h.apiKey)
+        assertEquals(true, h.useRunsApi)
     }
 
     @Test fun `base64 encoded Hermes Relay QR payload is accepted`() {

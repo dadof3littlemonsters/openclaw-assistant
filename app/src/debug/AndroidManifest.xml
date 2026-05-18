@@ -2,6 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
     <application>
+        <activity
+            android:name="com.openclaw.assistant.debug.HermesLiveProbeActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.NoDisplay" />
+
         <!--
             Remove FirebaseInitProvider from debug builds so that Firebase is not
             initialized automatically. OpenClawApplication initializes it manually

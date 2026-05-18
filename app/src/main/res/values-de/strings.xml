@@ -440,6 +440,16 @@ Weitere Informationen finden Sie auf der offiziellen Website von VOICEVOX.</stri
 <string name="setup_guide_gateway_label">Gateway</string>
 <string name="setup_guide_auth_label">Auth</string>
 <string name="setup_guide_test_connection_desc">Klicken Sie auf Verbindung testen, um die Erreichbarkeit des Gateways zu überprüfen.</string>
+<string name="setup_guide_e2e_title">Erforderlicher Live-Test</string>
+<string name="setup_guide_e2e_target">Primäres Backend: %1$s</string>
+<string name="setup_guide_e2e_openclaw_tls_note">Wenn OpenClaw ein Zertifikat anzeigt, bestätige den Fingerprint hier, damit der Chat-Test weiterläuft.</string>
+<string name="setup_guide_e2e_button">Verbindung und Chat testen</string>
+<string name="setup_guide_e2e_testing_connection">Teste Verbindung zu %1$s...</string>
+<string name="setup_guide_e2e_waiting_tls">Warte auf Zertifikatsfreigabe...</string>
+<string name="setup_guide_e2e_sending_chat">Sende Setup-Testnachricht an %1$s...</string>
+<string name="setup_guide_e2e_success">%1$s hat geantwortet. Setup kann abgeschlossen werden.</string>
+<string name="setup_guide_e2e_failed">Setup-Test fehlgeschlagen: %1$s</string>
+<string name="setup_guide_e2e_reply_preview">Antwort: %1$s</string>
 <string name="setup_guide_connected_to">Verbunden mit %s</string>
 <string name="setup_guide_pairing_required">Kopplung erforderlich</string>
 <string name="setup_guide_pairing_run_on_host">Führen Sie diese auf dem Gateway-Host aus:</string>

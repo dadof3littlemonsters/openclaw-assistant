@@ -155,6 +155,25 @@ class HermesApiServerClient(
             })
         }.toString()
 
+    internal fun buildRunsRequestBody(messages: List<AgentMessage>): String =
+        buildJsonObject {
+            put("model", modelName)
+            put("input", runsInput(messages))
+            put("messages", buildJsonArray {
+                messages.forEach { m ->
+                    add(buildJsonObject {
+                        put("role", m.role)
+                        put("content", m.content)
+                    })
+                }
+            })
+        }.toString()
+
+    private fun runsInput(messages: List<AgentMessage>): String =
+        messages.lastOrNull { it.role.equals("user", ignoreCase = true) }?.content
+            ?: messages.lastOrNull()?.content
+            ?: ""
+
     private fun sendViaChatCompletions(
         messages: List<AgentMessage>,
         options: AgentSendOptions,
@@ -211,14 +230,7 @@ class HermesApiServerClient(
         options: AgentSendOptions,
     ): Flow<AgentEvent> = flow {
         val selectedBaseUrl = resolveBaseUrl()
-        val createBody = buildJsonObject {
-            put("model", modelName)
-            put("messages", buildJsonArray {
-                messages.forEach { m ->
-                    add(buildJsonObject { put("role", m.role); put("content", m.content) })
-                }
-            })
-        }.toString().toRequestBody(JSON_MEDIA)
+        val createBody = buildRunsRequestBody(messages).toRequestBody(JSON_MEDIA)
 
         val createReq = authed(Request.Builder().url(HermesUrl.runsUrl(selectedBaseUrl)).post(createBody)).build()
         val createCall = httpClient.newCall(createReq)
@@ -283,7 +295,7 @@ class HermesApiServerClient(
         if (raw == "[DONE]") return AgentEvent.Completed(collected.toString(), runIdHint)
         return when (ev.event) {
             "hermes.tool.progress" -> parseToolProgress(raw)
-            else -> parseTokenDelta(raw, collected)
+            else -> parseHermesEvent(raw, collected, runIdHint) ?: parseTokenDelta(raw, collected)
         }
     }
 
@@ -293,6 +305,55 @@ class HermesApiServerClient(
         val stage = obj["stage"]?.jsonPrimitive?.content ?: "progress"
         val detail = obj["detail"]?.jsonPrimitive?.content
         AgentEvent.ToolProgress(tool, stage, detail)
+    }.getOrNull()
+
+    private fun parseHermesEvent(payload: String, collected: StringBuilder, runIdHint: String?): AgentEvent? = runCatching {
+        val obj = json.parseToJsonElement(payload).jsonObject
+        val eventType = obj["event"]?.jsonPrimitive?.contentOrNullSafe()
+            ?: obj["type"]?.jsonPrimitive?.contentOrNullSafe()
+            ?: return@runCatching null
+        when (eventType) {
+            "message.delta", "assistant.delta", "response.output_text.delta" -> {
+                val token = obj["delta"]?.jsonPrimitive?.contentOrNullSafe()
+                    ?: obj["text"]?.jsonPrimitive?.contentOrNullSafe()
+                    ?: obj["payload"]?.jsonObject?.get("text")?.jsonPrimitive?.contentOrNullSafe()
+                    ?: obj["payload"]?.jsonObject?.get("rendered")?.jsonPrimitive?.contentOrNullSafe()
+                if (token.isNullOrEmpty()) null else {
+                    collected.append(token)
+                    AgentEvent.TokenDelta(token)
+                }
+            }
+            "tool.progress", "tool.started", "tool.pending", "tool.completed", "tool.failed" -> {
+                val tool = obj["tool"]?.jsonPrimitive?.contentOrNullSafe()
+                    ?: obj["tool_name"]?.jsonPrimitive?.contentOrNullSafe()
+                    ?: obj["name"]?.jsonPrimitive?.contentOrNullSafe()
+                    ?: "unknown"
+                val detail = obj["delta"]?.jsonPrimitive?.contentOrNullSafe()
+                    ?: obj["message"]?.jsonPrimitive?.contentOrNullSafe()
+                    ?: obj["error"]?.jsonPrimitive?.contentOrNullSafe()
+                    ?: obj["result_preview"]?.jsonPrimitive?.contentOrNullSafe()
+                AgentEvent.ToolProgress(tool, eventType.substringAfter('.'), detail)
+            }
+            "reasoning.available", "reasoning.delta", "thinking.delta" -> {
+                val detail = obj["text"]?.jsonPrimitive?.contentOrNullSafe()
+                    ?: obj["delta"]?.jsonPrimitive?.contentOrNullSafe()
+                if (detail.isNullOrBlank()) null else AgentEvent.ToolProgress("reasoning", eventType.substringAfter('.'), detail)
+            }
+            "run.completed", "response.completed", "done" -> {
+                val finalText = obj["output"]?.jsonPrimitive?.contentOrNullSafe()
+                    ?: obj["message"]?.jsonPrimitive?.contentOrNullSafe()
+                    ?: collected.toString()
+                AgentEvent.Completed(finalText, runIdHint ?: obj["run_id"]?.jsonPrimitive?.contentOrNullSafe())
+            }
+            "run.failed", "error" -> {
+                AgentEvent.Error(
+                    obj["error"]?.jsonPrimitive?.contentOrNullSafe()
+                        ?: obj["message"]?.jsonPrimitive?.contentOrNullSafe()
+                        ?: "Hermes run failed",
+                )
+            }
+            else -> null
+        }
     }.getOrNull()
 
     private fun parseTokenDelta(payload: String, collected: StringBuilder): AgentEvent? = runCatching {

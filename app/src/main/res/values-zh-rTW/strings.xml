@@ -440,6 +440,16 @@
 <string name="setup_guide_gateway_label">閘道</string>
 <string name="setup_guide_auth_label">授權</string>
 <string name="setup_guide_test_connection_desc">按下“測試連線”以驗證網關的可及性。</string>
+<string name="setup_guide_e2e_title">必要的即時測試</string>
+<string name="setup_guide_e2e_target">主用後端：%1$s</string>
+<string name="setup_guide_e2e_openclaw_tls_note">如果 OpenClaw 顯示憑證提示，請在這裡批准 fingerprint，聊天測試會繼續。</string>
+<string name="setup_guide_e2e_button">測試連線和聊天</string>
+<string name="setup_guide_e2e_testing_connection">正在測試 %1$s 連線...</string>
+<string name="setup_guide_e2e_waiting_tls">正在等待憑證批准...</string>
+<string name="setup_guide_e2e_sending_chat">正在向 %1$s 傳送設定檢查訊息...</string>
+<string name="setup_guide_e2e_success">%1$s 已回覆。可以完成設定。</string>
+<string name="setup_guide_e2e_failed">設定測試失敗：%1$s</string>
+<string name="setup_guide_e2e_reply_preview">回覆：%1$s</string>
 <string name="setup_guide_connected_to">連接到 %s</string>
 <string name="setup_guide_pairing_required">需要配對</string>
 <string name="setup_guide_pairing_run_on_host">在網關主機上運行這些：</string>

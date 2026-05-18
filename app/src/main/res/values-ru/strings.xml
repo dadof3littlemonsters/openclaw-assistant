@@ -441,6 +441,16 @@
 <string name="setup_guide_gateway_label">Шлюз</string>
 <string name="setup_guide_auth_label">Auth</string>
 <string name="setup_guide_test_connection_desc">Нажмите «Проверить соединение», чтобы проверить доступность шлюза.</string>
+<string name="setup_guide_e2e_title">Обязательная живая проверка</string>
+<string name="setup_guide_e2e_target">Основной бэкенд: %1$s</string>
+<string name="setup_guide_e2e_openclaw_tls_note">Если OpenClaw покажет сертификат, подтвердите fingerprint здесь, чтобы продолжить тест чата.</string>
+<string name="setup_guide_e2e_button">Проверить соединение и чат</string>
+<string name="setup_guide_e2e_testing_connection">Проверка соединения с %1$s...</string>
+<string name="setup_guide_e2e_waiting_tls">Ожидание подтверждения сертификата...</string>
+<string name="setup_guide_e2e_sending_chat">Отправка проверочного сообщения в %1$s...</string>
+<string name="setup_guide_e2e_success">%1$s ответил. Можно завершить настройку.</string>
+<string name="setup_guide_e2e_failed">Ошибка проверки настройки: %1$s</string>
+<string name="setup_guide_e2e_reply_preview">Ответ: %1$s</string>
 <string name="setup_guide_connected_to">Подключено к %s</string>
 <string name="setup_guide_pairing_required">Требуется сопряжение</string>
 <string name="setup_guide_pairing_run_on_host">Запустите их на узле шлюза:</string>
