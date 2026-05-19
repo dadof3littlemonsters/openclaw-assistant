@@ -20,6 +20,7 @@ import com.openclaw.assistant.chat.ChatSessionEntry
 import com.openclaw.assistant.chat.OutgoingAttachment
 import com.openclaw.assistant.chat.isCanonicalMainSessionKey
 import com.openclaw.assistant.chat.normalizeMainKey
+import com.openclaw.assistant.bridge.MobileBridgeConfig
 import com.openclaw.assistant.gateway.AgentInfo
 import com.openclaw.assistant.gateway.AgentListResult
 import com.openclaw.assistant.gateway.DeviceAuthStore
@@ -63,6 +64,7 @@ class NodeRuntime(context: Context) {
   val screenRecorder = ScreenRecordManager(appContext)
   val sms = SmsManager(appContext)
   private val json = Json { ignoreUnknownKeys = true }
+  private val mobileBridgeConfig = MobileBridgeConfig.getInstance(appContext)
 
   private val externalAudioCaptureActive = MutableStateFlow(false)
   private val chatMicActive = MutableStateFlow(false)
@@ -189,6 +191,12 @@ class NodeRuntime(context: Context) {
     invokeErrorFromThrowable = { invokeErrorFromThrowable(it) },
   )
 
+  private val mobileBridgeHandler = MobileBridgeHandler(
+    context = appContext,
+    config = mobileBridgeConfig,
+    json = json,
+  )
+
   private val connectionManager: ConnectionManager = ConnectionManager(
     prefs = prefs,
     appContext = appContext,
@@ -221,6 +229,7 @@ class NodeRuntime(context: Context) {
     debugHandler = debugHandler,
     appUpdateHandler = appUpdateHandler,
     deviceHandler = deviceHandler,
+    mobileBridgeHandler = mobileBridgeHandler,
     isForeground = { _isForeground.value },
     cameraEnabled = { cameraEnabled.value },
     locationEnabled = { locationMode.value != LocationMode.Off },

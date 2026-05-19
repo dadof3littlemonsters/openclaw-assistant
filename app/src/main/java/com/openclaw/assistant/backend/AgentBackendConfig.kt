@@ -30,13 +30,12 @@ data class AgentBackendConfig(
      */
     val secondaryUrls: List<String> = emptyList(),
     /**
-     * Hermes Relay endpoint used by high-privilege realtime channels such as
-     * Terminal. This is separate from [baseUrl], which targets the Hermes API
-     * server for chat/runs.
+     * Hermes Dashboard endpoint used by the Terminal tab. Hermes exposes the
+     * PTY bridge at `/api/pty` on `hermes dashboard --tui`, not on the normal
+     * API server port.
      */
-    val relayUrl: String? = null,
-    val relayPairingCode: String? = null,
-    val relaySessionToken: String? = null,
+    val terminalUrl: String? = null,
+    val terminalSessionToken: String? = null,
 ) {
     val hermesMode: HermesMode
         get() = if (useRunsApi) HermesMode.RUNS_API else HermesMode.CHAT_COMPLETIONS

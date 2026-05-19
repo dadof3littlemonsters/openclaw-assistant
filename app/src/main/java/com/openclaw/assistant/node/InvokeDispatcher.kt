@@ -17,6 +17,7 @@ import com.openclaw.assistant.protocol.OpenClawMotionCommand
 import com.openclaw.assistant.protocol.OpenClawWifiCommand
 import com.openclaw.assistant.protocol.OpenClawAppCommand
 import com.openclaw.assistant.protocol.OpenClawClipboardCommand
+import com.openclaw.assistant.protocol.OpenClawBridgeCommand
 import com.openclaw.assistant.protocol.OpenClawVoiceWakeCommand
 
 class InvokeDispatcher(
@@ -39,6 +40,7 @@ class InvokeDispatcher(
   private val debugHandler: DebugHandler,
   private val appUpdateHandler: AppUpdateHandler,
   private val deviceHandler: DeviceHandler,
+  private val mobileBridgeHandler: MobileBridgeHandler,
   private val isForeground: () -> Boolean,
   private val cameraEnabled: () -> Boolean,
   private val locationEnabled: () -> Boolean,
@@ -238,6 +240,13 @@ class InvokeDispatcher(
       OpenClawDeviceCommand.Info.rawValue -> deviceHandler.handleInfo()
       OpenClawDeviceCommand.Permissions.rawValue -> deviceHandler.handlePermissions()
       OpenClawDeviceCommand.Health.rawValue -> deviceHandler.handleHealth()
+
+      // Mobile Bridge compatibility commands
+      OpenClawBridgeCommand.Status.rawValue -> mobileBridgeHandler.handleStatus()
+      OpenClawBridgeCommand.Manifest.rawValue -> mobileBridgeHandler.handleManifest()
+      OpenClawBridgeCommand.Execute.rawValue -> mobileBridgeHandler.handleExecute(paramsJson)
+      OpenClawBridgeCommand.Grants.rawValue -> mobileBridgeHandler.handleGrants()
+      OpenClawBridgeCommand.Revoke.rawValue -> mobileBridgeHandler.handleRevoke(paramsJson)
 
       // Debug commands
       "debug.ed25519" -> debugHandler.handleEd25519()

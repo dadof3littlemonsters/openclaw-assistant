@@ -1,0 +1,96 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <link rel="stylesheet" href="xterm.css" />
+  <style>
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
+      background: #0b1020;
+    }
+    #terminal {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #0b1020;
+    }
+    .xterm {
+      height: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body>
+  <div id="terminal"></div>
+  <script src="xterm.js"></script>
+  <script src="addon-fit.js"></script>
+  <script>
+    const term = new Terminal({
+      cursorBlink: true,
+      convertEol: false,
+      fontFamily: 'monospace',
+      fontSize: 13,
+      theme: {
+        background: '#0b1020',
+        foreground: '#d6deff',
+        cursor: '#f8fafc',
+        selectionBackground: '#334155'
+      }
+    });
+    const fitAddon = new FitAddon.FitAddon();
+    const decoder = new TextDecoder('utf-8');
+    term.loadAddon(fitAddon);
+    term.open(document.getElementById('terminal'));
+
+    let readySent = false;
+    function notifyReady() {
+      const cols = Math.max(1, term.cols || 80);
+      const rows = Math.max(1, term.rows || 24);
+      if (!readySent) {
+        readySent = true;
+        AndroidBridge.onReady(cols, rows);
+      } else {
+        AndroidBridge.onResize(cols, rows);
+      }
+    }
+
+    window.refit = function(widthCss, heightCss) {
+      const terminal = document.getElementById('terminal');
+      if (terminal && widthCss > 0 && heightCss > 0) {
+        terminal.style.width = `${widthCss}px`;
+        terminal.style.height = `${heightCss}px`;
+      }
+      fitAddon.fit();
+      notifyReady();
+    };
+
+    window.writeTerminal = function(b64) {
+      const binary = atob(b64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      term.write(decoder.decode(bytes, { stream: true }));
+    };
+
+    term.onData(data => AndroidBridge.onInput(data));
+    function fitAndNotify() {
+      fitAddon.fit();
+      notifyReady();
+    }
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(fitAndNotify);
+    });
+    setTimeout(() => {
+      fitAndNotify();
+      term.focus();
+    }, 250);
+  </script>
+</body>
+</html>

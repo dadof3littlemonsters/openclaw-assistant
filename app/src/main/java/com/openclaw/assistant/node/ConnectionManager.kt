@@ -25,6 +25,7 @@ import com.openclaw.assistant.protocol.OpenClawContactsCommand
 import com.openclaw.assistant.protocol.OpenClawCalendarCommand
 import com.openclaw.assistant.protocol.OpenClawMotionCommand
 import com.openclaw.assistant.protocol.OpenClawCapability
+import com.openclaw.assistant.protocol.OpenClawBridgeCommand
 import com.openclaw.assistant.LocationMode
 import com.openclaw.assistant.VoiceWakeMode
 import android.provider.Settings
@@ -112,6 +113,7 @@ class ConnectionManager(
       add(OpenClawCanvasA2UICommand.Push.rawValue)
       add(OpenClawCanvasA2UICommand.PushJSONL.rawValue)
       add(OpenClawCanvasA2UICommand.Reset.rawValue)
+      OpenClawBridgeCommand.entries.forEach { add(it.rawValue) }
       add(OpenClawScreenCommand.Record.rawValue)
       OpenClawDeviceCommand.entries.forEach { add(it.rawValue) }
       if (cameraEnabled()) {
@@ -179,6 +181,7 @@ class ConnectionManager(
       add(OpenClawCapability.Canvas.rawValue)
       add(OpenClawCapability.Screen.rawValue)
       add(OpenClawCapability.System.rawValue)
+      add(OpenClawCapability.Bridge.rawValue)
 
       if (isNotificationListenerEnabled()) {
         add(OpenClawCapability.Notifications.rawValue)
@@ -261,6 +264,7 @@ class ConnectionManager(
       OpenClawCapability.Canvas.rawValue,
       OpenClawCapability.Screen.rawValue,
       OpenClawCapability.System.rawValue,
+      OpenClawCapability.Bridge.rawValue,
     )
     val requestedScopes = caps.filterNot { it in alwaysOnCaps }.map { "node.$it" }
 

@@ -92,7 +92,11 @@ class PairingUriParserTest {
                 "urls": ["http://tail:8642", "http://lan:8642", "http://127.0.0.1:8642"],
                 "model": "default",
                 "runs": false,
-                "streaming": true
+                "streaming": true,
+                "terminal": {
+                  "url": "https://dash.example.com",
+                  "token": "session-token"
+                }
               },
               "openclaw": {
                 "setupCode": "openclaw-code"
@@ -108,6 +112,13 @@ class PairingUriParserTest {
         assertEquals("default", h.modelName)
         assertEquals(false, h.useRunsApi)
         assertEquals(true, h.streaming)
+        assertEquals("https://dash.example.com", h.terminalUrl)
+        assertEquals("session-token", h.terminalSessionToken)
+    }
+
+    @Test fun `OpenClaw health test normalizes websocket gateway URLs`() {
+        assertEquals("http://10.0.2.2:18789/health", openClawHealthUrl("ws://10.0.2.2:18789"))
+        assertEquals("https://gateway.example.com/health", openClawHealthUrl("wss://gateway.example.com"))
     }
 
     @Test fun `Hermes Relay v1 QR payload is accepted directly`() {

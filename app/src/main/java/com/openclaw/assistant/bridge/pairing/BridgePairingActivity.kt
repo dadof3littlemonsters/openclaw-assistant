@@ -23,6 +23,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,7 +55,8 @@ private fun BridgePairingScreen() {
     val context = LocalContext.current
     val cfg = remember { MobileBridgeConfig.getInstance(context) }
     var offer by remember { mutableStateOf(BridgePairing.currentOffer()) }
-    val bridgeUrl = remember(cfg.port.value) { "http://<device-ip>:${cfg.port.value}" }
+    val port by cfg.port.collectAsState()
+    val bridgeUrl = remember(port) { "http://<device-ip>:$port" }
 
     Scaffold(topBar = { TopAppBar(title = { Text(androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.av_pair_title)) }) }) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {

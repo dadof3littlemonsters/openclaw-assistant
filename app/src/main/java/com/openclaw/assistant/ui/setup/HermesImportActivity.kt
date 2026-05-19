@@ -238,7 +238,8 @@ private fun mask(s: String): String = if (s.length <= 6) "•".repeat(s.length) 
 private fun testOpenClawSetupCode(setupCode: String): ConnectionTestResult {
     val decoded = GatewayConfigUtils.decodeGatewaySetupCode(setupCode)
         ?: return ConnectionTestResult(false, "Invalid setup code")
-    val healthUrl = decoded.url.trim().trimEnd('/') + "/health"
+    val healthUrl = openClawHealthUrl(decoded.url)
+        ?: return ConnectionTestResult(false, "Invalid gateway URL")
     val started = System.currentTimeMillis()
     return try {
         val conn = (URL(healthUrl).openConnection() as HttpURLConnection).apply {
@@ -261,6 +262,19 @@ private fun testOpenClawSetupCode(setupCode: String): ConnectionTestResult {
     }
 }
 
+internal fun openClawHealthUrl(gatewayUrl: String): String? {
+    val uri = runCatching { URI(gatewayUrl.trim()) }.getOrNull() ?: return null
+    val scheme = when (uri.scheme?.lowercase(Locale.US)) {
+        "ws", "http" -> "http"
+        "wss", "https" -> "https"
+        else -> return null
+    }
+    val host = uri.host ?: return null
+    val hostForUrl = if (":" in host && !host.startsWith("[")) "[$host]" else host
+    val port = if (uri.port > 0) ":${uri.port}" else ""
+    return "$scheme://$hostForUrl$port/health"
+}
+
 internal data class PairingPayload(
     val hermes: HermesPairingPayload?,
     val openClawSetupCode: String?,
@@ -274,6 +288,8 @@ internal data class HermesPairingPayload(
     val useRunsApi: Boolean,
     val streaming: Boolean,
     val displayName: String?,
+    val terminalUrl: String? = null,
+    val terminalSessionToken: String? = null,
 )
 
 internal data class EditablePairingPayload(
@@ -285,6 +301,8 @@ internal data class EditablePairingPayload(
     val hermesUseRunsApi: Boolean,
     val hermesStreaming: Boolean,
     val hermesDisplayName: String,
+    val hermesTerminalUrl: String,
+    val hermesTerminalSessionToken: String,
     val includeOpenClaw: Boolean,
     val openClawSetupCode: String,
 )
@@ -299,6 +317,8 @@ internal fun PairingPayload.toEditablePairingPayload(): EditablePairingPayload {
         hermesUseRunsApi = hermes?.useRunsApi ?: true,
         hermesStreaming = hermes?.streaming ?: true,
         hermesDisplayName = hermes?.displayName.orEmpty(),
+        hermesTerminalUrl = hermes?.terminalUrl.orEmpty(),
+        hermesTerminalSessionToken = hermes?.terminalSessionToken.orEmpty(),
         includeOpenClaw = openClawSetupCode != null,
         openClawSetupCode = openClawSetupCode.orEmpty(),
     )
@@ -319,6 +339,8 @@ internal fun EditablePairingPayload.toPairingPayload(): PairingPayload? {
             useRunsApi = hermesUseRunsApi,
             streaming = hermesStreaming,
             displayName = hermesDisplayName.trim().ifEmpty { null },
+            terminalUrl = hermesTerminalUrl.trim().takeIf { it.startsWith("http://") || it.startsWith("https://") },
+            terminalSessionToken = hermesTerminalSessionToken.trim().ifEmpty { null },
         )
     } else {
         null
@@ -485,27 +507,38 @@ private fun parsePairingJson(raw: String): PairingPayload? {
 
 private fun parseAgentVoiceSetupJson(obj: JsonObject): PairingPayload? {
     if (obj["type"]?.jsonPrimitive?.contentOrNull != "agent_voice_setup") return null
-        val hermesObj = obj["hermes"] as? JsonObject
-        val hermes = hermesObj?.let { h ->
-            val urls = withoutAndroidLoopbackUrls((h["urls"] as? JsonArray)
-                ?.mapNotNull { element ->
-                    element.jsonPrimitive.contentOrNull?.takeIf { it.startsWith("http://") || it.startsWith("https://") }
-                }
-                .orEmpty())
-            val base = urls.firstOrNull()
-                ?: h["url"]?.jsonPrimitive?.contentOrNull?.takeIf { it.startsWith("http://") || it.startsWith("https://") }
-            base?.let {
-                HermesPairingPayload(
-                    baseUrl = it,
-                    secondaryUrls = urls.drop(1),
-                    apiKey = h["key"]?.jsonPrimitive?.contentOrNull?.trim()?.ifEmpty { null },
-                    modelName = h["model"]?.jsonPrimitive?.contentOrNull?.trim()?.ifEmpty { "default" } ?: "default",
-                    useRunsApi = h["runs"]?.jsonPrimitive?.booleanOrNull ?: true,
-                    streaming = h["streaming"]?.jsonPrimitive?.booleanOrNull ?: true,
-                    displayName = h["name"]?.jsonPrimitive?.contentOrNull?.trim()?.ifEmpty { null },
-                )
+    val hermesObj = obj["hermes"] as? JsonObject
+    val hermes = hermesObj?.let { h ->
+        val urls = withoutAndroidLoopbackUrls((h["urls"] as? JsonArray)
+            ?.mapNotNull { element ->
+                element.jsonPrimitive.contentOrNull?.takeIf { it.startsWith("http://") || it.startsWith("https://") }
             }
+            .orEmpty())
+        val base = urls.firstOrNull()
+            ?: h["url"]?.jsonPrimitive?.contentOrNull?.takeIf { it.startsWith("http://") || it.startsWith("https://") }
+        base?.let {
+            HermesPairingPayload(
+                baseUrl = it,
+                secondaryUrls = urls.drop(1),
+                apiKey = h["key"]?.jsonPrimitive?.contentOrNull?.trim()?.ifEmpty { null },
+                modelName = h["model"]?.jsonPrimitive?.contentOrNull?.trim()?.ifEmpty { "default" } ?: "default",
+                useRunsApi = h["runs"]?.jsonPrimitive?.booleanOrNull ?: true,
+                streaming = h["streaming"]?.jsonPrimitive?.booleanOrNull ?: true,
+                displayName = h["name"]?.jsonPrimitive?.contentOrNull?.trim()?.ifEmpty { null },
+                terminalUrl = (h["terminal"] as? JsonObject)
+                    ?.get("url")
+                    ?.jsonPrimitive
+                    ?.contentOrNull
+                    ?.takeIf { it.startsWith("http://") || it.startsWith("https://") },
+                terminalSessionToken = (h["terminal"] as? JsonObject)
+                    ?.get("token")
+                    ?.jsonPrimitive
+                    ?.contentOrNull
+                    ?.trim()
+                    ?.ifEmpty { null },
+            )
         }
+    }
     val openClawSetupCode = (obj["openclaw"] as? JsonObject)
         ?.get("setupCode")
         ?.jsonPrimitive
@@ -571,6 +604,9 @@ private fun parseHermesParams(uri: Uri, prefix: String): HermesPairingPayload? {
         useRunsApi = uri.getQueryParameter("${prefix}r") != "0",
         streaming = uri.getQueryParameter("${prefix}s") != "0",
         displayName = uri.getQueryParameter("${prefix}n"),
+        terminalUrl = uri.getQueryParameter("${prefix}tu")
+            ?.takeIf { it.startsWith("http://") || it.startsWith("https://") },
+        terminalSessionToken = uri.getQueryParameter("${prefix}tt")?.trim()?.ifEmpty { null },
     )
 }
 
@@ -594,6 +630,8 @@ private fun HermesPairingPayload.toBackendConfig(isPrimary: Boolean): AgentBacke
     modelName = modelName,
     useRunsApi = useRunsApi,
     useStreaming = streaming,
+    terminalUrl = terminalUrl,
+    terminalSessionToken = terminalSessionToken,
     isPrimary = isPrimary,
 )
 

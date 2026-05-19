@@ -202,6 +202,23 @@ def wait_for_http_url(url: str, timeout_seconds: float = 35.0) -> bool:
     return False
 
 
+def discover_dashboard_terminal(local_url: str = "http://127.0.0.1:9119") -> Optional[dict]:
+    """Return Hermes dashboard terminal pairing data when `dashboard --tui` is running."""
+    try:
+        with urllib.request.urlopen(local_url.rstrip("/") + "/", timeout=2.0) as response:
+            html = response.read().decode("utf-8", errors="replace")
+    except Exception:
+        return None
+    token_match = re.search(r'__HERMES_SESSION_TOKEN__="([^"]+)"', html)
+    tui_match = re.search(r"__HERMES_DASHBOARD_EMBEDDED_CHAT__=(true|false)", html)
+    if not token_match:
+        return None
+    if tui_match and tui_match.group(1) != "true":
+        print("Hermes dashboard is running, but Terminal is disabled. Start it with `hermes dashboard --tui`.", file=sys.stderr)
+        return None
+    return {"url": normalize_url(local_url), "token": token_match.group(1)}
+
+
 def start_cloudflared_tunnel(local_url: str, label: str, timeout_seconds: float = 35.0) -> Optional[str]:
     cloudflared = shutil.which("cloudflared")
     if not cloudflared:
@@ -683,6 +700,7 @@ def build_pairing_uri(
     use_runs_api: bool,
     streaming: bool,
     display_name: Optional[str],
+    terminal: Optional[dict],
     openclaw_setup_code: Optional[str],
 ) -> str:
     params: List[tuple[str, str]] = []
@@ -699,6 +717,11 @@ def build_pairing_uri(
         params.append(("hs", "1" if streaming else "0"))
     if hermes_urls and display_name:
         params.append(("hn", display_name))
+    if hermes_urls and terminal:
+        if terminal.get("url"):
+            params.append(("htu", str(terminal["url"])))
+        if terminal.get("token"):
+            params.append(("htt", str(terminal["token"])))
     if openclaw_setup_code:
         params.append(("oc", openclaw_setup_code))
     if not params:
@@ -713,6 +736,7 @@ def build_pairing_json(
     use_runs_api: bool,
     streaming: bool,
     display_name: Optional[str],
+    terminal: Optional[dict],
     openclaw_setup_code: Optional[str],
 ) -> str:
     payload: dict = {"type": "agent_voice_setup", "version": 1}
@@ -727,6 +751,11 @@ def build_pairing_json(
             hermes["key"] = hermes_key
         if display_name:
             hermes["name"] = display_name
+        if terminal and terminal.get("url") and terminal.get("token"):
+            hermes["terminal"] = {
+                "url": str(terminal["url"]),
+                "token": str(terminal["token"]),
+            }
         payload["hermes"] = hermes
     if openclaw_setup_code:
         payload["openclaw"] = {"setupCode": openclaw_setup_code}
@@ -1133,6 +1162,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     openclaw_installed = bool(shutil.which("openclaw"))
     tailscale_installed = bool(tailscale_cmd())
     hermes_port_open = is_port_open("127.0.0.1", 8642)
+    dashboard_port_open = is_port_open("127.0.0.1", 9119)
     openclaw_port_open = is_port_open("127.0.0.1", 18789)
     hermes_key = args.key or discover_hermes_key()
     hermes_model = args.model or discover_hermes_model() or "default"
@@ -1146,7 +1176,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     discovered_openclaw_setup_code = args.openclaw_setup_code or discover_openclaw_setup_code() or openclaw_setup_code_from_local_install()
 
     print("Agent Voice pairing helper")
-    print(f"  Hermes:   {'found' if hermes_installed else 'not found'}; API port {'open' if hermes_port_open else 'not detected'}")
+    print(f"  Hermes:   {'found' if hermes_installed else 'not found'}; API port {'open' if hermes_port_open else 'not detected'}; dashboard {'open' if dashboard_port_open else 'not detected'}")
     print(f"  OpenClaw: {'found' if openclaw_installed else 'not found'}; gateway port {'open' if openclaw_port_open else 'not detected'}")
     print(f"  Tailscale:{' found' if tailscale_installed else ' not found'}")
     if discovered_hermes_url:
@@ -1187,10 +1217,19 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     hermes_urls: List[str] = []
     hermes_public_url: Optional[str] = None
+    terminal_pairing: Optional[dict] = discover_dashboard_terminal() if include_hermes and dashboard_port_open else None
     openclaw_public_url: Optional[str] = None
     if use_public_tunnel:
         if include_hermes and hermes_port_open:
             hermes_public_url = start_public_tunnel("http://127.0.0.1:8642", "hermes", args.tunnel_provider)
+        if include_hermes and terminal_pairing and dashboard_port_open:
+            dashboard_public_url = start_public_tunnel("http://127.0.0.1:9119", "hermes-dashboard", args.tunnel_provider)
+            if dashboard_public_url and wait_for_http_url(dashboard_public_url, timeout_seconds=8.0):
+                terminal_pairing = dict(terminal_pairing)
+                terminal_pairing["url"] = dashboard_public_url
+            elif args.public_tunnel:
+                print("Hermes Terminal dashboard tunnel could not be verified; omitting Terminal from the QR.", file=sys.stderr)
+                terminal_pairing = None
         if include_openclaw and openclaw_port_open:
             openclaw_public_url = start_public_tunnel("http://127.0.0.1:18789", "openclaw", args.tunnel_provider)
 
@@ -1277,6 +1316,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         use_runs_api=hermes_runs,
         streaming=hermes_streaming,
         display_name=args.name,
+        terminal=terminal_pairing,
         openclaw_setup_code=openclaw_setup_code,
     )
     deep_link = build_pairing_uri(
@@ -1286,6 +1326,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         use_runs_api=hermes_runs,
         streaming=hermes_streaming,
         display_name=args.name,
+        terminal=terminal_pairing,
         openclaw_setup_code=openclaw_setup_code,
     )
 

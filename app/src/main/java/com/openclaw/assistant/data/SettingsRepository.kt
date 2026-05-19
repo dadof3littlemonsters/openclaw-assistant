@@ -214,6 +214,11 @@ class SettingsRepository(context: Context) {
         get() = prefs.getBoolean(KEY_MEDIA_BUTTON_ENABLED, false)
         set(value) = prefs.edit().putBoolean(KEY_MEDIA_BUTTON_ENABLED, value).apply()
 
+    // Latest app update version dismissed from the startup notice.
+    var dismissedUpdateVersion: String
+        get() = prefs.getString(KEY_DISMISSED_UPDATE_VERSION, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_DISMISSED_UPDATE_VERSION, value).apply()
+
     // Connection Verified
     var isVerified: Boolean
         get() = prefs.getBoolean(KEY_IS_VERIFIED, false)
@@ -310,6 +315,7 @@ class SettingsRepository(context: Context) {
         private const val KEY_TTS_BARGE_IN_ENABLED = "tts_barge_in_enabled"
         private const val KEY_WAKE_WORD_DEBUG_ENABLED = "wake_word_debug_enabled"
         private const val KEY_MEDIA_BUTTON_ENABLED = "media_button_enabled"
+        private const val KEY_DISMISSED_UPDATE_VERSION = "dismissed_update_version"
         private const val KEY_SPEECH_LANGUAGE = "speech_language"
         private const val KEY_APP_LANGUAGE = "app_language"
         private const val KEY_HAS_COMPLETED_SETUP = "has_completed_setup"

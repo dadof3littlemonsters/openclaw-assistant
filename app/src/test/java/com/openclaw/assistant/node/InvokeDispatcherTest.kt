@@ -8,6 +8,7 @@ import com.openclaw.assistant.protocol.OpenClawPhotosCommand
 import com.openclaw.assistant.protocol.OpenClawContactsCommand
 import com.openclaw.assistant.protocol.OpenClawCalendarCommand
 import com.openclaw.assistant.protocol.OpenClawMotionCommand
+import com.openclaw.assistant.protocol.OpenClawBridgeCommand
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -35,6 +36,7 @@ class InvokeDispatcherTest {
   private val clipboardHandler = mockk<ClipboardHandler>()
   private val appHandler = mockk<AppHandler>()
   private val voiceWakeHandler = mockk<VoiceWakeHandler>()
+  private val mobileBridgeHandler = mockk<MobileBridgeHandler>()
 
   private fun createDispatcher(
     isForeground: Boolean = true,
@@ -60,6 +62,7 @@ class InvokeDispatcherTest {
     clipboardHandler = clipboardHandler,
     appHandler = appHandler,
     voiceWakeHandler = voiceWakeHandler,
+    mobileBridgeHandler = mobileBridgeHandler,
     isForeground = { isForeground },
     cameraEnabled = { cameraEnabled },
     locationEnabled = { locationEnabled }
@@ -163,5 +166,28 @@ class InvokeDispatcherTest {
 
     assertEquals(true, result.ok)
     assertEquals("""{"activity":"still"}""", result.payloadJson)
+  }
+
+  @Test
+  fun `bridge status is dispatched to handler`() = runTest {
+    val dispatcher = createDispatcher()
+    every { mobileBridgeHandler.handleStatus() } returns GatewaySession.InvokeResult.ok("""{"enabled":true}""")
+
+    val result = dispatcher.handleInvoke(OpenClawBridgeCommand.Status.rawValue, null)
+
+    assertEquals(true, result.ok)
+    assertEquals("""{"enabled":true}""", result.payloadJson)
+  }
+
+  @Test
+  fun `bridge execute is dispatched to handler`() = runTest {
+    val dispatcher = createDispatcher()
+    val params = """{"requestId":"r1","capability":"device.info","arguments":{}}"""
+    coEvery { mobileBridgeHandler.handleExecute(params) } returns GatewaySession.InvokeResult.ok("""{"status":"completed"}""")
+
+    val result = dispatcher.handleInvoke(OpenClawBridgeCommand.Execute.rawValue, params)
+
+    assertEquals(true, result.ok)
+    assertEquals("""{"status":"completed"}""", result.payloadJson)
   }
 }

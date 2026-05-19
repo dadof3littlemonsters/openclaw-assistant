@@ -79,6 +79,9 @@ import com.openclaw.assistant.ui.components.CollapsibleSection
 import com.openclaw.assistant.ui.components.ConnectionState
 import com.openclaw.assistant.ui.components.PairingRequiredCard
 import com.openclaw.assistant.ui.components.StatusIndicator
+import com.openclaw.assistant.ui.bridge.MobileBridgeSettingsScreen
+import com.openclaw.assistant.ui.terminal.TerminalScreen
+import com.openclaw.assistant.ui.terminal.TerminalViewModel
 import com.openclaw.assistant.ui.theme.OpenClawAssistantTheme
 import com.openclaw.assistant.ui.SetupGuideScreen
 
@@ -96,9 +99,11 @@ data class PermissionInfo(
 sealed class AppTab(val route: String, val labelResId: Int, val icon: ImageVector) {
     object Home     : AppTab("home",     R.string.tab_nav_home,     Icons.Default.Home)
     object Chat     : AppTab("chat",     R.string.tab_nav_chat,     Icons.AutoMirrored.Filled.Chat)
+    object Terminal : AppTab("terminal", R.string.tab_nav_terminal, Icons.Default.Terminal)
+    object Bridge   : AppTab("bridge",   R.string.tab_nav_bridge,   Icons.Default.Link)
     object Canvas   : AppTab("canvas",   R.string.tab_nav_canvas,   Icons.Default.Brush)
     object Settings : AppTab("settings", R.string.tab_nav_settings, Icons.Default.Settings)
-    companion object { val ALL by lazy { listOf(Home, Chat, Canvas, Settings) } }
+    companion object { val ALL by lazy { listOf(Home, Chat, Terminal, Bridge, Canvas, Settings) } }
 }
 
 class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
@@ -468,6 +473,8 @@ fun MainNavHost(
             restore = { route ->
                 when (route) {
                     AppTab.Chat.route     -> AppTab.Chat
+                    AppTab.Terminal.route -> AppTab.Terminal
+                    AppTab.Bridge.route   -> AppTab.Bridge
                     AppTab.Canvas.route   -> AppTab.Canvas
                     AppTab.Settings.route -> AppTab.Settings
                     else                  -> AppTab.Home
@@ -572,6 +579,16 @@ fun MainNavHost(
                         modifier = Modifier.fillMaxSize()
                     )
                 }
+                AppTab.Terminal -> {
+                    val terminalViewModel: TerminalViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+                    TerminalScreen(
+                        viewModel = terminalViewModel,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+                AppTab.Bridge -> {
+                    MobileBridgeSettingsScreen()
+                }
                 AppTab.Settings -> {
                     if (showSettingsCredits) {
                         com.openclaw.assistant.ui.settings.CreditsScreen(
@@ -669,15 +686,14 @@ fun MainScreen(
         try {
             val versionName = context.packageManager.getPackageInfo(context.packageName, 0).versionName
             val info = com.openclaw.assistant.utils.UpdateChecker.checkUpdate(versionName ?: "")
-            if (info != null && info.hasUpdate) {
+            if (info != null && info.hasUpdate && settings.dismissedUpdateVersion != info.latestVersion) {
                 val result = snackbarHostState.showSnackbar(
                     message = context.getString(R.string.update_available, info.latestVersion),
-                    actionLabel = context.getString(R.string.update_action),
+                    actionLabel = context.getString(R.string.update_dismiss_action),
                     duration = SnackbarDuration.Indefinite
                 )
                 if (result == SnackbarResult.ActionPerformed) {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(info.downloadUrl))
-                    context.startActivity(intent)
+                    settings.dismissedUpdateVersion = info.latestVersion
                 }
             }
         } catch (e: Exception) {

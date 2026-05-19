@@ -16,6 +16,7 @@ enum class OpenClawCapability(val rawValue: String) {
     Wifi("wifi"),
     App("app"),
     Clipboard("clipboard"),
+    Bridge("bridge"),
 }
 
 enum class OpenClawCanvasCommand(val rawValue: String) {
@@ -200,5 +201,18 @@ enum class OpenClawVoiceWakeCommand(val rawValue: String) {
 
     companion object {
         const val NamespacePrefix: String = "voiceWake."
+    }
+}
+
+enum class OpenClawBridgeCommand(val rawValue: String) {
+    Status("bridge.status"),
+    Manifest("bridge.manifest"),
+    Execute("bridge.execute"),
+    Grants("bridge.grants"),
+    Revoke("bridge.revoke"),
+    ;
+
+    companion object {
+        const val NamespacePrefix: String = "bridge."
     }
 }
