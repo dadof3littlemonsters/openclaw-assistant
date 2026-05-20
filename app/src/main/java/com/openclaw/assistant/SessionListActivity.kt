@@ -109,7 +109,7 @@ class SessionListActivity : ComponentActivity() {
                     onCreateSession = { name, isGateway, agentId, targetBackendId ->
                         ChatBackendTarget.set(targetBackendId)
                         viewModel.setUseNodeChat(isGateway)
-                        viewModel.createSession(name, isGateway, agentId) { sessionId, createdAsGateway ->
+                        viewModel.createSession(name, isGateway, agentId, targetBackendId) { sessionId, createdAsGateway ->
                             startActivity(Intent(this, ChatActivity::class.java).apply {
                                 putExtra(ChatActivity.EXTRA_SESSION_ID, sessionId)
                                 putExtra(ChatActivity.EXTRA_SESSION_TITLE, name)
@@ -550,14 +550,17 @@ private fun SessionListItem(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Surface(
-                        color = if (session.isGateway) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.tertiaryContainer,
+                        color = if (session.product == ChatProduct.OPENCLAW) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.tertiaryContainer,
                         shape = MaterialTheme.shapes.small
                     ) {
                         Text(
-                            text = if (session.isGateway) stringResource(R.string.tab_gateway) else stringResource(R.string.tab_http),
+                            text = when (session.product) {
+                                ChatProduct.OPENCLAW -> stringResource(R.string.chat_type_openclaw)
+                                ChatProduct.HERMES -> stringResource(R.string.chat_type_hermes)
+                            },
                             style = MaterialTheme.typography.labelSmall,
                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                            color = if (session.isGateway) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onTertiaryContainer
+                            color = if (session.product == ChatProduct.OPENCLAW) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onTertiaryContainer
                         )
                     }
                 }

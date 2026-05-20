@@ -57,9 +57,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.openclaw.assistant.R
 import com.openclaw.assistant.bridge.BridgeApprovalMode
 import com.openclaw.assistant.bridge.BridgeBindMode
 import com.openclaw.assistant.bridge.MobileBridgeConfig
@@ -88,7 +90,7 @@ fun MobileBridgeSettingsScreen() {
     val token = remember(rotated, enabled) { cfg.tokenOrNull() ?: "" }
     val a11yEnabled = com.openclaw.assistant.bridge.accessibility.AgentVoiceAccessibilityService.isRunning()
 
-    Scaffold(topBar = { TopAppBar(title = { Text(androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.mobile_bridge_title)) }) }) { padding ->
+    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.mobile_bridge_title)) }) }) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -114,19 +116,19 @@ fun MobileBridgeSettingsScreen() {
                 },
             )
 
-            SettingsCard(title = "Connection", icon = Icons.Default.Link) {
+            SettingsCard(title = stringResource(R.string.av_bridge_connection_section), icon = Icons.Default.Link) {
                 OutlinedTextField(
                     value = portText,
                     onValueChange = {
                         portText = it.filter(Char::isDigit)
                         portText.toIntOrNull()?.let(cfg::setPort)
                     },
-                    label = { Text("Port") },
+                    label = { Text(stringResource(R.string.av_bridge_port)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
                 Spacer(Modifier.height(12.dp))
-                Text("Bind mode", style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.av_bridge_bind_mode), style = MaterialTheme.typography.labelLarge)
                 FlowChipRow {
                     BridgeBindMode.values().forEach { mode ->
                         FilterChip(
@@ -139,7 +141,7 @@ fun MobileBridgeSettingsScreen() {
                 if (bindMode == BridgeBindMode.LAN) {
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "LAN / VPN exposes this device to the network. Use it only on trusted Wi-Fi or Tailscale.",
+                        stringResource(R.string.av_bridge_lan_warning),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -148,14 +150,14 @@ fun MobileBridgeSettingsScreen() {
                 AssistChip(onClick = {}, label = { Text("http://<device-ip>:$port") })
             }
 
-            SettingsCard(title = "Security", icon = Icons.Default.Security) {
-                Text("Approval mode", style = MaterialTheme.typography.labelLarge)
+            SettingsCard(title = stringResource(R.string.av_bridge_security_section), icon = Icons.Default.Security) {
+                Text(stringResource(R.string.av_bridge_approval_mode), style = MaterialTheme.typography.labelLarge)
                 FlowChipRow {
                     BridgeApprovalMode.values().forEach { mode ->
                         FilterChip(
                             selected = approvalMode == mode,
                             onClick = { cfg.setApprovalMode(mode) },
-                            label = { Text(approvalLabel(mode)) },
+                        label = { Text(approvalLabel(mode)) },
                         )
                     }
                 }
@@ -166,10 +168,10 @@ fun MobileBridgeSettingsScreen() {
                     Icon(Icons.Default.Key, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("Bridge token", style = MaterialTheme.typography.labelLarge)
+                        Text(stringResource(R.string.bridge_token), style = MaterialTheme.typography.labelLarge)
                         Text(
                             when {
-                                token.isBlank() -> "Not generated yet"
+                                token.isBlank() -> stringResource(R.string.av_bridge_token_not_generated)
                                 showToken -> token
                                 else -> "•".repeat(token.length.coerceAtMost(32))
                             },
@@ -192,13 +194,13 @@ fun MobileBridgeSettingsScreen() {
                 OutlinedButton(onClick = { cfg.rotateToken(); rotated++; showToken = true }) {
                     Icon(Icons.Default.Sync, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Rotate token")
+                    Text(stringResource(R.string.av_bridge_rotate_token))
                 }
             }
 
-            SettingsCard(title = "Capabilities", icon = Icons.Default.Devices) {
+            SettingsCard(title = stringResource(R.string.av_bridge_capabilities_section), icon = Icons.Default.Devices) {
                 Text(
-                    "These are separate from the Home screen toggles. Only checked groups are exposed through the local Bridge HTTP API.",
+                    stringResource(R.string.av_bridge_capabilities_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -217,21 +219,21 @@ fun MobileBridgeSettingsScreen() {
                 }
             }
 
-            SettingsCard(title = "Accessibility Bridge", icon = Icons.Default.SettingsAccessibility) {
+            SettingsCard(title = stringResource(R.string.av_bridge_a11y_section), icon = Icons.Default.SettingsAccessibility) {
                 StatusLine(
-                    label = if (a11yEnabled) "Service enabled" else "Enable in Android Accessibility settings",
+                    label = if (a11yEnabled) stringResource(R.string.av_bridge_service_enabled) else stringResource(R.string.av_bridge_enable_a11y_settings),
                     active = a11yEnabled,
                 )
                 Spacer(Modifier.height(10.dp))
                 Button(onClick = {
                     context.startActivity(android.content.Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)
                         .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
-                }) { Text("Open Accessibility settings") }
+                }) { Text(stringResource(R.string.av_bridge_open_a11y_settings)) }
             }
 
-            SettingsCard(title = "Pairing and checks", icon = Icons.Default.CheckCircle) {
+            SettingsCard(title = stringResource(R.string.av_bridge_pairing_checks), icon = Icons.Default.CheckCircle) {
                 Text(
-                    "Use the pairing screen for Hermes tools or another trusted client. OpenClaw inside this app uses its own Gateway/device-control path and does not need this token.",
+                    stringResource(R.string.av_bridge_pairing_checks_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -239,37 +241,37 @@ fun MobileBridgeSettingsScreen() {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(onClick = {
                         context.startActivity(android.content.Intent(context, com.openclaw.assistant.bridge.pairing.BridgePairingActivity::class.java))
-                    }) { Text("Pair a remote") }
+                    }) { Text(stringResource(R.string.av_bridge_pair_remote)) }
                     OutlinedButton(onClick = {
                         context.startActivity(android.content.Intent(context, com.openclaw.assistant.ui.diag.SelfCheckActivity::class.java))
-                    }) { Text("Self-check") }
+                    }) { Text(stringResource(R.string.av_bridge_self_check)) }
                 }
                 val grants = com.openclaw.assistant.bridge.grants.BridgeGrants.snapshot()
                 Spacer(Modifier.height(14.dp))
                 HorizontalDivider()
                 Spacer(Modifier.height(14.dp))
-                Text("Active grants", style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.av_bridge_active_grants), style = MaterialTheme.typography.labelLarge)
                 Spacer(Modifier.height(4.dp))
                 if (grants.isEmpty()) {
-                    Text("None", style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.av_bridge_no_grants), style = MaterialTheme.typography.bodySmall)
                 } else {
                     grants.forEach { grant ->
                         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                             Text(grant.capability, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
                             OutlinedButton(onClick = { com.openclaw.assistant.bridge.grants.BridgeGrants.revoke(grant.capability) }) {
-                                Text("Revoke")
+                                Text(stringResource(R.string.av_bridge_revoke))
                             }
                         }
                     }
                     OutlinedButton(onClick = { com.openclaw.assistant.bridge.grants.BridgeGrants.revokeAll() }) {
-                        Text("Revoke all")
+                        Text(stringResource(R.string.av_bridge_revoke_all))
                     }
                 }
             }
 
             if (!com.openclaw.assistant.BuildConfig.IS_SIDELOAD) {
                 Text(
-                    "This build is configured for Play distribution: Accessibility Bridge and SMS are hidden.",
+                    stringResource(R.string.av_bridge_play_warning),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                 )
@@ -296,9 +298,9 @@ private fun BridgeStatusCard(
                 StatusDot(active = enabled)
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("Mobile Bridge", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.mobile_bridge_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     Text(
-                        if (enabled) "Running on port $port (${modeLabel(bindMode)})" else "Off. Enable only when a trusted agent needs device access.",
+                        if (enabled) stringResource(R.string.av_bridge_running_on_port, port, modeLabel(bindMode)) else stringResource(R.string.av_bridge_off_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -306,8 +308,8 @@ private fun BridgeStatusCard(
                 Switch(checked = enabled, onCheckedChange = onEnabledChange)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AssistChip(onClick = {}, label = { Text(if (tokenPresent) "Token ready" else "No token") })
-                AssistChip(onClick = {}, label = { Text(if (enabled) "Bridge API active" else "Bridge API stopped") })
+                AssistChip(onClick = {}, label = { Text(if (tokenPresent) stringResource(R.string.av_bridge_token_ready) else stringResource(R.string.av_bridge_no_token)) })
+                AssistChip(onClick = {}, label = { Text(if (enabled) stringResource(R.string.av_bridge_api_active) else stringResource(R.string.av_bridge_api_stopped)) })
             }
         }
     }
@@ -376,12 +378,15 @@ private fun StatusDot(active: Boolean) {
     }
 }
 
+@Composable
 private fun modeLabel(m: BridgeBindMode) = when (m) {
-    BridgeBindMode.LOCAL_ONLY -> "Local only"
-    BridgeBindMode.LAN -> "LAN / VPN"
+    BridgeBindMode.LOCAL_ONLY -> stringResource(R.string.av_bridge_bind_local)
+    BridgeBindMode.LAN -> stringResource(R.string.av_bridge_bind_lan)
 }
+
+@Composable
 private fun approvalLabel(m: BridgeApprovalMode) = when (m) {
-    BridgeApprovalMode.ALWAYS_CONFIRM -> "Always confirm"
-    BridgeApprovalMode.CONFIRM_MEDIUM_HIGH -> "Confirm medium/high"
-    BridgeApprovalMode.TRUSTED -> "Trusted (no prompts)"
+    BridgeApprovalMode.ALWAYS_CONFIRM -> stringResource(R.string.av_bridge_approval_always)
+    BridgeApprovalMode.CONFIRM_MEDIUM_HIGH -> stringResource(R.string.av_bridge_approval_med_high)
+    BridgeApprovalMode.TRUSTED -> stringResource(R.string.av_bridge_approval_trusted)
 }

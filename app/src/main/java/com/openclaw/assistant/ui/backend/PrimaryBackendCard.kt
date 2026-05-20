@@ -13,6 +13,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -52,6 +53,17 @@ fun PrimaryBackendCard(
     var hermesTest by remember { mutableStateOf<ConnectionTestResult?>(null) }
     val scope = rememberCoroutineScope()
     val hasConfiguredBackend = openClaw != null || hermes != null
+    val connectionTestingText = stringResource(R.string.av_connection_testing)
+
+    LaunchedEffect(hermes?.id, hermes?.updatedAt) {
+        val config = hermes
+        if (config == null) {
+            hermesTest = null
+        } else {
+            hermesTest = ConnectionTestResult(false, connectionTestingText)
+            hermesTest = withContext(Dispatchers.IO) { AgentClientFactory.create(config).testConnection() }
+        }
+    }
 
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -68,20 +80,21 @@ fun PrimaryBackendCard(
                     configured = openClaw != null,
                     connected = openClawConnected,
                     statusText = when {
-                        openClawConnected -> if (openClawStatusText.isBlank()) stringResource(R.string.av_home_connected) else openClawStatusText
+                        openClawConnected -> stringResource(R.string.av_home_connected)
                         openClaw != null -> stringResource(R.string.av_home_disconnected)
                         else -> stringResource(R.string.av_home_not_configured)
                     },
                     modifier = Modifier.weight(1f),
                 )
                 BackendProductTile(
-                    name = "Hermes",
+                    name = "Hermes Agent",
                     configured = hermes != null,
                     connected = hermesTest?.ok == true,
+                    testing = hermes != null && hermesTest?.message == connectionTestingText,
                     statusText = when {
                         hermesTest?.ok == true -> stringResource(R.string.av_home_connected)
                         hermesTest != null -> hermesTest?.message ?: stringResource(R.string.av_home_disconnected)
-                        hermes != null -> stringResource(R.string.av_home_disconnected)
+                        hermes != null -> connectionTestingText
                         else -> stringResource(R.string.av_home_not_configured)
                     },
                     modifier = Modifier.weight(1f),
@@ -95,7 +108,7 @@ fun PrimaryBackendCard(
                         }
                         hermes?.let { config ->
                             scope.launch {
-                                hermesTest = ConnectionTestResult(false, context.getString(R.string.av_connection_testing))
+                                hermesTest = ConnectionTestResult(false, connectionTestingText)
                                 hermesTest = withContext(Dispatchers.IO) { AgentClientFactory.create(config).testConnection() }
                             }
                         }
@@ -114,10 +127,15 @@ private fun BackendProductTile(
     name: String,
     configured: Boolean,
     connected: Boolean,
+    testing: Boolean = false,
     statusText: String,
     modifier: Modifier = Modifier,
 ) {
-    val statusColor = if (connected) Color(0xFF34C759) else Color(0xFFE53935)
+    val statusColor = when {
+        connected -> Color(0xFF34C759)
+        testing -> Color(0xFFFFA000)
+        else -> Color(0xFFE53935)
+    }
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest),

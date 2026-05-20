@@ -349,6 +349,7 @@ def start_public_tunnel(local_url: str, label: str, provider: str = "auto") -> O
 
 MUX_HERMES_PREFIX = "/__agentvoice_hermes_api"
 MUX_DASHBOARD_PREFIX = "/__agentvoice_hermes_dashboard"
+MUX_TERMINAL_PREFIX = "/__agentvoice_terminal"
 
 
 def stop_temp_process(label: str, provider: str) -> None:
@@ -375,12 +376,16 @@ def find_free_local_port() -> int:
         return int(sock.getsockname()[1])
 
 
-def start_multiplex_proxy(port: int) -> Optional[str]:
+def start_multiplex_proxy(port: int, approval_port: Optional[int] = None) -> Optional[str]:
     node = shutil.which("node")
     if not node:
         return None
     script_path = Path(tempfile.gettempdir()) / "agentvoice-public-mux.js"
+    terminal_route = ""
+    if approval_port:
+        terminal_route = f"  {{ prefix: '{MUX_TERMINAL_PREFIX}', host: '127.0.0.1', port: {approval_port}, rewriteHost: true }},\n"
     script_path.write_text(
+        (
         r"""
 const http = require('http');
 const net = require('net');
@@ -389,6 +394,9 @@ const port = Number(process.argv[2]);
 const routes = [
   { prefix: '/__agentvoice_hermes_api', host: '127.0.0.1', port: 8642, rewriteHost: true },
   { prefix: '/__agentvoice_hermes_dashboard', host: '127.0.0.1', port: 9119, rewriteHost: true },
+"""
+        + terminal_route +
+        r"""
 ];
 const fallback = { host: '127.0.0.1', port: 18789, rewriteHost: false };
 
@@ -443,6 +451,7 @@ server.on('upgrade', (req, socket, head) => {
 
 server.listen(port, '127.0.0.1');
 """.strip()
+        )
         + "\n"
     )
     log_path = Path(tempfile.gettempdir()) / "agentvoice-public-mux.log"
@@ -469,7 +478,7 @@ server.listen(port, '127.0.0.1');
     return None
 
 
-def start_multiplexed_public_tunnel(provider: str) -> Optional[str]:
+def start_multiplexed_public_tunnel(provider: str, approval_port: Optional[int] = None) -> Optional[str]:
     if provider not in ("auto", "ngrok"):
         return None
     stop_temp_process("mux", "ngrok")
@@ -480,7 +489,7 @@ def start_multiplexed_public_tunnel(provider: str) -> Optional[str]:
     except Exception:
         pass
     port = find_free_local_port()
-    local_url = start_multiplex_proxy(port)
+    local_url = start_multiplex_proxy(port, approval_port=approval_port)
     if not local_url:
         return None
     public_url = start_ngrok_tunnel(local_url, "mux")
@@ -492,6 +501,115 @@ def start_multiplexed_public_tunnel(provider: str) -> Optional[str]:
             pass
         return None
     return public_url.rstrip("/")
+
+
+def start_terminal_command_server() -> Optional[dict]:
+    secret = secrets.token_urlsafe(24)
+    port = find_free_local_port()
+    script_path = Path(tempfile.gettempdir()) / f"agentvoice-terminal-{port}.py"
+    script_path.write_text(
+        r'''
+import json
+import os
+import subprocess
+import sys
+import urllib.parse
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+
+port = int(sys.argv[1])
+secret = sys.argv[2]
+
+class TerminalHandler(BaseHTTPRequestHandler):
+    server_version = "AgentVoiceTerminal/1"
+
+    def log_message(self, fmt, *args):
+        return
+
+    def _json(self, status, payload):
+        body = json.dumps(payload, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+        self.send_response(status)
+        self.send_header("content-type", "application/json; charset=utf-8")
+        self.send_header("cache-control", "no-store")
+        self.send_header("content-length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_POST(self):
+        parsed = urllib.parse.urlparse(self.path)
+        if parsed.path != "/run":
+            self._json(404, {"ok": False, "error": "not_found"})
+            return
+        length = int(self.headers.get("content-length", "0") or "0")
+        if length > 32768:
+            self._json(413, {"ok": False, "error": "too_large"})
+            return
+        try:
+            body = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+        except Exception:
+            self._json(400, {"ok": False, "error": "invalid_json"})
+            return
+        if str(body.get("secret") or "") != secret:
+            self._json(403, {"ok": False, "error": "forbidden"})
+            return
+        command = str(body.get("command") or "").strip()
+        if not command:
+            self._json(400, {"ok": False, "error": "missing_command"})
+            return
+        timeout = int(body.get("timeoutSeconds") or 30)
+        timeout = max(1, min(timeout, 120))
+        try:
+            proc = subprocess.run(
+                command,
+                shell=True,
+                cwd=str(Path.home()),
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                executable=os.environ.get("SHELL") or "/bin/zsh",
+            )
+        except subprocess.TimeoutExpired:
+            self._json(504, {"ok": False, "error": "timeout"})
+            return
+        self._json(200, {
+            "ok": proc.returncode == 0,
+            "exitCode": proc.returncode,
+            "stdout": proc.stdout[-8000:],
+            "stderr": proc.stderr[-8000:],
+        })
+
+ThreadingHTTPServer(("127.0.0.1", port), TerminalHandler).serve_forever()
+'''.lstrip()
+    )
+    stop_temp_process("terminal", "server")
+    log_path = Path(tempfile.gettempdir()) / "agentvoice-terminal-server.log"
+    log_file = log_path.open("w+")
+    try:
+        proc = subprocess.Popen(
+            [sys.executable, str(script_path), str(port), secret],
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+            stdin=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    except Exception:
+        log_file.close()
+        return None
+    deadline = time.monotonic() + 5.0
+    while time.monotonic() < deadline:
+        if proc.poll() is not None:
+            log_file.close()
+            return None
+        if is_port_open("127.0.0.1", port, timeout=0.2):
+            log_file.close()
+            (Path(tempfile.gettempdir()) / "agentvoice-terminal-server.pid").write_text(str(proc.pid))
+            break
+        time.sleep(0.1)
+    else:
+        proc.terminate()
+        log_file.close()
+        return None
+    return {"port": port, "secret": secret}
 
 
 def origin_variants_for_url(url: str) -> List[str]:
@@ -928,6 +1046,7 @@ def build_pairing_uri(
     display_name: Optional[str],
     terminal: Optional[dict],
     openclaw_setup_code: Optional[str],
+    openclaw_approval: Optional[dict] = None,
 ) -> str:
     params: List[tuple[str, str]] = []
     for url in hermes_urls:
@@ -950,6 +1069,11 @@ def build_pairing_uri(
             params.append(("htt", str(terminal["token"])))
     if openclaw_setup_code:
         params.append(("oc", openclaw_setup_code))
+    if openclaw_approval:
+        if openclaw_approval.get("url"):
+            params.append(("oau", str(openclaw_approval["url"])))
+        if openclaw_approval.get("secret"):
+            params.append(("oas", str(openclaw_approval["secret"])))
     if not params:
         raise SystemExit("Nothing to pair. Include Hermes, OpenClaw, or both.")
     return "agentvoice://setup?" + urllib.parse.urlencode(params)
@@ -964,6 +1088,7 @@ def build_pairing_json(
     display_name: Optional[str],
     terminal: Optional[dict],
     openclaw_setup_code: Optional[str],
+    openclaw_approval: Optional[dict] = None,
 ) -> str:
     payload: dict = {"type": "agent_voice_setup", "version": 1}
     if hermes_urls:
@@ -984,7 +1109,13 @@ def build_pairing_json(
             }
         payload["hermes"] = hermes
     if openclaw_setup_code:
-        payload["openclaw"] = {"setupCode": openclaw_setup_code}
+        openclaw_payload = {"setupCode": openclaw_setup_code}
+        if openclaw_approval and openclaw_approval.get("url") and openclaw_approval.get("secret"):
+            openclaw_payload["approval"] = {
+                "url": str(openclaw_approval["url"]),
+                "secret": str(openclaw_approval["secret"]),
+            }
+        payload["openclaw"] = openclaw_payload
     if len(payload) <= 2:
         raise SystemExit("Nothing to pair. Include Hermes, OpenClaw, or both.")
     return json.dumps(payload, separators=(",", ":"), ensure_ascii=False)
@@ -1444,16 +1575,23 @@ def main(argv: Optional[List[str]] = None) -> int:
     hermes_urls: List[str] = []
     hermes_public_url: Optional[str] = None
     terminal_pairing: Optional[dict] = discover_dashboard_terminal() if include_hermes and dashboard_port_open else None
+    terminal_command_pairing: Optional[dict] = start_terminal_command_server() if include_openclaw and openclaw_installed else None
     openclaw_public_url: Optional[str] = None
     if use_public_tunnel:
         mux_public_url = None
         if include_hermes and include_openclaw and hermes_port_open and dashboard_port_open and openclaw_port_open and terminal_pairing:
-            mux_public_url = start_multiplexed_public_tunnel(args.tunnel_provider)
+            mux_public_url = start_multiplexed_public_tunnel(
+                args.tunnel_provider,
+                approval_port=(terminal_command_pairing or {}).get("port"),
+            )
             if mux_public_url:
                 hermes_public_url = mux_public_url + MUX_HERMES_PREFIX
                 openclaw_public_url = mux_public_url
                 terminal_pairing = dict(terminal_pairing)
                 terminal_pairing["url"] = mux_public_url + MUX_DASHBOARD_PREFIX
+                if terminal_command_pairing:
+                    terminal_command_pairing = dict(terminal_command_pairing)
+                    terminal_command_pairing["url"] = mux_public_url + MUX_TERMINAL_PREFIX + "/run"
                 print(f"Started temporary public tunnel for Hermes/OpenClaw/Terminal: {mux_public_url}")
         if not mux_public_url and include_hermes and hermes_port_open:
             hermes_public_url = start_public_tunnel("http://127.0.0.1:8642", "hermes", args.tunnel_provider)
@@ -1565,6 +1703,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         display_name=args.name,
         terminal=terminal_pairing,
         openclaw_setup_code=openclaw_setup_code,
+        openclaw_approval=terminal_command_pairing,
     )
     deep_link = build_pairing_uri(
         hermes_urls=hermes_urls,
@@ -1575,6 +1714,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         display_name=args.name,
         terminal=terminal_pairing,
         openclaw_setup_code=openclaw_setup_code,
+        openclaw_approval=terminal_command_pairing,
     )
 
     qr_path = write_qr_png(qr_payload, Path(tempfile.gettempdir()) / "agentvoice-pair-qr.png")

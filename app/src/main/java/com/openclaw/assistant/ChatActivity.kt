@@ -918,8 +918,8 @@ fun ChatSettingsDialog(
                         title = backend.displayName,
                         subtitle = when (backend.type) {
                             BackendType.HERMES_API_SERVER -> "Hermes Agent"
-                            BackendType.OPENCLAW_GATEWAY -> "OpenClaw Gateway"
-                            BackendType.OPENCLAW_HTTP -> "OpenClaw HTTP"
+                            BackendType.OPENCLAW_GATEWAY -> "OpenClaw"
+                            BackendType.OPENCLAW_HTTP -> "OpenClaw API"
                         },
                         onClick = { pendingSelectedId = backend.id },
                     )

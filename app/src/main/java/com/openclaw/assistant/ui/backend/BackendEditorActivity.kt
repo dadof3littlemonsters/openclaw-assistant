@@ -132,7 +132,7 @@ fun BackendEditorScreen(existingId: String?, onDone: () -> Unit) {
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(value = port, onValueChange = { port = it.filter(Char::isDigit) }, label = { Text("Port") }, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(value = token, onValueChange = { token = it }, label = { Text("Gateway token") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = token, onValueChange = { token = it }, label = { Text("OpenClaw token") }, modifier = Modifier.fillMaxWidth())
                     Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                         Checkbox(checked = useTls, onCheckedChange = { useTls = it }); Text("Use TLS")
                     }
@@ -211,13 +211,13 @@ private fun buildConfig(
 }
 
 private fun shortLabel(t: BackendType) = when (t) {
-    BackendType.HERMES_API_SERVER -> "Hermes"
-    BackendType.OPENCLAW_GATEWAY -> "OpenClaw Gateway"
-    BackendType.OPENCLAW_HTTP -> "OpenClaw HTTP"
+    BackendType.HERMES_API_SERVER -> "Hermes Agent"
+    BackendType.OPENCLAW_GATEWAY -> "OpenClaw"
+    BackendType.OPENCLAW_HTTP -> "OpenClaw API"
 }
 
 private fun defaultName(t: BackendType) = when (t) {
     BackendType.HERMES_API_SERVER -> "Hermes Agent"
-    BackendType.OPENCLAW_GATEWAY -> "OpenClaw Gateway"
-    BackendType.OPENCLAW_HTTP -> "OpenClaw HTTP"
+    BackendType.OPENCLAW_GATEWAY -> "OpenClaw"
+    BackendType.OPENCLAW_HTTP -> "OpenClaw API"
 }

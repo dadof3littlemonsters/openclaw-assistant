@@ -86,6 +86,7 @@ import java.util.Locale
  * Combined setup parameters:
  *   hu/hk/hm/hr/hs/hn mirror the Hermes-only params.
  *   oc is an OpenClaw Gateway setup code, as printed by `openclaw qr`.
+ *   oau/oas are an optional short-lived host Terminal command endpoint URL/secret.
  */
 class HermesImportActivity : ComponentActivity() {
     private var importUri by mutableStateOf<Uri?>(null)
@@ -286,6 +287,8 @@ internal fun openClawHealthUrl(gatewayUrl: String): String? {
 internal data class PairingPayload(
     val hermes: HermesPairingPayload?,
     val openClawSetupCode: String?,
+    val terminalCommandUrl: String? = null,
+    val terminalCommandSecret: String? = null,
 )
 
 internal data class HermesPairingPayload(
@@ -313,6 +316,8 @@ internal data class EditablePairingPayload(
     val hermesTerminalSessionToken: String,
     val includeOpenClaw: Boolean,
     val openClawSetupCode: String,
+    val terminalCommandUrl: String,
+    val terminalCommandSecret: String,
 )
 
 internal fun PairingPayload.toEditablePairingPayload(): EditablePairingPayload {
@@ -329,6 +334,8 @@ internal fun PairingPayload.toEditablePairingPayload(): EditablePairingPayload {
         hermesTerminalSessionToken = hermes?.terminalSessionToken.orEmpty(),
         includeOpenClaw = openClawSetupCode != null,
         openClawSetupCode = openClawSetupCode.orEmpty(),
+        terminalCommandUrl = terminalCommandUrl.orEmpty(),
+        terminalCommandSecret = terminalCommandSecret.orEmpty(),
     )
 }
 
@@ -354,7 +361,13 @@ internal fun EditablePairingPayload.toPairingPayload(): PairingPayload? {
         null
     }
     val openClaw = openClawSetupCode.trim().takeIf { includeOpenClaw && it.isNotEmpty() }
-    return if (hermes == null && openClaw == null) null else PairingPayload(hermes, openClaw)
+    val terminalUrl = terminalCommandUrl.trim().takeIf { it.startsWith("http://") || it.startsWith("https://") }
+    val terminalSecret = terminalCommandSecret.trim().ifEmpty { null }
+    return if (hermes == null && openClaw == null) {
+        null
+    } else {
+        PairingPayload(hermes, openClaw, terminalUrl, terminalSecret)
+    }
 }
 
 @Composable
@@ -470,10 +483,14 @@ internal fun parsePairingUri(uri: Uri): PairingPayload? {
     if (uri.scheme != "agentvoice") return null
     val hermes = parseHermesParams(uri, prefix = if (uri.host == "setup") "h" else "")
     val openClawSetupCode = uri.getQueryParameter("oc")?.trim()?.ifEmpty { null }
+    val terminalCommandUrl = uri.getQueryParameter("oau")?.trim()?.takeIf { it.startsWith("http://") || it.startsWith("https://") }
+    val terminalCommandSecret = uri.getQueryParameter("oas")?.trim()?.ifEmpty { null }
     if (hermes == null && openClawSetupCode == null) return null
     return PairingPayload(
         hermes = hermes,
         openClawSetupCode = openClawSetupCode,
+        terminalCommandUrl = terminalCommandUrl,
+        terminalCommandSecret = terminalCommandSecret,
     )
 }
 
@@ -547,13 +564,31 @@ private fun parseAgentVoiceSetupJson(obj: JsonObject): PairingPayload? {
             )
         }
     }
-    val openClawSetupCode = (obj["openclaw"] as? JsonObject)
+    val openClawObj = obj["openclaw"] as? JsonObject
+    val openClawSetupCode = openClawObj
         ?.get("setupCode")
         ?.jsonPrimitive
         ?.contentOrNull
         ?.trim()
         ?.ifEmpty { null }
-    return if (hermes == null && openClawSetupCode == null) null else PairingPayload(hermes, openClawSetupCode)
+    val approvalObj = openClawObj?.get("approval") as? JsonObject
+    val terminalCommandUrl = approvalObj
+        ?.get("url")
+        ?.jsonPrimitive
+        ?.contentOrNull
+        ?.trim()
+        ?.takeIf { it.startsWith("http://") || it.startsWith("https://") }
+    val terminalCommandSecret = approvalObj
+        ?.get("secret")
+        ?.jsonPrimitive
+        ?.contentOrNull
+        ?.trim()
+        ?.ifEmpty { null }
+    return if (hermes == null && openClawSetupCode == null) {
+        null
+    } else {
+        PairingPayload(hermes, openClawSetupCode, terminalCommandUrl, terminalCommandSecret)
+    }
 }
 
 private fun parseHermesRelayJson(obj: JsonObject): PairingPayload? {
@@ -681,6 +716,8 @@ internal fun applyPairingPayload(
         runtime.setManualHost(parsed.host)
         runtime.setManualPort(parsed.port)
         runtime.setManualTls(parsed.tls)
+        runtime.prefs.saveTerminalCommandUrl(payload.terminalCommandUrl.orEmpty())
+        runtime.prefs.saveTerminalCommandSecret(payload.terminalCommandSecret.orEmpty())
         runtime.setGatewayBootstrapToken(decoded.bootstrapToken.orEmpty())
         runtime.setGatewayPassword(decoded.password.orEmpty())
         runtime.setGatewayToken("")

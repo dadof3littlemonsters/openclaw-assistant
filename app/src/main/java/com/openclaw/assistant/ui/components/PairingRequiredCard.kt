@@ -25,6 +25,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.openclaw.assistant.OpenClawApplication
 import com.openclaw.assistant.R
+import com.openclaw.assistant.ui.terminal.HermesTerminalClient
+import com.openclaw.assistant.ui.terminal.TerminalCommandClient
+import kotlinx.coroutines.launch
 
 internal const val PAIRING_AUTO_RETRY_MS = 5 * 60_000L
 
@@ -33,16 +36,78 @@ fun PairingRequiredCard(deviceId: String, displayName: String = "") {
     val context = LocalContext.current
     val nodeRuntime = remember { (context.applicationContext as OpenClawApplication).nodeRuntime }
     val clipboardManager = remember { context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager }
+    val scope = rememberCoroutineScope()
 
     val approveCommand = stringResource(R.string.approve_command_format, deviceId)
     val rejectCommand = stringResource(R.string.reject_command_format, deviceId)
 
     var expanded by remember { mutableStateOf(false) }
+    var runningCommand by remember { mutableStateOf(false) }
+    var commandStatus by remember { mutableStateOf<String?>(null) }
+    var autoApproveAttempted by remember(deviceId) { mutableStateOf(false) }
+
+    suspend fun approveWithBestRoute(isAuto: Boolean) {
+        runningCommand = true
+        commandStatus = context.getString(
+            if (isAuto) R.string.pairing_gateway_auto_running else R.string.pairing_gateway_running,
+        )
+
+        val gatewayResult = nodeRuntime.approvePendingPairingForDevice(deviceId)
+        if (gatewayResult.approved) {
+            runningCommand = false
+            commandStatus = context.getString(R.string.pairing_gateway_approve_sent)
+            nodeRuntime.refreshGatewayConnection()
+            return
+        }
+
+        if (TerminalCommandClient.isConfigured(context) || HermesTerminalClient.resolveEndpoint(context) != null) {
+            commandStatus = context.getString(
+                if (isAuto) R.string.pairing_terminal_auto_running else R.string.pairing_terminal_running,
+            )
+            val terminalResult =
+                if (TerminalCommandClient.isConfigured(context)) {
+                    TerminalCommandClient.run(context, approveCommand, timeoutSeconds = 45).map { Unit }
+                } else {
+                    HermesTerminalClient.requestCommandRun(context, approveCommand)
+                }
+            runningCommand = false
+            if (terminalResult.isSuccess) {
+                commandStatus = context.getString(R.string.pairing_terminal_approve_sent)
+                nodeRuntime.refreshGatewayConnection()
+            } else {
+                commandStatus = context.getString(
+                    if (isAuto) R.string.pairing_terminal_auto_failed else R.string.pairing_terminal_failed_copied,
+                )
+                if (!isAuto) {
+                    val clip = ClipData.newPlainText("OpenClaw Approve", approveCommand)
+                    clipboardManager.setPrimaryClip(clip)
+                    Toast.makeText(context, R.string.pairing_command_copied, Toast.LENGTH_SHORT).show()
+                }
+            }
+            return
+        }
+
+        runningCommand = false
+        commandStatus = gatewayResult.message?.takeIf { it.isNotBlank() }
+            ?: context.getString(R.string.pairing_gateway_failed)
+        if (!isAuto) {
+            val clip = ClipData.newPlainText("OpenClaw Approve", approveCommand)
+            clipboardManager.setPrimaryClip(clip)
+            Toast.makeText(context, R.string.pairing_command_copied, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     LaunchedEffect(Unit) {
         while (true) {
             delay(PAIRING_AUTO_RETRY_MS)
             nodeRuntime.refreshGatewayConnection()
+        }
+    }
+
+    LaunchedEffect(deviceId) {
+        if (!autoApproveAttempted) {
+            autoApproveAttempted = true
+            approveWithBestRoute(isAuto = true)
         }
     }
 
@@ -92,17 +157,18 @@ fun PairingRequiredCard(deviceId: String, displayName: String = "") {
             ) {
                 Button(
                     onClick = {
-                        val clip = ClipData.newPlainText("OpenClaw Approve", approveCommand)
-                        clipboardManager.setPrimaryClip(clip)
-                        Toast.makeText(context, R.string.pairing_command_copied, Toast.LENGTH_SHORT).show()
+                        scope.launch {
+                            approveWithBestRoute(isAuto = false)
+                        }
                     },
+                    enabled = !runningCommand,
                     modifier = Modifier.weight(1f),
                     contentPadding = PaddingValues(horizontal = 8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(stringResource(R.string.pairing_approve_command), fontSize = 12.sp)
+                    Text(stringResource(R.string.pairing_approve_terminal), fontSize = 12.sp)
                 }
 
                 OutlinedButton(
@@ -118,6 +184,11 @@ fun PairingRequiredCard(deviceId: String, displayName: String = "") {
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(stringResource(R.string.pairing_reject_command), fontSize = 12.sp)
                 }
+            }
+
+            commandStatus?.let {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(it, style = MaterialTheme.typography.bodySmall)
             }
 
             Spacer(modifier = Modifier.height(12.dp))

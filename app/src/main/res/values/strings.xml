@@ -17,11 +17,32 @@
     <string name="bridge_warning_lan">LAN bind exposes this device on the network. Use Tailscale or a trusted Wi-Fi.</string>
     <string name="bridge_approval_required">WakeHermesClaw action approval</string>
     <string name="accessibility_bridge_description">Lets WakeHermesClaw tap, swipe, type, and read on-screen content on behalf of a paired Hermes agent. Off by default. Every gesture requires an explicit, time-limited grant from you.</string>
+    <string name="av_bridge_connection_section">Connection</string>
+    <string name="av_bridge_port">Port</string>
+    <string name="av_bridge_lan_warning">LAN / VPN exposes this device to the network. Use it only on trusted Wi-Fi or Tailscale.</string>
+    <string name="av_bridge_security_section">Security</string>
+    <string name="av_bridge_token_not_generated">Not generated yet</string>
+    <string name="av_bridge_rotate_token">Rotate token</string>
+    <string name="av_bridge_capabilities_section">Capabilities</string>
+    <string name="av_bridge_capabilities_desc">These are separate from the Home screen toggles. Only checked groups are exposed through the local Bridge HTTP API.</string>
+    <string name="av_bridge_service_enabled">Service enabled</string>
+    <string name="av_bridge_enable_a11y_settings">Enable in Android Accessibility settings</string>
+    <string name="av_bridge_pairing_checks">Pairing and checks</string>
+    <string name="av_bridge_pairing_checks_desc">Use the pairing screen for Hermes Agent tools or another trusted client. OpenClaw inside this app uses its own device-control path and does not need this token.</string>
+    <string name="av_bridge_self_check">Self-check</string>
+    <string name="av_bridge_running_on_port">Running on port %1$d (%2$s)</string>
+    <string name="av_bridge_off_desc">Off. Enable only when a trusted agent needs device access.</string>
+    <string name="av_bridge_token_ready">Token ready</string>
+    <string name="av_bridge_no_token">No token</string>
+    <string name="av_bridge_api_active">Bridge API active</string>
+    <string name="av_bridge_api_stopped">Bridge API stopped</string>
+    <string name="av_pair_expires_in">Expires in %1$ds</string>
+    <string name="av_pair_desktop_command">On the desktop, run:\n  hermes-pair %1$s\n  (or POST {&quot;code&quot;:&quot;%1$s&quot;} to /pair on this bridge)</string>
 
     <!-- WakeHermesClaw setup wizard -->
     <string name="av_setup_title">Set up WakeHermesClaw</string>
     <string name="av_setup_welcome_title">Welcome to WakeHermesClaw</string>
-    <string name="av_setup_welcome_body">A native Android voice client for Hermes Agent and OpenClaw. Run the pairing helper on your computer, answer whether to include Hermes, OpenClaw, and Tailscale, then scan one QR in this app.</string>
+    <string name="av_setup_welcome_body">A native Android voice client for Hermes Agent and OpenClaw. Run the pairing helper on your computer, answer whether to include Hermes Agent, OpenClaw, and Tailscale, then scan one QR in this app.</string>
     <string name="av_setup_choose_title">Which backends will you use?</string>
     <string name="av_setup_choose_hint">Tick at least one. You can add more later in Settings → Backends.</string>
     <string name="av_setup_choose_recommended">Recommended: set up both now. You can switch Primary later.</string>
@@ -35,8 +56,8 @@
     <!-- Backend cards -->
     <string name="av_backend_hermes">Hermes Agent</string>
     <string name="av_backend_openclaw">OpenClaw</string>
-    <string name="av_backend_hermes_subtitle">Hermes API Server. The pairing helper detects Hermes, reads config/env, and includes it in the shared QR.</string>
-    <string name="av_backend_openclaw_subtitle">OpenClaw Gateway / HTTP. The same helper detects OpenClaw and adds its setup code to the shared QR.</string>
+    <string name="av_backend_hermes_subtitle">Hermes Agent API Server. The pairing helper detects Hermes Agent, reads config/env, and includes it in the shared QR.</string>
+    <string name="av_backend_openclaw_subtitle">OpenClaw. The same helper detects OpenClaw and adds its setup code to the shared QR.</string>
     <string name="av_backend_open_openclaw_setup">Open OpenClaw setup</string>
 
     <!-- Unified pairing card -->
@@ -44,8 +65,8 @@
     <string name="av_setup_scope_both">Hermes Agent and OpenClaw will be included in one QR.</string>
     <string name="av_setup_scope_hermes">Only Hermes Agent will be included in the QR.</string>
     <string name="av_setup_scope_openclaw">Only OpenClaw will be included in the QR.</string>
-    <string name="av_pairing_card_step1">1. On the computer running Hermes or OpenClaw, install the WakeHermesClaw pairing helper:</string>
-    <string name="av_pairing_card_step2">2. Run the helper. It reads local Hermes/OpenClaw settings, detects Tailscale, and uses a temporary public tunnel when the phone is not on the same LAN/VPN:</string>
+    <string name="av_pairing_card_step1">1. On the computer running Hermes Agent or OpenClaw, install the WakeHermesClaw pairing helper:</string>
+    <string name="av_pairing_card_step2">2. Run the helper. It reads local Hermes Agent/OpenClaw settings, detects Tailscale, and uses a temporary public tunnel when the phone is not on the same LAN/VPN:</string>
     <string name="av_pairing_card_step3">3. Scan that QR inside WakeHermesClaw. Included backends are saved together.</string>
     <string name="av_pairing_card_note">The public tunnel is temporary and useful for setup from cellular networks. For daily use, prefer Tailscale/VPN or a trusted LAN.</string>
     <string name="av_pairing_scan_qr">Scan pairing QR</string>
@@ -54,9 +75,9 @@
 
     <!-- Hermes QR card -->
     <string name="av_hermes_card_title">WakeHermesClaw · one QR setup</string>
-    <string name="av_hermes_card_step1">1. On the machine running Hermes/OpenClaw, install the WakeHermesClaw pairing helper:</string>
-    <string name="av_hermes_card_step2">2. Run the helper. It reads local Hermes/OpenClaw settings, detects Tailscale, and prints one QR:</string>
-    <string name="av_hermes_card_step3">3. Scan that QR in WakeHermesClaw. Hermes and OpenClaw settings are applied together when both are included.</string>
+    <string name="av_hermes_card_step1">1. On the machine running Hermes Agent/OpenClaw, install the WakeHermesClaw pairing helper:</string>
+    <string name="av_hermes_card_step2">2. Run the helper. It reads local Hermes Agent/OpenClaw settings, detects Tailscale, and prints one QR:</string>
+    <string name="av_hermes_card_step3">3. Scan that QR in WakeHermesClaw. Hermes Agent and OpenClaw settings are applied together when both are included.</string>
     <string name="av_hermes_card_note">For use away from home, answer yes to the Tailscale/VPN prompt so the QR includes LAN + Tailscale endpoint candidates.</string>
     <string name="av_hermes_use_runs_api">Use Runs API</string>
     <string name="av_hermes_stream_responses">Stream responses</string>
@@ -64,7 +85,7 @@
     <!-- OpenClaw card -->
     <string name="av_openclaw_card_title">OpenClaw · pair with QR</string>
     <string name="av_openclaw_card_step1">1. On your OpenClaw server, print a setup QR:</string>
-    <string name="av_openclaw_card_step2">2. Scan it in WakeHermesClaw. OpenClaw handles Gateway pairing, TLS trust, and agent discovery.</string>
+    <string name="av_openclaw_card_step2">2. Scan it in WakeHermesClaw. OpenClaw handles pairing, TLS trust, and agent discovery.</string>
 
     <!-- Backend list -->
     <string name="av_backends_test">Test connection</string>
@@ -149,9 +170,9 @@
     <string name="av_home_also_configured">Also configured:</string>
     <string name="av_home_test_short">Test</string>
     <string name="av_home_switch_primary">Switch primary</string>
-    <string name="av_backend_kind_hermes">Hermes</string>
-    <string name="av_backend_kind_gateway">Gateway</string>
-    <string name="av_backend_kind_http">HTTP</string>
+    <string name="av_backend_kind_hermes">Hermes Agent</string>
+    <string name="av_backend_kind_gateway">OpenClaw</string>
+    <string name="av_backend_kind_http">OpenClaw API</string>
     <string name="av_connection_testing">Testing…</string>
     <string name="av_chat_no_backend">No backend</string>
     <string name="av_chat_primary_target">Primary: %1$s</string>
@@ -159,8 +180,8 @@
     <string name="chat_settings_backend">Backend</string>
     <string name="chat_settings_primary_backend">Use primary backend</string>
     <string name="chat_settings_openclaw_agent">OpenClaw agent</string>
-    <string name="chat_settings_hermes_model">Hermes model</string>
-    <string name="chat_settings_hermes_model_help">Usually keep default. Change it only for a specific Hermes profile or model.</string>
+    <string name="chat_settings_hermes_model">Hermes Agent model</string>
+    <string name="chat_settings_hermes_model_help">Usually keep default. Change it only for a specific Hermes Agent profile or model.</string>
 
     <!-- Pairing import -->
     <string name="av_import_title">Add WakeHermesClaw backends</string>
@@ -168,8 +189,8 @@
     <string name="av_import_close">Close</string>
     <string name="av_import_review">Review the settings found in the QR before saving them.</string>
     <string name="av_import_add_open">Add and open WakeHermesClaw</string>
-    <string name="av_import_no_hermes">No Hermes backend in this QR.</string>
-    <string name="av_import_test_hermes">Test Hermes connection</string>
+    <string name="av_import_no_hermes">No Hermes Agent backend in this QR.</string>
+    <string name="av_import_test_hermes">Test Hermes Agent connection</string>
     <string name="av_import_test_openclaw">Test OpenClaw connection</string>
     <string name="av_import_test_all">Test connections</string>
     <string name="av_import_cancel">Cancel</string>
@@ -177,12 +198,12 @@
     <string name="av_import_fallback_urls">Fallback URLs</string>
     <string name="av_import_api_key">API key</string>
     <string name="av_import_not_included">Not included</string>
-    <string name="av_import_model">Hermes target</string>
-    <string name="av_import_model_help">Usually keep default. Change it only when you intentionally target a Hermes profile or model.</string>
+    <string name="av_import_model">Hermes Agent target</string>
+    <string name="av_import_model_help">Usually keep default. Change it only when you intentionally target a Hermes Agent profile or model.</string>
     <string name="av_import_mode">Mode</string>
     <string name="av_import_mode_runs">Runs API</string>
     <string name="av_import_mode_chat">Chat completions</string>
-    <string name="av_import_gateway_url">Gateway URL</string>
+    <string name="av_import_gateway_url">OpenClaw URL</string>
     <string name="av_import_auth">Auth</string>
     <string name="av_import_auth_password_pairing">Password and pairing token included</string>
     <string name="av_import_auth_bootstrap">Bootstrap token included</string>
@@ -195,7 +216,7 @@
     <string name="chat_session_title_format">Chat %s</string>
     <string name="error_config_required">Please configure connection in Settings</string>
     <string name="config_required">Configuration required</string>
-    <string name="error_gateway_not_connected">Gateway is not connected. Please check your connection settings.</string>
+    <string name="error_gateway_not_connected">OpenClaw is not connected. Please check your connection settings.</string>
     <string name="state_listening">Listening...</string>
     <string name="state_processing">Processing...</string>
     <string name="state_thinking">Thinking...</string>
@@ -258,7 +279,7 @@
     <string name="speaking">Speaking…</string>
     <string name="preparing_speech">読み込み中…</string>
     <string name="ready">Ready</string>
-    <string name="error_no_webhook">Please configure HTTP connection</string>
+    <string name="error_no_webhook">Please configure OpenClaw connection</string>
 
     <string name="error_speech">Speech recognition error</string>
     
@@ -278,7 +299,7 @@
     <string name="could_not_open_settings">Could not open settings</string>
     <string name="hotword_started">Wake Word detection started</string>
     <string name="hotword_stopped">Wake Word detection stopped</string>
-    <string name="wakeword_requires_connection_error">Please configure a HTTP connection in Settings before enabling Wake Word.</string>
+    <string name="wakeword_requires_connection_error">Please configure an OpenClaw connection in Settings before enabling Wake Word.</string>
     <string name="saved">Saved</string>
     
     <!-- How to Use -->
@@ -444,9 +465,9 @@
     <string name="select_chat_type">Choose backend</string>
     <string name="select_chat_backend_desc">Choose where this chat should be sent.</string>
     <string name="chat_type_openclaw">OpenClaw</string>
-    <string name="chat_type_hermes">Hermes</string>
-    <string name="chat_type_gateway">Gateway Chat</string>
-    <string name="chat_type_http">HTTP Chat</string>
+    <string name="chat_type_hermes">Hermes Agent</string>
+    <string name="chat_type_gateway">OpenClaw</string>
+    <string name="chat_type_http">OpenClaw</string>
 
     <!-- Session List -->
     <string name="chat_sessions_dialog_title">Sessions</string>
@@ -516,6 +537,16 @@
     <string name="reject_command_format">openclaw devices reject $(openclaw devices list --json | jq -r \'.pending[] | select(.deviceId == \"%s\") | .requestId\')</string>
     <string name="pairing_approve_command">Approve Command (Copy)</string>
     <string name="pairing_reject_command">Reject Command (Copy)</string>
+    <string name="pairing_approve_terminal">Approve</string>
+    <string name="pairing_gateway_running">Approving through OpenClaw...</string>
+    <string name="pairing_gateway_auto_running">Approving through OpenClaw automatically...</string>
+    <string name="pairing_gateway_approve_sent">Pairing approved. Refreshing connection...</string>
+    <string name="pairing_gateway_failed">OpenClaw approval failed.</string>
+    <string name="pairing_terminal_running">Running approval command in Terminal...</string>
+    <string name="pairing_terminal_auto_running">Terminal is connected. Running approval command automatically...</string>
+    <string name="pairing_terminal_approve_sent">Approval command sent. Refreshing connection...</string>
+    <string name="pairing_terminal_failed_copied">Terminal execution failed. The command was copied instead.</string>
+    <string name="pairing_terminal_auto_failed">Automatic Terminal approval failed. You can run it again or copy the command.</string>
     <string name="pairing_refresh_status">Refresh Status</string>
     <string name="pairing_guide_title">How to approve this device:</string>
     <string name="pairing_guide_step_1">1. Access your OpenClaw server terminal.</string>
@@ -542,7 +573,7 @@
     <string name="setup_required_hint">Please configure connection in Settings</string>
 
     <!-- Gateway Settings -->
-    <string name="settings_gateway_title">Gateway Connection</string>
+    <string name="settings_gateway_title">OpenClaw Connection</string>
     <string name="disconnected">Disconnected</string>
     <string name="offline">Offline</string>
     <string name="gateway_discovery_active">Discovery active...</string>
@@ -564,12 +595,12 @@
     <string name="connect">Connect</string>
     <string name="gateway_foreground_service">Foreground Service</string>
     <string name="gateway_foreground_desc">Keep running in background</string>
-    <string name="gateway_use_node_chat">Use Gateway Chat</string>
-    <string name="gateway_use_node_chat_desc">Route chat via gateway</string>
+    <string name="gateway_use_node_chat">Use OpenClaw Chat</string>
+    <string name="gateway_use_node_chat_desc">Route chat via OpenClaw</string>
 
     <!-- Legacy Settings -->
-    <string name="settings_legacy_title">HTTP Connection</string>
-    <string name="settings_legacy_desc">Direct connection via HTTP</string>
+    <string name="settings_legacy_title">OpenClaw API</string>
+    <string name="settings_legacy_desc">Direct connection to OpenClaw</string>
 
     <!-- Capability Cards (SMS & Screen) -->
     <string name="capability_sms">SMS</string>
@@ -595,8 +626,8 @@
     <string name="canvas_debug_mode_desc">Show a connection status overlay on the canvas screen</string>
 
     <!-- Wake Word Sync -->
-    <string name="wake_word_sync_from_server">Get Wake Words from Gateway</string>
-    <string name="wake_word_sync_desc">Download wake words configured on the gateway server to this device.</string>
+    <string name="wake_word_sync_from_server">Get Wake Words from OpenClaw</string>
+    <string name="wake_word_sync_desc">Download wake words configured on OpenClaw to this device.</string>
     <string name="wake_word_sync_success">Wake words synced</string>
     <string name="wake_word_sync_failed">Sync failed</string>
 
@@ -617,19 +648,19 @@
     <string name="status_node_online_operator_offline">Node Online (Operator Offline)</string>
 
     <!-- Gateway Trust Dialog -->
-    <string name="gateway_trust_title">Trust this Gateway?</string>
+    <string name="gateway_trust_title">Trust this OpenClaw connection?</string>
     <string name="gateway_trust_message">First-time TLS connection.\n\nVerify this SHA-256 fingerprint out-of-band before trusting:\n%s</string>
     <string name="gateway_trust_confirm">Trust &amp; Connect</string>
     <string name="gateway_fingerprint_label">SHA-256 Fingerprint:</string>
 
     <!-- Error Messages -->
-    <string name="gateway_not_connected">Not connected to gateway</string>
+    <string name="gateway_not_connected">Not connected to OpenClaw</string>
     <string name="agents_fetch_failed">Connected, but failed to load agents</string>
 
     <!-- Wake Word Mode (Settings) -->
-    <string name="wake_word_node_title">Gateway Wake Word</string>
-    <string name="wake_word_node_desc">Detects your wake word and sends a request to the AI gateway.</string>
-    <string name="wake_word_gateway_desc">This device listens for your wake word and sends a command to the gateway. Enter the words you want to say to activate the assistant.</string>
+    <string name="wake_word_node_title">OpenClaw Wake Word</string>
+    <string name="wake_word_node_desc">Detects your wake word and sends a request to OpenClaw.</string>
+    <string name="wake_word_gateway_desc">This device listens for your wake word and sends a command to OpenClaw. Enter the words you want to say to activate the assistant.</string>
     <string name="wake_word_node_foreground">App Open</string>
     <string name="wake_word_node_foreground_desc">Listens only while OpenClaw is open.</string>
     <string name="wake_word_node_always">Always</string>
@@ -644,17 +675,17 @@
 
     <!-- Hardcoded strings extracted to resources -->
     <string name="connection_settings">Connection Settings</string>
-    <string name="tab_gateway">Gateway</string>
-    <string name="tab_http">HTTP</string>
-    <string name="gateway_configuration">Gateway Configuration</string>
-    <string name="http_api_configuration">HTTP API Configuration</string>
+    <string name="tab_gateway">OpenClaw</string>
+    <string name="tab_http">OpenClaw API</string>
+    <string name="gateway_configuration">OpenClaw Configuration</string>
+    <string name="http_api_configuration">OpenClaw API Configuration</string>
     <string name="http_ignore_ssl_errors">Ignore SSL Certificate Errors</string>
     <string name="http_ignore_ssl_errors_desc">Allow self-signed or invalid HTTPS certificates. Use only on trusted networks.</string>
     <string name="http_ignore_ssl_errors_warning">⚠️ Security Risk: Disabling SSL verification makes your connection vulnerable to man-in-the-middle (MITM) attacks. An attacker on the same network could intercept or tamper with your data. Only enable this if you fully trust your network and cannot install a proper certificate.</string>
     <string name="wakeword_connection_type">Voice Session Connection</string>
-    <string name="wakeword_connection_type_desc">Choose how the voice session (long-press Home) sends messages to the assistant.</string>
-    <string name="wakeword_use_gateway">Gateway</string>
-    <string name="wakeword_use_http">HTTP</string>
+    <string name="wakeword_connection_type_desc">Choose which backend receives voice sessions started from wake word or long-press Home.</string>
+    <string name="wakeword_use_gateway">OpenClaw</string>
+    <string name="wakeword_use_http">Hermes Agent</string>
     <string name="enter_session_name">Enter session name</string>
     <string name="session_name_optional">Session Name (Optional)</string>
     <string name="running_tools">Running tools</string>
@@ -682,14 +713,14 @@
     <string name="setup_guide_welcome_bullet_3">Include LAN or Tailscale endpoints without hand-copying URLs.</string>
     <string name="setup_guide_welcome_bullet_4">Review the configured backends before entering the app.</string>
     <string name="setup_guide_connection_title">Backend Connection</string>
-    <string name="setup_guide_connection_guide_title">Get setup code + gateway URL</string>
-    <string name="setup_guide_connection_guide_cmd_1">Run these on the gateway host:</string>
+    <string name="setup_guide_connection_guide_title">Get setup code + OpenClaw URL</string>
+    <string name="setup_guide_connection_guide_cmd_1">Run these on the OpenClaw host:</string>
     <string name="setup_guide_connection_guide_json_desc">`--json` prints `setupCode` and `gatewayUrl`.</string>
     <string name="setup_guide_connection_discovery_desc">Auto URL discovery is not wired yet. Android emulator uses `10.0.2.2`; real devices need LAN/Tailscale host.</string>
     <string name="setup_guide_mode_setup_code">OpenClaw</string>
     <string name="setup_guide_mode_manual">Manual</string>
     <string name="setup_guide_setup_code_label">SETUP CODE</string>
-    <string name="setup_guide_setup_code_hint">Paste code from `openclaw qr --setup-code-only`</string>
+    <string name="setup_guide_setup_code_hint">Paste code from `agentvoice-pair --public-tunnel --terminal-qr`</string>
     <string name="setup_guide_manual_host">HOST</string>
     <string name="setup_guide_manual_port">PORT</string>
     <string name="setup_guide_manual_tls">Use TLS</string>
@@ -708,17 +739,17 @@
     <string name="setup_guide_configured_backends">%1$d configured</string>
     <string name="setup_guide_no_backends_yet">No backend is configured yet. Go back and scan the WakeHermesClaw QR.</string>
     <string name="setup_guide_invalid_code">Invalid setup code.</string>
-    <string name="setup_guide_invalid_url">Invalid gateway URL.</string>
+    <string name="setup_guide_invalid_url">Invalid OpenClaw URL.</string>
 
 
 
     <!-- Setup Code Apply & HTTP Sync -->
-    <string name="http_use_gateway_url">Use Gateway URL</string>
+    <string name="http_use_gateway_url">Use OpenClaw URL</string>
     <string name="setup_code_applied">Settings applied!</string>
     <string name="setup_code_invalid_code">Invalid or incomplete setup code.</string>
     <string name="setup_code_credential_copy_button">Copy command</string>
-    <string name="setup_code_credential_hint_title">Enter your gateway password or token</string>
-    <string name="setup_code_credential_hint_desc">The setup code configured your server URL. To connect the operator session, enter your gateway password or token below.\n\nRun this command on the host running OpenClaw to retrieve it:</string>
+    <string name="setup_code_credential_hint_title">Enter your OpenClaw password or token</string>
+    <string name="setup_code_credential_hint_desc">The setup code configured your server URL. To connect the operator session, enter your OpenClaw password or token below.\n\nRun this command on the host running OpenClaw to retrieve it:</string>
 
     <!-- Additional Setup Guide Strings -->
     <string name="permission_camera_desc">Required for the AI to see your camera stream</string>
@@ -727,9 +758,9 @@
     <string name="setup_guide_auth_token">Token</string>
     <string name="setup_guide_auth_password">Password</string>
     <string name="setup_guide_auth_none">None</string>
-    <string name="setup_guide_gateway_label">Gateway</string>
+    <string name="setup_guide_gateway_label">OpenClaw</string>
     <string name="setup_guide_auth_label">Auth</string>
-    <string name="setup_guide_test_connection_desc">Press Test Connection to verify gateway reachability.</string>
+    <string name="setup_guide_test_connection_desc">Press Test Connection to verify OpenClaw reachability.</string>
     <string name="setup_guide_e2e_title">Required live test</string>
     <string name="setup_guide_e2e_target">Primary backend: %1$s</string>
     <string name="setup_guide_e2e_targets_all">Required backends: %1$s</string>
@@ -746,7 +777,7 @@
     <string name="setup_guide_testing_in_progress">Testing connection...</string>
     <string name="setup_guide_connection_state">Connection state: %1$s</string>
     <string name="setup_guide_pairing_required">Pairing Required</string>
-    <string name="setup_guide_pairing_run_on_host">Run these on the gateway host:</string>
+    <string name="setup_guide_pairing_run_on_host">Run these on the OpenClaw host:</string>
     <string name="setup_guide_pairing_retest_desc">Then tap Test Connection again.</string>
     <string name="setup_guide_copied">Copied</string>
 
@@ -840,14 +871,14 @@
     <string name="canvas_placeholder_body">Canvas is a display area controlled by the AI assistant. Ask the assistant in Chat to show something here.</string>
     <string name="canvas_go_to_chat">Go to Chat</string>
     <string name="canvas_chat_hint">What to show on Canvas?</string>
-    <string name="canvas_chat_not_connected">Connect to Gateway to chat</string>
+    <string name="canvas_chat_not_connected">Connect to OpenClaw to chat</string>
     <string name="canvas_chat_send">Send</string>
     <string name="canvas_status_sending">Sending...</string>
     <string name="canvas_status_thinking">Thinking...</string>
     <string name="canvas_status_tool">Using tools...</string>
     <string name="canvas_status_loading">Loading Canvas...</string>
     <string name="canvas_diag_no_canvas">AI did not use Canvas — text response shown below.\nCanvas tools may not be available or enabled.</string>
-    <string name="canvas_diag_not_connected">Not connected to Gateway. Connect to allow AI to operate Canvas.</string>
+    <string name="canvas_diag_not_connected">Not connected to OpenClaw. Connect to allow AI to operate Canvas.</string>
     <string name="media_button_enabled">Headset Button Trigger</string>
     <string name="media_button_enabled_desc">Start voice chat by pressing the button on a Bluetooth headset or wired headphones. Requires Wake Word to be enabled.</string>
     <string name="wake_word_debug_enabled">Wake Word Debug Log</string>
@@ -878,13 +909,13 @@
     <string name="av_pairing_runs_api">Use Runs API</string>
     <string name="av_pairing_streaming">Use streaming</string>
     <string name="av_pairing_openclaw_setup_code">OpenClaw setup code</string>
-    <string name="av_pairing_openclaw_decoded">Decoded Gateway URL</string>
+    <string name="av_pairing_openclaw_decoded">Decoded OpenClaw URL</string>
     <string name="av_pairing_primary_title">Primary backend</string>
-    <string name="av_pairing_primary_hermes">Use Hermes as primary</string>
+    <string name="av_pairing_primary_hermes">Use Hermes Agent as primary</string>
     <string name="av_pairing_primary_openclaw">Use OpenClaw as primary</string>
     <string name="av_pairing_review_loaded">QR contents loaded. Review and apply them.</string>
     <string name="av_pairing_apply_review">Apply reviewed setup</string>
-    <string name="av_settings_no_hermes">No Hermes backend is configured yet.</string>
+    <string name="av_settings_no_hermes">No Hermes Agent backend is configured yet.</string>
     <string name="av_settings_no_openclaw">No OpenClaw backend is configured yet.</string>
     <string name="av_settings_openclaw_advanced">OpenClaw advanced connection details</string>
     <string name="av_backend_url_unset">URL unset</string>

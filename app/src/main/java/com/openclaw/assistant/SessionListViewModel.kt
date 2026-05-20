@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.openclaw.assistant.data.local.entity.SessionEntity
 import com.openclaw.assistant.data.repository.ChatRepository
 import com.openclaw.assistant.data.SettingsRepository
+import com.openclaw.assistant.backend.BackendRepository
+import com.openclaw.assistant.backend.BackendType
 import com.openclaw.assistant.gateway.AgentInfo
 import com.openclaw.assistant.gateway.AgentListResult
 import kotlinx.coroutines.flow.combine
@@ -19,13 +21,18 @@ data class SessionUiModel(
     val id: String,
     val title: String,
     val createdAt: Long,
-    val isGateway: Boolean
+    val isGateway: Boolean,
+    val product: ChatProduct,
 )
+
+enum class ChatProduct { OPENCLAW, HERMES }
 
 class SessionListViewModel(application: Application) : AndroidViewModel(application) {
 
     private val chatRepository = ChatRepository.getInstance(application)
     private val settingsRepository = SettingsRepository.getInstance(application)
+    private val backendRepository = BackendRepository.getInstance(application)
+    private val prefs = application.getSharedPreferences("chat_session_products", android.content.Context.MODE_PRIVATE)
     private val nodeRuntime = (application as OpenClawApplication).nodeRuntime
 
     val isGatewayConfigured: Boolean
@@ -38,22 +45,27 @@ class SessionListViewModel(application: Application) : AndroidViewModel(applicat
 
     val allSessions: StateFlow<List<SessionUiModel>> = combine(
         nodeRuntime.chatSessions,
-        chatRepository.allSessionsWithLatestTime
-    ) { nodeEntries, localSessions ->
+        chatRepository.allSessionsWithLatestTime,
+        backendRepository.backends,
+    ) { nodeEntries, localSessions, backends ->
         val gatewayModels = nodeEntries.map { entry ->
             SessionUiModel(
                 id = entry.key,
                 title = entry.displayName ?: "New Session",
                 createdAt = entry.updatedAtMs ?: System.currentTimeMillis(),
-                isGateway = true
+                isGateway = true,
+                product = ChatProduct.OPENCLAW,
             )
         }
+        val hasHermes = backends.any { it.enabled && it.type == BackendType.HERMES_API_SERVER }
+        val hasOpenClawHttp = backends.any { it.enabled && it.type == BackendType.OPENCLAW_HTTP } || isHttpConfigured
         val httpModels = localSessions.map { session ->
             SessionUiModel(
                 id = session.id,
                 title = session.title,
                 createdAt = session.latestMessageTime ?: session.createdAt,
-                isGateway = false
+                isGateway = false,
+                product = loadProduct(session.id) ?: if (hasHermes && !hasOpenClawHttp) ChatProduct.HERMES else ChatProduct.OPENCLAW,
             )
         }
         
@@ -70,7 +82,7 @@ class SessionListViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
 
-    fun createSession(name: String, isGateway: Boolean, agentId: String? = null, onCreated: (String, Boolean) -> Unit) {
+    fun createSession(name: String, isGateway: Boolean, agentId: String? = null, targetBackendId: String? = null, onCreated: (String, Boolean) -> Unit) {
         if (isGateway) {
             val ts = java.text.SimpleDateFormat("yyyyMMdd-HHmmss", java.util.Locale.US).format(java.util.Date())
             val id = if (!agentId.isNullOrBlank()) "agent:$agentId:chat-$ts" else "chat-$ts"
@@ -81,6 +93,7 @@ class SessionListViewModel(application: Application) : AndroidViewModel(applicat
         } else {
             viewModelScope.launch {
                 val id = chatRepository.createSession(name.trim())
+                saveProduct(id, productForBackend(targetBackendId))
                 onCreated(id, false)
             }
         }
@@ -112,7 +125,24 @@ class SessionListViewModel(application: Application) : AndroidViewModel(applicat
         } else {
             viewModelScope.launch {
                 chatRepository.deleteSession(sessionId)
+                prefs.edit().remove(sessionId).apply()
             }
         }
     }
+
+    private fun productForBackend(backendId: String?): ChatProduct {
+        val backend = backendId?.let { id -> backendRepository.backends.value.firstOrNull { it.id == id } }
+            ?: backendRepository.backends.value.firstOrNull { it.enabled && it.isPrimary }
+        return when (backend?.type) {
+            BackendType.HERMES_API_SERVER -> ChatProduct.HERMES
+            else -> ChatProduct.OPENCLAW
+        }
+    }
+
+    private fun saveProduct(sessionId: String, product: ChatProduct) {
+        prefs.edit().putString(sessionId, product.name).apply()
+    }
+
+    private fun loadProduct(sessionId: String): ChatProduct? =
+        prefs.getString(sessionId, null)?.let { runCatching { ChatProduct.valueOf(it) }.getOrNull() }
 }

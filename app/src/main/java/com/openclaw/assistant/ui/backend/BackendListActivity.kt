@@ -136,7 +136,7 @@ private fun EmptyState(padding: PaddingValues) {
     ) {
         Text("No backends configured yet.", style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(8.dp))
-        Text("Tap “Add backend” to configure OpenClaw Gateway, OpenClaw HTTP, or a Hermes API Server.",
+        Text("Tap “Add backend” to configure OpenClaw or Hermes Agent.",
             style = MaterialTheme.typography.bodyMedium)
     }
 }
@@ -184,7 +184,7 @@ private fun BackendRow(
 }
 
 private fun AgentBackendConfig.typeLabel(): String = when (type) {
-    BackendType.HERMES_API_SERVER -> "Hermes API Server — ${baseUrl ?: "no URL"}"
-    BackendType.OPENCLAW_GATEWAY -> "OpenClaw Gateway — ${host ?: "?"}:${port ?: "?"}"
-    BackendType.OPENCLAW_HTTP -> "OpenClaw HTTP — ${baseUrl ?: "no URL"}"
+    BackendType.HERMES_API_SERVER -> "Hermes Agent — ${baseUrl ?: "no URL"}"
+    BackendType.OPENCLAW_GATEWAY -> "OpenClaw — ${host ?: "?"}:${port ?: "?"}"
+    BackendType.OPENCLAW_HTTP -> "OpenClaw API — ${baseUrl ?: "no URL"}"
 }

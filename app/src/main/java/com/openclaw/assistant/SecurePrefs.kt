@@ -196,6 +196,28 @@ class SecurePrefs(context: Context) {
     prefs.edit { putString(key, token.trim()) }
   }
 
+  fun loadTerminalCommandUrl(): String? {
+    val key = "terminal.command.url.${_instanceId.value}"
+    val stored = prefs.getString(key, null)?.trim()
+    return stored?.takeIf { it.isNotEmpty() }
+  }
+
+  fun saveTerminalCommandUrl(url: String) {
+    val key = "terminal.command.url.${_instanceId.value}"
+    prefs.edit { putString(key, url.trim()) }
+  }
+
+  fun loadTerminalCommandSecret(): String? {
+    val key = "terminal.command.secret.${_instanceId.value}"
+    val stored = prefs.getString(key, null)?.trim()
+    return stored?.takeIf { it.isNotEmpty() }
+  }
+
+  fun saveTerminalCommandSecret(secret: String) {
+    val key = "terminal.command.secret.${_instanceId.value}"
+    prefs.edit { putString(key, secret.trim()) }
+  }
+
   fun loadGatewayTlsFingerprint(stableId: String): String? {
     val key = "gateway.tls.$stableId"
     return prefs.getString(key, null)?.trim()?.takeIf { it.isNotEmpty() }

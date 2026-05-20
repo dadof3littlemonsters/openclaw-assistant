@@ -31,9 +31,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.openclaw.assistant.R
 import com.openclaw.assistant.bridge.MobileBridgeConfig
 
 /**
@@ -58,28 +60,28 @@ private fun BridgePairingScreen() {
     val port by cfg.port.collectAsState()
     val bridgeUrl = remember(port) { "http://<device-ip>:$port" }
 
-    Scaffold(topBar = { TopAppBar(title = { Text(androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.av_pair_title)) }) }) { padding ->
+    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.av_pair_title)) }) }) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Use this screen to grant a desktop Hermes CLI, another phone, or a paired laptop access to this device's Mobile Bridge.", style = MaterialTheme.typography.bodyMedium)
+            Text(stringResource(R.string.av_pair_intro), style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(16.dp))
             if (offer == null) {
                 Button(onClick = { offer = BridgePairing.createOffer(bridgeUrl) }) {
-                    Text("Generate pairing code")
+                    Text(stringResource(R.string.av_pair_generate))
                 }
             } else {
                 val o = offer!!
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("6-character code", style = MaterialTheme.typography.labelLarge)
+                        Text(stringResource(R.string.av_pair_code_label), style = MaterialTheme.typography.labelLarge)
                         Spacer(Modifier.height(8.dp))
                         Text(
                             o.code.chunked(3).joinToString(" "),
                             style = MaterialTheme.typography.displaySmall.copy(fontFamily = FontFamily.Monospace, fontSize = 48.sp),
                         )
                         Spacer(Modifier.height(16.dp))
-                        Text("Expires in ${((o.expiresAtMs - System.currentTimeMillis()) / 1000).coerceAtLeast(0)}s", style = MaterialTheme.typography.bodySmall)
+                        Text(stringResource(R.string.av_pair_expires_in, ((o.expiresAtMs - System.currentTimeMillis()) / 1000).coerceAtLeast(0)), style = MaterialTheme.typography.bodySmall)
                         Spacer(Modifier.height(16.dp))
-                        Text("Or scan / paste:", style = MaterialTheme.typography.labelLarge)
+                        Text(stringResource(R.string.av_pair_or_scan), style = MaterialTheme.typography.labelLarge)
                         Text(
                             o.qrPayload,
                             style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
@@ -87,15 +89,15 @@ private fun BridgePairingScreen() {
                         )
                         Spacer(Modifier.height(16.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedButton(onClick = { copy(context, o.qrPayload) }) { Text("Copy URL") }
-                            OutlinedButton(onClick = { copy(context, o.code) }) { Text("Copy code") }
-                            OutlinedButton(onClick = { BridgePairing.cancel(); offer = null }) { Text("Cancel") }
+                            OutlinedButton(onClick = { copy(context, o.qrPayload) }) { Text(stringResource(R.string.av_pair_copy_url)) }
+                            OutlinedButton(onClick = { copy(context, o.code) }) { Text(stringResource(R.string.av_pair_copy_code)) }
+                            OutlinedButton(onClick = { BridgePairing.cancel(); offer = null }) { Text(stringResource(R.string.av_pair_cancel)) }
                         }
                     }
                 }
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    "On the desktop, run:\n  hermes-pair ${o.code}\n  (or POST {\"code\":\"${o.code}\"} to /pair on this bridge)",
+                    stringResource(R.string.av_pair_desktop_command, o.code),
                     style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
                 )
             }

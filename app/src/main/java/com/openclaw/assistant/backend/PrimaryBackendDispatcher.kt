@@ -3,6 +3,7 @@ package com.openclaw.assistant.backend
 import android.content.Context
 import com.openclaw.assistant.OpenClawApplication
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeout
 
@@ -32,9 +33,11 @@ object PrimaryBackendDispatcher {
     ): Reply? {
         val manager = BackendManager.getInstance(context)
         val backends = manager.backends.first()
-        val target = (backendId?.let { id -> backends.firstOrNull { it.id == id && it.enabled } }
-            ?: backends.firstOrNull { it.enabled && it.isPrimary })
-            ?: return null
+        val target = if (backendId != null) {
+            backends.firstOrNull { it.id == backendId && it.enabled }
+        } else {
+            backends.firstOrNull { it.enabled && it.isPrimary }
+        } ?: return null
         return when (target.type) {
             BackendType.HERMES_API_SERVER,
             BackendType.OPENCLAW_HTTP -> sendViaAgentClient(target, userText, sessionId, agentId)
@@ -104,19 +107,33 @@ object PrimaryBackendDispatcher {
         val assistantCountBefore = runtime.chatMessages.value.count { it.role == "assistant" }
         runtime.sendChat(message = userText, thinking = "low", attachments = emptyList())
 
-        val responseText = try {
-            withTimeout(60_000L) {
-                runtime.chatMessages
-                    .first { messages -> messages.count { it.role == "assistant" } > assistantCountBefore }
-                    .lastOrNull { it.role == "assistant" }
-                    ?.content?.firstOrNull { it.type == "text" }?.text
+        val responseText: String? = try {
+            withTimeout<String>(60_000L) {
+                var found: String? = null
+                while (found == null) {
+                    runtime.chatError.value?.takeIf { it.isNotBlank() }?.let { error ->
+                        throw IllegalStateException(error)
+                    }
+                    val assistantText = runtime.chatMessages.value
+                        .takeIf { messages -> messages.count { it.role == "assistant" } > assistantCountBefore }
+                        ?.lastOrNull { it.role == "assistant" }
+                        ?.content?.firstOrNull { it.type == "text" }?.text
+                    if (!assistantText.isNullOrBlank()) {
+                        found = assistantText
+                    } else {
+                        delay(250L)
+                    }
+                }
+                found
             }
         } catch (_: TimeoutCancellationException) {
             null
         }
 
         if (responseText.isNullOrBlank()) {
-            throw IllegalStateException("No response from OpenClaw Gateway")
+            throw IllegalStateException(
+                "OpenClaw Gateway accepted the message, but the agent did not return a reply. Check the host OpenClaw agent/model authentication."
+            )
         }
         return Reply(text = responseText, sourceDisplayName = target.displayName)
     }

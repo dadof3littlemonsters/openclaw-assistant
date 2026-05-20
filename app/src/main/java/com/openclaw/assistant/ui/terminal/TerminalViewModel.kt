@@ -3,20 +3,16 @@ package com.openclaw.assistant.ui.terminal
 import android.app.Application
 import android.util.Base64
 import androidx.lifecycle.AndroidViewModel
-import com.openclaw.assistant.backend.BackendRepository
-import com.openclaw.assistant.backend.BackendType
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import okio.ByteString
-import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 data class TerminalOutput(val b64: String)
@@ -28,7 +24,6 @@ data class TerminalUiState(
 )
 
 class TerminalViewModel(application: Application) : AndroidViewModel(application) {
-    private val repo = BackendRepository.getInstance(application)
     private val client = OkHttpClient.Builder()
         .pingInterval(20, TimeUnit.SECONDS)
         .readTimeout(0, TimeUnit.MILLISECONDS)
@@ -88,22 +83,7 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun resolveEndpoint(): String? {
-        val backend = repo.backends.value.firstOrNull {
-            it.enabled && it.type == BackendType.HERMES_API_SERVER && !it.terminalUrl.isNullOrBlank() && !it.terminalSessionToken.isNullOrBlank()
-        } ?: return null
-        val base = backend.terminalUrl?.trim()?.trimEnd('/')?.toHttpUrlOrNull() ?: return null
-        val token = backend.terminalSessionToken?.trim()?.takeIf { it.isNotEmpty() } ?: return null
-        val channel = "agentvoice-${UUID.randomUUID()}"
-        val path = if (base.encodedPath.endsWith("/api/pty")) base.encodedPath else "${base.encodedPath.trimEnd('/')}/api/pty"
-        val httpUrl = base.newBuilder()
-            .encodedPath(path)
-            .setQueryParameter("token", token)
-            .setQueryParameter("channel", channel)
-            .build()
-        return httpUrl.toString().replaceFirst(
-            if (base.isHttps) "https://" else "http://",
-            if (base.isHttps) "wss://" else "ws://",
-        )
+        return HermesTerminalClient.resolveEndpoint(getApplication<Application>().applicationContext)
     }
 
     private fun emitText(text: String) {

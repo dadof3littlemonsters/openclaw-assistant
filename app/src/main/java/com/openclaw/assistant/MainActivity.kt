@@ -103,7 +103,7 @@ sealed class AppTab(val route: String, val labelResId: Int, val icon: ImageVecto
     object Bridge   : AppTab("bridge",   R.string.tab_nav_bridge,   Icons.Default.Link)
     object Canvas   : AppTab("canvas",   R.string.tab_nav_canvas,   Icons.Default.Brush)
     object Settings : AppTab("settings", R.string.tab_nav_settings, Icons.Default.Settings)
-    companion object { val ALL by lazy { listOf(Home, Chat, Terminal, Bridge, Canvas, Settings) } }
+    companion object { val BOTTOM_NAV_TABS by lazy { listOf(Home, Chat, Terminal, Bridge, Settings) } }
 }
 
 class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
@@ -475,7 +475,7 @@ fun MainNavHost(
                     AppTab.Chat.route     -> AppTab.Chat
                     AppTab.Terminal.route -> AppTab.Terminal
                     AppTab.Bridge.route   -> AppTab.Bridge
-                    AppTab.Canvas.route   -> AppTab.Canvas
+                    AppTab.Canvas.route   -> AppTab.Home
                     AppTab.Settings.route -> AppTab.Settings
                     else                  -> AppTab.Home
                 }
@@ -489,14 +489,7 @@ fun MainNavHost(
     val nodeRuntime = remember(context.applicationContext) {
         (context.applicationContext as OpenClawApplication).nodeRuntime
     }
-    val isOpenClawGatewayConnected by nodeRuntime.isConnected.collectAsState()
-    val availableTabs = remember(isOpenClawGatewayConnected) {
-        if (isOpenClawGatewayConnected) {
-            AppTab.ALL
-        } else {
-            AppTab.ALL.filterNot { it == AppTab.Canvas }
-        }
-    }
+    val availableTabs = remember { AppTab.BOTTOM_NAV_TABS }
 
     LaunchedEffect(selectedTab) {
         if (selectedTab == AppTab.Chat) sessionListViewModel.refreshSessions()
@@ -504,8 +497,8 @@ fun MainNavHost(
     LaunchedEffect(chatRefreshTrigger) {
         sessionListViewModel.refreshSessions()
     }
-    LaunchedEffect(isOpenClawGatewayConnected, selectedTab) {
-        if (!isOpenClawGatewayConnected && selectedTab == AppTab.Canvas) {
+    LaunchedEffect(availableTabs, selectedTab) {
+        if (selectedTab !in availableTabs) {
             selectedTab = AppTab.Home
         }
     }
@@ -559,7 +552,7 @@ fun MainNavHost(
                         onCreateSession     = { name, isGateway, agentId, targetBackendId ->
                             com.openclaw.assistant.ui.backend.ChatBackendTarget.set(targetBackendId)
                             sessionListViewModel.setUseNodeChat(isGateway)
-                            sessionListViewModel.createSession(name, isGateway, agentId) { sessionId, _ ->
+                            sessionListViewModel.createSession(name, isGateway, agentId, targetBackendId) { sessionId, _ ->
                                 context.startActivity(
                                     Intent(context, ChatActivity::class.java).apply {
                                         putExtra(ChatActivity.EXTRA_SESSION_ID, sessionId)

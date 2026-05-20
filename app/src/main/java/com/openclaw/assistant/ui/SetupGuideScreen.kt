@@ -343,20 +343,24 @@ fun SetupGuideScreen(
                                     runtime.setManualHost(parsed.host)
                                     runtime.setManualPort(parsed.port)
                                     runtime.setManualTls(parsed.tls)
-                                    // Save credentials and clear stale fields from previous setup codes.
-                                    // Only one auth type is valid at a time.
+                                    // bootstrapToken is for node pairing; password/token may also be
+                                    // present so the app can open an operator session and approve it.
                                     when {
                                         decoded.bootstrapToken != null -> {
                                             runtime.setGatewayBootstrapToken(decoded.bootstrapToken)
-                                            // Save user-entered credential (password takes priority over token)
+                                            // User-entered credential takes priority over QR credential.
+                                            // Password takes priority over token because it can request
+                                            // operator.pairing for automatic approval.
+                                            val resolvedPassword = manualPassword.trim().ifBlank { decoded.password.orEmpty() }
+                                            val resolvedToken = authToken.trim().ifBlank { decoded.token.orEmpty() }
                                             when {
-                                                manualPassword.isNotBlank() -> {
-                                                    runtime.setGatewayPassword(manualPassword.trim())
+                                                resolvedPassword.isNotBlank() -> {
+                                                    runtime.setGatewayPassword(resolvedPassword)
                                                     runtime.prefs.setGatewayToken("")
                                                     runtime.prefs.saveGatewayToken("")
                                                 }
-                                                authToken.isNotBlank() -> {
-                                                    runtime.prefs.saveGatewayToken(authToken.trim())
+                                                resolvedToken.isNotBlank() -> {
+                                                    runtime.prefs.saveGatewayToken(resolvedToken)
                                                     runtime.setGatewayPassword("")
                                                 }
                                                 else -> {
@@ -563,7 +567,7 @@ private fun ConnectionStep(
                 color = OnboardingTextSecondary
             )
             Spacer(modifier = Modifier.height(8.dp))
-            CommandBlock("openclaw qr")
+            CommandBlock("agentvoice-pair --public-tunnel --terminal-qr")
             Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedButton(
@@ -579,15 +583,24 @@ private fun ConnectionStep(
                                 scanner.startScan()
                                     .addOnSuccessListener { barcode ->
                                         barcode.rawValue?.let { rawValue ->
-                                            // openclaw qr generates {"setupCode":"base64..."} JSON; extract the inner code
-                                            val code = try {
-                                                org.json.JSONObject(rawValue.trim())
-                                                    .optString("setupCode")
-                                                    .takeIf { it.isNotBlank() } ?: rawValue
-                                            } catch (_: Exception) {
-                                                rawValue
+                                            val raw = rawValue.trim()
+                                            val pairingPayload = parsePairingPayload(raw)
+                                            if (pairingPayload != null) {
+                                                applyPairingPayload(context, pairingPayload, BackendType.OPENCLAW_GATEWAY)
+                                                pairingPayload.openClawSetupCode?.let(onSetupCodeChange)
+                                                onModeChange(ConnectionMode.SetupCode)
+                                            } else {
+                                                // agentvoice-pair/openclaw can wrap the Gateway setup code in
+                                                // {"setupCode":"base64..."} JSON; extract the inner code.
+                                                val code = try {
+                                                    org.json.JSONObject(raw)
+                                                        .optString("setupCode")
+                                                        .takeIf { it.isNotBlank() } ?: raw
+                                                } catch (_: Exception) {
+                                                    raw
+                                                }
+                                                onSetupCodeChange(code)
                                             }
-                                            onSetupCodeChange(code)
                                         }
                                     }
                                     .addOnFailureListener { /* scan cancelled or failed — no action needed */ }
@@ -1362,7 +1375,7 @@ private fun HermesFinalStep(onFinish: () -> Unit) {
                             true
                         } == true
                         if (!connected) {
-                            testStatus = context.getString(R.string.setup_guide_e2e_failed, statusText.ifBlank { "OpenClaw Gateway timeout" })
+                            testStatus = context.getString(R.string.setup_guide_e2e_failed, statusText.ifBlank { "OpenClaw timeout" })
                             return@launch
                         }
                     } else {
@@ -1461,8 +1474,8 @@ private fun HermesFinalStep(onFinish: () -> Unit) {
                             Text(
                                 text = when (backend.type) {
                                     BackendType.HERMES_API_SERVER -> "Hermes Agent"
-                                    BackendType.OPENCLAW_GATEWAY -> "OpenClaw Gateway"
-                                    BackendType.OPENCLAW_HTTP -> "OpenClaw HTTP"
+                                    BackendType.OPENCLAW_GATEWAY -> "OpenClaw"
+                                    BackendType.OPENCLAW_HTTP -> "OpenClaw API"
                                 },
                                 style = MaterialTheme.typography.labelMedium,
                                 color = OnboardingGradientMid

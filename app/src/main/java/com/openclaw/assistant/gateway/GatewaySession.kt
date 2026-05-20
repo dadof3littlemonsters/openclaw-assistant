@@ -50,6 +50,9 @@ data class GatewayConnectOptions(
   val permissions: Map<String, Boolean>,
   val client: GatewayClientInfo,
   val userAgent: String? = null,
+  val ignoreStoredDeviceToken: Boolean = false,
+  val includeDeviceIdentity: Boolean = true,
+  val persistIssuedDeviceToken: Boolean = true,
 )
 
 class GatewaySession(
@@ -416,7 +419,8 @@ class GatewaySession(
     private suspend fun sendConnect(connectNonce: String?) {
       val identity = identityStore.loadOrCreate()
       val identityId = identity.deviceId ?: throw IllegalStateException("missing device identity id")
-      val storedToken = deviceAuthStore.loadToken(identityId, options.role)
+      val storedToken =
+        if (options.ignoreStoredDeviceToken) null else deviceAuthStore.loadToken(identityId, options.role)
       val trimmedToken = token?.trim().orEmpty()
       val trimmedPassword = password?.trim().orEmpty()
       val trimmedBootstrapToken = bootstrapToken?.trim().orEmpty()
@@ -531,7 +535,7 @@ class GatewaySession(
       val authObj = obj["auth"].asObjectOrNull()
       val deviceToken = authObj?.get("deviceToken").asStringOrNull()
       val authRole = authObj?.get("role").asStringOrNull() ?: options.role
-      if (!deviceToken.isNullOrBlank()) {
+      if (options.persistIssuedDeviceToken && !deviceToken.isNullOrBlank()) {
         deviceAuthStore.saveToken(identityId, authRole, deviceToken)
       }
       val deviceTokens = authObj?.get("deviceTokens") as? JsonArray
@@ -539,7 +543,7 @@ class GatewaySession(
         val tokenObj = entry.asObjectOrNull() ?: return@forEach
         val role = tokenObj["role"].asStringOrNull()?.trim().orEmpty()
         val token = tokenObj["deviceToken"].asStringOrNull()?.trim().orEmpty()
-        if (role.isNotEmpty() && token.isNotEmpty()) {
+        if (options.persistIssuedDeviceToken && role.isNotEmpty() && token.isNotEmpty()) {
           deviceAuthStore.saveToken(identityId, role, token)
         }
       }
@@ -599,23 +603,27 @@ class GatewaySession(
 
       val signedAtMs = System.currentTimeMillis()
       val payload =
-        buildDeviceAuthPayload(
-          deviceId = identityId,
-          clientId = client.id,
-          clientMode = client.mode,
-          role = options.role,
-          scopes = connectScopes,
-          signedAtMs = signedAtMs,
-          token =
-            when {
-              authToken.isNotEmpty() -> authToken
-              bootstrapTokenTrimmed.isNotEmpty() -> bootstrapTokenTrimmed
-              else -> null
-            },
-          nonce = connectNonce,
-        )
-      val signature = identityStore.signPayload(payload, identity)
-      val publicKey = identityStore.publicKeyBase64Url(identity)
+        if (options.includeDeviceIdentity) {
+          buildDeviceAuthPayload(
+            deviceId = identityId,
+            clientId = client.id,
+            clientMode = client.mode,
+            role = options.role,
+            scopes = connectScopes,
+            signedAtMs = signedAtMs,
+            token =
+              when {
+                authToken.isNotEmpty() -> authToken
+                bootstrapTokenTrimmed.isNotEmpty() -> bootstrapTokenTrimmed
+                else -> null
+              },
+            nonce = connectNonce,
+          )
+        } else {
+          null
+        }
+      val signature = payload?.let { identityStore.signPayload(it, identity) }
+      val publicKey = if (payload != null) identityStore.publicKeyBase64Url(identity) else null
       val deviceJson =
         if (!signature.isNullOrBlank() && !publicKey.isNullOrBlank()) {
           buildJsonObject {

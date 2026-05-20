@@ -173,10 +173,10 @@ private fun UnifiedPairingCard(includeHermes: Boolean, includeOpenClaw: Boolean)
     val installCommand = "curl -fsSL https://raw.githubusercontent.com/yuga-hashimoto/openclaw-assistant/main/integrations/agentvoice-pair/install.sh | bash"
     val pairCommand = remember(includeHermes, includeOpenClaw) {
         when {
-            includeHermes && includeOpenClaw -> "agentvoice-pair --public-tunnel"
-            includeHermes -> "agentvoice-pair --public-tunnel --hermes-only"
-            includeOpenClaw -> "agentvoice-pair --public-tunnel --openclaw-only"
-            else -> "agentvoice-pair --public-tunnel"
+            includeHermes && includeOpenClaw -> "agentvoice-pair --public-tunnel --terminal-qr"
+            includeHermes -> "agentvoice-pair --public-tunnel --hermes-only --terminal-qr"
+            includeOpenClaw -> "agentvoice-pair --public-tunnel --openclaw-only --terminal-qr"
+            else -> "agentvoice-pair --public-tunnel --terminal-qr"
         }
     }
     val scopeText = when {
@@ -213,7 +213,8 @@ private fun UnifiedPairingCard(includeHermes: Boolean, includeOpenClaw: Boolean)
                             val pairingPayload = parsePairingPayload(raw)
                             if (pairingPayload != null) {
                                 pairingReview = pairingPayload.toEditablePairingPayload()
-                                status = context.getString(R.string.av_pairing_review_loaded)
+                                applyPairingPayload(context, pairingPayload, null)
+                                status = context.getString(R.string.setup_code_applied)
                             } else if (raw.startsWith("agentvoice://")) {
                                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(raw)))
                             } else {

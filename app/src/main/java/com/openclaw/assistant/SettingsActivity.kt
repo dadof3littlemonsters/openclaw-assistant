@@ -463,8 +463,16 @@ fun SettingsScreen(
                                 runtime.setManualTls(gatewayTls)
                                 if (gatewayBootstrapToken.isNotBlank()) {
                                     runtime.setGatewayBootstrapToken(gatewayBootstrapToken.trim())
-                                    runtime.setGatewayToken("")
-                                    runtime.setGatewayPassword("")
+                                    if (usePasswordAuth && gatewayPassword.isNotBlank()) {
+                                        runtime.setGatewayToken("")
+                                        runtime.setGatewayPassword(gatewayPassword.trim())
+                                    } else if (!usePasswordAuth && gatewayToken.isNotBlank()) {
+                                        runtime.setGatewayToken(gatewayToken.trim())
+                                        runtime.setGatewayPassword("")
+                                    } else {
+                                        runtime.setGatewayToken("")
+                                        runtime.setGatewayPassword("")
+                                    }
                                 } else if (usePasswordAuth) {
                                     runtime.setGatewayBootstrapToken("")
                                     runtime.setGatewayToken("")
@@ -664,9 +672,15 @@ fun SettingsScreen(
                                                         gatewayTls = parsed.tls
                                                         if (decoded.bootstrapToken != null) {
                                                             gatewayBootstrapToken = decoded.bootstrapToken
-                                                            gatewayToken = ""
-                                                            gatewayPassword = ""
-                                                            usePasswordAuth = false
+                                                            if (decoded.password != null) {
+                                                                gatewayToken = ""
+                                                                gatewayPassword = decoded.password
+                                                                usePasswordAuth = true
+                                                            } else {
+                                                                gatewayToken = decoded.token.orEmpty()
+                                                                gatewayPassword = ""
+                                                                usePasswordAuth = false
+                                                            }
                                                             setupCodeHasBootstrapOnly = decoded.password == null && decoded.token == null
                                                         } else if (decoded.password != null) {
                                                             gatewayBootstrapToken = ""
@@ -2064,9 +2078,9 @@ private fun BackendSummaryBlock(
 
 @Composable
 private fun AgentBackendConfig.settingsTypeLabel(): String = when (type) {
-    BackendType.HERMES_API_SERVER -> "Hermes API Server · ${baseUrl ?: stringResource(R.string.av_backend_url_unset)}"
-    BackendType.OPENCLAW_GATEWAY -> "OpenClaw Gateway · ${host ?: stringResource(R.string.av_backend_host_unset)}:${port ?: "?"}"
-    BackendType.OPENCLAW_HTTP -> "OpenClaw HTTP · ${baseUrl ?: stringResource(R.string.av_backend_url_unset)}"
+    BackendType.HERMES_API_SERVER -> "Hermes Agent · ${baseUrl ?: stringResource(R.string.av_backend_url_unset)}"
+    BackendType.OPENCLAW_GATEWAY -> "OpenClaw · ${host ?: stringResource(R.string.av_backend_host_unset)}:${port ?: "?"}"
+    BackendType.OPENCLAW_HTTP -> "OpenClaw API · ${baseUrl ?: stringResource(R.string.av_backend_url_unset)}"
 }
 
 private fun applyAppLanguage(languageTag: String) {

@@ -35,6 +35,7 @@ import com.openclaw.assistant.service.OpenClawNotificationListenerService
 
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -45,6 +46,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -290,6 +292,17 @@ class NodeRuntime(context: Context) {
   val deviceId: String?
     get() = identityStore.loadOrCreate().deviceId
 
+  private fun hasStoredOperatorToken(): Boolean {
+    val identityId = deviceId ?: return false
+    return !deviceAuthStore.loadToken(identityId, "operator").isNullOrBlank()
+  }
+
+  data class PairingApprovalResult(
+    val approved: Boolean,
+    val requestId: String? = null,
+    val message: String? = null,
+  )
+
   private val _isForeground = MutableStateFlow(true)
   val isForeground: StateFlow<Boolean> = _isForeground.asStateFlow()
 
@@ -310,7 +323,6 @@ class NodeRuntime(context: Context) {
         _serverName.value = name
         _remoteAddress.value = remote
         _serverVersion.value = version
-        _isPairingRequired.value = false
         applyMainSessionKey(mainSessionKey)
         updateStatus()
         scope.launch { refreshBrandingFromGateway() }
@@ -349,7 +361,6 @@ class NodeRuntime(context: Context) {
         nodeConnected = true
         nodeStatusText = "Connected"
         _serverVersion.value = version
-        _isPairingRequired.value = false
         updateStatus()
         scope.launch { refreshNodeCanvasCapabilityAndNavigate() }
         scope.launch { connectOperatorAfterNodeBootstrap() }
@@ -419,7 +430,7 @@ class NodeRuntime(context: Context) {
       // generic disconnected message while the request is still pending, so only a real connection
       // should clear the prompt.
       _isPairingRequired.value = true
-    } else if (operatorConnected || nodeConnected) {
+    } else if (operatorConnected && nodeConnected) {
       _isPairingRequired.value = false
     }
 
@@ -722,15 +733,161 @@ class NodeRuntime(context: Context) {
     val password = prefs.loadGatewayPassword()
     val bootstrapToken = prefs.loadGatewayBootstrapToken()
     val tls = connectionManager.resolveTlsParams(endpoint)
-    // bootstrapToken is single-use and issued for the node role only — do not pass to operatorSession.
-    if (bootstrapToken.isNullOrBlank()) {
+    // bootstrapToken is single-use and issued for the node role only — never pass it to operatorSession.
+    // If this device already has an operator token, keep the operator connection alive so it can
+    // approve node repair pairings without asking the user to run a CLI command.
+    if (bootstrapToken.isNullOrBlank() || hasStoredOperatorToken()) {
       operatorSession.connect(endpoint, token, password, null, connectionManager.buildOperatorConnectOptions(), tls)
     }
     nodeSession.connect(endpoint, token, password, bootstrapToken, connectionManager.buildNodeConnectOptions(), tls)
-    if (bootstrapToken.isNullOrBlank()) {
+    if (bootstrapToken.isNullOrBlank() || hasStoredOperatorToken()) {
       operatorSession.reconnect()
     }
     nodeSession.reconnect()
+  }
+
+  suspend fun approvePendingPairingForDevice(targetDeviceId: String): PairingApprovalResult {
+    val normalizedDeviceId = targetDeviceId.trim()
+    if (normalizedDeviceId.isBlank()) {
+      return PairingApprovalResult(approved = false, message = "deviceId is empty")
+    }
+    return try {
+      val password = prefs.loadGatewayPassword()
+      Log.d("NodeRuntime", "Pairing approval v20260520c device=$normalizedDeviceId hasPassword=${!password.isNullOrBlank()}")
+      Log.d("NodeRuntime", "Approving pending device pairing for $normalizedDeviceId")
+      if (!password.isNullOrBlank()) {
+        val requestId = approvePendingPairingWithPasswordOperatorForDevice(normalizedDeviceId)
+        Log.d("NodeRuntime", "Approved pending device pairing request $requestId")
+        refreshGatewayConnection()
+        return PairingApprovalResult(approved = true, requestId = requestId)
+      }
+      val listJson = operatorSession.request("device.pair.list", "{}", timeoutMs = 10_000)
+      val listRoot = json.parseToJsonElement(listJson).asObjectOrNull()
+      val pending = listRoot?.get("pending") as? JsonArray
+      val requestId =
+        pending
+          ?.mapNotNull { it.asObjectOrNull() }
+          ?.firstOrNull { it["deviceId"].asStringOrNull()?.trim() == normalizedDeviceId }
+          ?.get("requestId")
+          .asStringOrNull()
+          ?.trim()
+      if (requestId.isNullOrBlank()) {
+        Log.w("NodeRuntime", "No pending pairing request found for $normalizedDeviceId")
+        return PairingApprovalResult(approved = false, message = "No pending request for this device.")
+      }
+      val params = buildJsonObject { put("requestId", JsonPrimitive(requestId)) }
+      Log.d("NodeRuntime", "Pairing approval using existing operator session; no password available for operator.pairing session")
+      operatorSession.request("device.pair.approve", params.toString(), timeoutMs = 10_000)
+      Log.d("NodeRuntime", "Approved pending device pairing request $requestId")
+      refreshGatewayConnection()
+      PairingApprovalResult(approved = true, requestId = requestId)
+    } catch (err: Throwable) {
+      Log.w("NodeRuntime", "Device pairing approval failed: ${err.message ?: err::class.java.simpleName}")
+      PairingApprovalResult(
+        approved = false,
+        message = err.message ?: err::class.java.simpleName,
+      )
+    }
+  }
+
+  private suspend fun approvePendingPairingWithPasswordOperatorForDevice(deviceId: String): String {
+    val pairingSession = createPairingOperatorSession()
+    try {
+      connectPairingOperatorSession(pairingSession)
+      withTimeout(10_000) { pairingSession.connected.await() }
+      val listJson = requestPairingOperator(pairingSession.session, "device.pair.list", "{}")
+      val listRoot = json.parseToJsonElement(listJson).asObjectOrNull()
+      val pending = listRoot?.get("pending") as? JsonArray
+      val requestId =
+        pending
+          ?.mapNotNull { it.asObjectOrNull() }
+          ?.firstOrNull { it["deviceId"].asStringOrNull()?.trim() == deviceId }
+          ?.get("requestId")
+          .asStringOrNull()
+          ?.trim()
+      if (requestId.isNullOrBlank()) {
+        throw IllegalStateException("No pending request for this device.")
+      }
+      val params = buildJsonObject { put("requestId", JsonPrimitive(requestId)) }
+      requestPairingOperator(pairingSession.session, "device.pair.approve", params.toString())
+      return requestId
+    } finally {
+      pairingSession.session.disconnect()
+    }
+  }
+
+  private suspend fun approvePendingPairingWithPasswordOperator(requestId: String) {
+    val pairingSession = createPairingOperatorSession()
+    try {
+      connectPairingOperatorSession(pairingSession)
+      withTimeout(10_000) { pairingSession.connected.await() }
+      val params = buildJsonObject { put("requestId", JsonPrimitive(requestId)) }
+      requestPairingOperator(pairingSession.session, "device.pair.approve", params.toString())
+    } finally {
+      pairingSession.session.disconnect()
+    }
+  }
+
+  private data class PairingOperatorHandle(
+    val session: GatewaySession,
+    val connected: CompletableDeferred<Unit>,
+  )
+
+  private fun createPairingOperatorSession(): PairingOperatorHandle {
+    val connected = CompletableDeferred<Unit>()
+    val session = GatewaySession(
+      scope = scope,
+      identityStore = identityStore,
+      deviceAuthStore = deviceAuthStore,
+      onConnected = { _, _, _, _ ->
+        if (!connected.isCompleted) connected.complete(Unit)
+      },
+      onDisconnected = { message ->
+        if (
+          !connected.isCompleted &&
+          !message.equals("Connecting...", ignoreCase = true) &&
+          !message.equals("Connecting…", ignoreCase = true)
+        ) {
+          connected.completeExceptionally(IllegalStateException(message))
+        }
+      },
+      onEvent = { _, _ -> },
+    )
+    return PairingOperatorHandle(session = session, connected = connected)
+  }
+
+  private fun connectPairingOperatorSession(pairingSession: PairingOperatorHandle) {
+    val endpoint = connectedEndpoint ?: throw IllegalStateException("gateway not connected")
+    val password = prefs.loadGatewayPassword()
+      ?: throw IllegalStateException("operator.pairing scope required and gateway password is not configured")
+    Log.d("NodeRuntime", "Connecting temporary operator.pairing password session")
+    val tls = connectionManager.resolveTlsParams(endpoint)
+    pairingSession.session.connect(
+      endpoint = endpoint,
+      token = null,
+      password = password,
+      bootstrapToken = null,
+      options = connectionManager.buildPairingOperatorConnectOptions(),
+      tls = tls,
+    )
+  }
+
+  private suspend fun requestPairingOperator(
+    pairingSession: GatewaySession,
+    method: String,
+    paramsJson: String,
+  ): String {
+    var lastError: Throwable? = null
+    repeat(20) {
+      try {
+        return pairingSession.request(method, paramsJson, timeoutMs = 10_000)
+      } catch (err: Throwable) {
+        lastError = err
+        if (!err.message.orEmpty().contains("not connected", ignoreCase = true)) throw err
+        delay(250)
+      }
+    }
+    throw IllegalStateException(lastError?.message ?: "pairing operator not connected")
   }
 
   fun connect(endpoint: GatewayEndpoint) {
@@ -758,8 +915,8 @@ class NodeRuntime(context: Context) {
     val token = prefs.loadGatewayToken()
     val password = prefs.loadGatewayPassword()
     val bootstrapToken = prefs.loadGatewayBootstrapToken()
-    // bootstrapToken is single-use and issued for the node role only — do not pass to operatorSession.
-    if (bootstrapToken.isNullOrBlank()) {
+    // bootstrapToken is single-use and issued for the node role only — never pass it to operatorSession.
+    if (bootstrapToken.isNullOrBlank() || hasStoredOperatorToken()) {
       operatorSession.connect(endpoint, token, password, null, connectionManager.buildOperatorConnectOptions(), tls)
     }
     nodeSession.connect(endpoint, token, password, bootstrapToken, connectionManager.buildNodeConnectOptions(), tls)

@@ -282,12 +282,32 @@ class ConnectionManager(
   fun buildOperatorConnectOptions(): GatewayConnectOptions {
     return GatewayConnectOptions(
       role = "operator",
-      scopes = listOf("operator.read", "operator.write", "operator.talk.secrets"),
+      scopes = listOf(
+        "operator.read",
+        "operator.write",
+        "operator.talk.secrets",
+        "operator.approvals",
+      ),
       caps = emptyList(),
       commands = emptyList(),
       permissions = emptyMap(),
       client = buildClientInfo(clientId = "openclaw-control-ui", clientMode = "ui"),
       userAgent = buildUserAgent(),
+    )
+  }
+
+  fun buildPairingOperatorConnectOptions(): GatewayConnectOptions {
+    return GatewayConnectOptions(
+      role = "operator",
+      scopes = listOf("operator.pairing"),
+      caps = emptyList(),
+      commands = emptyList(),
+      permissions = emptyMap(),
+      client = buildClientInfo(clientId = "cli", clientMode = "cli"),
+      userAgent = buildUserAgent(),
+      ignoreStoredDeviceToken = true,
+      includeDeviceIdentity = false,
+      persistIssuedDeviceToken = false,
     )
   }
 

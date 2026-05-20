@@ -549,13 +549,27 @@ class OpenClawSession(context: Context) : VoiceInteractionSession(context),
 
         scope.launch {
             val agentId = settings.defaultAgentId.takeIf { it.isNotBlank() && it != "main" }
+            val voiceBackendId = resolveVoiceSessionBackendId()
+            if (settings.wakewordConnectionType != SettingsRepository.CONNECTION_TYPE_GATEWAY && voiceBackendId == null) {
+                cancelInitialFillerPhrase()
+                cancelWaitPhraseTimer()
+                stopThinkingSound()
+                currentState.value = AssistantState.ERROR
+                errorMessage.value = context.getString(R.string.av_settings_no_hermes)
+                return@launch
+            }
             val primaryReply = try {
-                com.openclaw.assistant.backend.PrimaryBackendDispatcher.sendPrimary(
-                    context = context,
-                    userText = message,
-                    sessionId = settings.sessionId,
-                    agentId = agentId,
-                )
+                if (voiceBackendId != null) {
+                    com.openclaw.assistant.backend.PrimaryBackendDispatcher.send(
+                        context = context,
+                        userText = message,
+                        backendId = voiceBackendId,
+                        sessionId = settings.sessionId,
+                        agentId = agentId,
+                    )
+                } else {
+                    null
+                }
             } catch (e: Throwable) {
                 cancelInitialFillerPhrase()
                 cancelWaitPhraseTimer()
@@ -578,6 +592,15 @@ class OpenClawSession(context: Context) : VoiceInteractionSession(context),
                 return@launch
             }
 
+            if (settings.wakewordConnectionType != SettingsRepository.CONNECTION_TYPE_GATEWAY) {
+                cancelInitialFillerPhrase()
+                cancelWaitPhraseTimer()
+                stopThinkingSound()
+                currentState.value = AssistantState.ERROR
+                errorMessage.value = context.getString(R.string.av_settings_no_hermes)
+                return@launch
+            }
+
             // Save user message to local DB only for HTTP mode
             if (settings.wakewordConnectionType != SettingsRepository.CONNECTION_TYPE_GATEWAY) {
                 currentSessionId?.let { sessionId ->
@@ -590,6 +613,26 @@ class OpenClawSession(context: Context) : VoiceInteractionSession(context),
             } else {
                 sendViaHttp(message)
             }
+        }
+    }
+
+    private suspend fun resolveVoiceSessionBackendId(): String? {
+        val backends = com.openclaw.assistant.backend.BackendRepository.getInstance(context).backends.first()
+            .filter { it.enabled }
+        return if (settings.wakewordConnectionType == SettingsRepository.CONNECTION_TYPE_GATEWAY) {
+            backends.firstOrNull {
+                it.isPrimary && (
+                    it.type == com.openclaw.assistant.backend.BackendType.OPENCLAW_GATEWAY ||
+                        it.type == com.openclaw.assistant.backend.BackendType.OPENCLAW_HTTP
+                    )
+            }?.id
+                ?: backends.firstOrNull { it.type == com.openclaw.assistant.backend.BackendType.OPENCLAW_GATEWAY }?.id
+                ?: backends.firstOrNull { it.type == com.openclaw.assistant.backend.BackendType.OPENCLAW_HTTP }?.id
+        } else {
+            backends.firstOrNull {
+                it.isPrimary && it.type == com.openclaw.assistant.backend.BackendType.HERMES_API_SERVER
+            }?.id
+                ?: backends.firstOrNull { it.type == com.openclaw.assistant.backend.BackendType.HERMES_API_SERVER }?.id
         }
     }
 
