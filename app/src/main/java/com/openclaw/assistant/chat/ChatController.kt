@@ -127,6 +127,7 @@ class ChatController(
     message: String,
     thinkingLevel: String,
     attachments: List<OutgoingAttachment>,
+    modelName: String? = null,
   ) {
     val trimmed = message.trim()
     if (trimmed.isEmpty() && attachments.isEmpty()) return
@@ -182,6 +183,7 @@ class ChatController(
             put("sessionKey", JsonPrimitive(sessionKey))
             put("message", JsonPrimitive(text))
             put("thinking", JsonPrimitive(thinking))
+            modelName?.takeIf { it.isNotBlank() }?.let { put("model", JsonPrimitive(it)) }
             put("timeoutMs", JsonPrimitive(30_000))
             put("idempotencyKey", JsonPrimitive(runId))
             if (attachments.isNotEmpty()) {

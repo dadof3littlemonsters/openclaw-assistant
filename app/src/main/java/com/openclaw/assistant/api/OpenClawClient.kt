@@ -43,6 +43,7 @@ class OpenClawClient() {
         sessionId: String,
         authToken: String? = null,
         agentId: String? = null,
+        modelName: String? = null,
         attachments: List<Pair<String, String>> = emptyList()
     ): Result<OpenClawResponse> = withContext(Dispatchers.IO) {
         if (httpUrl.isBlank()) {
@@ -62,7 +63,7 @@ class OpenClawClient() {
         try {
             // OpenAI Chat Completions format for /v1/chat/completions
             val requestBody = JsonObject().apply {
-                addProperty("model", "openclaw")
+                addProperty("model", modelName?.trim()?.takeIf { it.isNotBlank() } ?: "openclaw")
                 addProperty("user", sessionId)
                 val messagesArray = JsonArray()
                 val userMessage = JsonObject().apply {

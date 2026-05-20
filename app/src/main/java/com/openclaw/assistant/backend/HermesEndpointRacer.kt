@@ -18,9 +18,8 @@ import java.util.concurrent.TimeUnit
  * in parallel and returns the first one to respond successfully to
  * `GET /v1/models` (with `/health` fallback).
  *
- * Modelled after Hermes-Relay's "LAN + Tailscale + public URLs" pattern: every
- * connect picks the lowest-latency reachable endpoint, so the same paired
- * backend works at home, on a train, or behind a VPN without reconfiguration.
+ * Races LAN, VPN, and public URLs so the same configured backend works at
+ * home, on a train, or behind a VPN without manual reconfiguration.
  *
  * The racer never falls back to a non-2xx endpoint — auth failure on the
  * fastest endpoint is still preferred over silently using a slow stale one.

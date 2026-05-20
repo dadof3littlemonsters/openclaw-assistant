@@ -44,8 +44,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Self-check / diagnostic screen — the AgentVoice analogue of Hermes-Relay's
- * `hermes-status` command and `/hermes-relay-self-setup` skill. One scrollable
+ * Self-check / diagnostic screen. One scrollable
  * view that probes every load-bearing surface so a user (or Hermes itself
  * via the bridge) can answer "is everything wired correctly?" in a glance.
  *

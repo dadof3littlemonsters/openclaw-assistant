@@ -605,7 +605,7 @@ private fun parseHermesRelayJson(obj: JsonObject): PairingPayload? {
             modelName = obj["model"]?.jsonPrimitive?.contentOrNull?.trim()?.ifEmpty { "default" } ?: "default",
             useRunsApi = obj["runs"]?.jsonPrimitive?.booleanOrNull ?: true,
             streaming = obj["streaming"]?.jsonPrimitive?.booleanOrNull ?: true,
-            displayName = obj["name"]?.jsonPrimitive?.contentOrNull?.trim()?.ifEmpty { null } ?: "Hermes Relay",
+            displayName = obj["name"]?.jsonPrimitive?.contentOrNull?.trim()?.ifEmpty { null } ?: "Hermes Agent",
         ),
         openClawSetupCode = null,
     )

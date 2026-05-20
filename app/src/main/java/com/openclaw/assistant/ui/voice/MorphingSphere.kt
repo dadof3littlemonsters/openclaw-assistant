@@ -34,7 +34,7 @@ import kotlin.math.min
 import kotlin.math.sin
 
 /**
- * "Morphing sphere" voice indicator — Hermes-Relay-style organic blob that
+ * "Morphing sphere" voice indicator — organic blob that
  * breathes while idle, ripples in response to live microphone amplitude while
  * listening, swirls slowly while thinking, and pulses while the assistant
  * speaks. Drives off [AssistantState] + an `audioLevel` already normalised

@@ -66,6 +66,7 @@ class OpenClawHttpAdapter(override val config: AgentBackendConfig) : AgentClient
             sessionId = options.sessionId ?: "agent-voice",
             authToken = config.apiKeyOrToken?.takeIf { it.isNotBlank() },
             agentId = options.extra["agentId"]?.takeIf { it.isNotBlank() },
+            modelName = config.modelName?.takeIf { it.isNotBlank() },
         )
         result.fold(
             onSuccess = { response ->

@@ -5,7 +5,7 @@ import java.security.SecureRandom
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Pairing protocol modelled after Hermes-Relay's `hermes-pair` flow:
+ * Pairing protocol for trusted local Mobile Bridge clients:
  *
  *  1. Bridge UI generates a short-lived [Offer] containing a random 6-character
  *     human-readable code and a one-time pairing nonce. The offer is shown as

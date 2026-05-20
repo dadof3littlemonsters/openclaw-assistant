@@ -143,7 +143,7 @@ class PairingUriParserTest {
         assertTrue(h.secondaryUrls.isEmpty())
         assertEquals("api-key", h.apiKey)
         assertEquals(true, h.useRunsApi)
-        assertEquals("Hermes Relay", h.displayName)
+        assertEquals("Hermes Agent", h.displayName)
     }
 
     @Test fun `Hermes Relay v3 endpoints are imported in priority order`() {

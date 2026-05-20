@@ -18,8 +18,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Hermes-Relay style "tool-progress cards" feed. Producers (Hermes client
- * code) push [AgentEvent.ToolProgress] events here; Chat renders the most
+ * Shared tool-progress feed. Producers (Hermes/OpenClaw client code) push
+ * [AgentEvent.ToolProgress] events here; Chat renders the most
  * recent few as inline cards above the input so the user can see tool
  * activity in real time.
  *

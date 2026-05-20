@@ -15,7 +15,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
 /**
- * Mirrors Hermes-Relay's "notifications" surface. Reads the current active
+ * Reads the current active
  * notifications via [OpenClawNotificationListenerService] (which Android
  * grants only after the user has explicitly enabled
  * "Notification access" for WakeHermesClaw).

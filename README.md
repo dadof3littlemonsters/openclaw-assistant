@@ -34,15 +34,14 @@
 > <key>`; the default model name is `hermes-agent`. Connection test
 > calls `GET /v1/models` and falls back to `/health`.
 >
-> **Hermes-Relay feature parity.** WakeHermesClaw mirrors the patterns in
-> [hermes-relay](https://codename-11.github.io/hermes-relay/):
-> 6-character pairing codes + deep-link QR payload (`agentvoice://pair?...`),
-> multi-endpoint candidates (LAN + Tailscale + public) raced in parallel on
-> every connect, per-capability TTL grants ("approve · 10 min / 1 hour /
-> until revoked") with a destructive-verb override, `/revoke` and `/grants`
-> endpoints, an Accessibility Bridge (tap / swipe / Home / Back / window
-> describe — sideload-only), notifications.active.list backed by the
-> existing NotificationListenerService, and a build-flag (`IS_SIDELOAD`)
+> **WakeHermesClaw shared agent controls.** The app includes 6-character
+> bridge pairing codes, deep-link setup payloads, multi-endpoint candidates
+> (LAN + VPN + public) raced in parallel on connect, per-capability TTL grants
+> ("approve · 10 min / 1 hour / until revoked") with a destructive-verb
+> override, `/revoke` and `/grants` endpoints, an Accessibility Bridge
+> (tap / swipe / Home / Back / window describe — sideload-only),
+> notifications.active.list backed by the existing NotificationListenerService,
+> and a build-flag (`IS_SIDELOAD`)
 > that gates Accessibility + SMS for a Play-track build.
 >
 > **Wear OS** uses its own per-watch backend URL + auth token. Point the

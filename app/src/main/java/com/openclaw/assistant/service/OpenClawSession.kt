@@ -655,6 +655,28 @@ class OpenClawSession(
         }
     }
 
+    private suspend fun resolveOpenClawGatewayModel(): String? {
+        val backends = com.openclaw.assistant.backend.BackendRepository.getInstance(context).backends.first()
+            .filter { it.enabled }
+        return backends.firstOrNull {
+            it.isPrimary && it.type == com.openclaw.assistant.backend.BackendType.OPENCLAW_GATEWAY
+        }?.modelName?.takeIf { it.isNotBlank() }
+            ?: backends.firstOrNull {
+                it.type == com.openclaw.assistant.backend.BackendType.OPENCLAW_GATEWAY
+            }?.modelName?.takeIf { it.isNotBlank() }
+    }
+
+    private suspend fun resolveLegacyOpenClawModel(): String? {
+        val backends = com.openclaw.assistant.backend.BackendRepository.getInstance(context).backends.first()
+            .filter { it.enabled }
+        return backends.firstOrNull {
+            it.isPrimary && it.type == com.openclaw.assistant.backend.BackendType.OPENCLAW_HTTP
+        }?.modelName?.takeIf { it.isNotBlank() }
+            ?: backends.firstOrNull {
+                it.type == com.openclaw.assistant.backend.BackendType.OPENCLAW_HTTP
+            }?.modelName?.takeIf { it.isNotBlank() }
+    }
+
     private var waitPhraseJob: Job? = null
 
     private fun scheduleInitialFillerPhrase() {
@@ -754,7 +776,8 @@ class OpenClawSession(
             nodeRuntime.sendChat(
                 message = message,
                 thinking = "low",
-                attachments = emptyList()
+                attachments = emptyList(),
+                modelName = resolveOpenClawGatewayModel(),
             )
 
             // Wait for a new complete assistant response (timeout 60s).
@@ -828,7 +851,8 @@ class OpenClawSession(
             message = message,
             sessionId = settings.sessionId,
             authToken = settings.authToken.takeIf { it.isNotBlank() },
-            agentId = agentId
+            agentId = agentId,
+            modelName = resolveLegacyOpenClawModel(),
         )
 
         cancelWaitPhraseTimer()

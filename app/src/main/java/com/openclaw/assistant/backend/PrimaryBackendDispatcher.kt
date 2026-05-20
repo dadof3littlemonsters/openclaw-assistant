@@ -40,7 +40,7 @@ object PrimaryBackendDispatcher {
         } ?: return null
         return when (target.type) {
             BackendType.HERMES_API_SERVER,
-            BackendType.OPENCLAW_HTTP -> sendViaAgentClient(target, userText, sessionId, agentId)
+            BackendType.OPENCLAW_HTTP -> sendViaAgentClient(context, target, userText, sessionId, agentId)
             BackendType.OPENCLAW_GATEWAY -> sendViaGateway(context, target, userText)
         }
     }
@@ -62,6 +62,7 @@ object PrimaryBackendDispatcher {
     ): Reply? = sendPrimary(context, userText)
 
     private suspend fun sendViaAgentClient(
+        context: Context,
         target: AgentBackendConfig,
         userText: String,
         sessionId: String?,
@@ -69,24 +70,40 @@ object PrimaryBackendDispatcher {
     ): Reply {
         val client = AgentClientFactory.create(target)
         val collected = StringBuilder()
-        client.sendMessage(
-            messages = listOf(AgentMessage.user(userText)),
-            options = AgentSendOptions(
-                sessionId = sessionId,
-                stream = target.useStreaming,
-                extra = mapOf("agentId" to agentId.orEmpty()),
-            ),
-        ).collect { event ->
-            when (event) {
-                is AgentEvent.TokenDelta -> collected.append(event.text)
-                is AgentEvent.MessageDelta -> collected.append(event.text)
-                is AgentEvent.Completed -> {
-                    if (collected.isEmpty()) collected.append(event.finalText)
+        val run = AgentDiagnostics.beginMessage(context, target, userText.length)
+        try {
+            client.sendMessage(
+                messages = listOf(AgentMessage.user(userText)),
+                options = AgentSendOptions(
+                    sessionId = sessionId,
+                    stream = target.useStreaming,
+                    extra = mapOf("agentId" to agentId.orEmpty()),
+                ),
+            ).collect { event ->
+                when (event) {
+                    is AgentEvent.TokenDelta -> {
+                        collected.append(event.text)
+                        run.onToken(event.text.length)
+                    }
+                    is AgentEvent.MessageDelta -> {
+                        collected.append(event.text)
+                        run.onToken(event.text.length)
+                    }
+                    is AgentEvent.Completed -> {
+                        if (collected.isEmpty()) collected.append(event.finalText)
+                        run.complete(collected.length)
+                    }
+                    is AgentEvent.ToolProgress -> com.openclaw.assistant.ui.backend.ToolProgressFeed.push(event)
+                    is AgentEvent.Error -> {
+                        run.error(event.message)
+                        throw RuntimeException("${target.displayName} error: ${event.message}", event.cause)
+                    }
+                    else -> Unit
                 }
-                is AgentEvent.ToolProgress -> com.openclaw.assistant.ui.backend.ToolProgressFeed.push(event)
-                is AgentEvent.Error -> throw RuntimeException("Hermes error: ${event.message}", event.cause)
-                else -> Unit
             }
+        } catch (e: Throwable) {
+            run.error(e.message ?: e.javaClass.simpleName)
+            throw e
         }
         if (collected.isBlank()) {
             throw IllegalStateException("${target.displayName} returned an empty response. Check the backend model/provider configuration.")
@@ -104,8 +121,14 @@ object PrimaryBackendDispatcher {
             throw IllegalStateException("OpenClaw Gateway is not connected")
         }
 
+        val run = AgentDiagnostics.beginMessage(context, target, userText.length)
         val assistantCountBefore = runtime.chatMessages.value.count { it.role == "assistant" }
-        runtime.sendChat(message = userText, thinking = "low", attachments = emptyList())
+        runtime.sendChat(
+            message = userText,
+            thinking = "low",
+            attachments = emptyList(),
+            modelName = target.modelName?.takeIf { it.isNotBlank() },
+        )
 
         val responseText: String? = try {
             withTimeout<String>(60_000L) {
@@ -131,10 +154,13 @@ object PrimaryBackendDispatcher {
         }
 
         if (responseText.isNullOrBlank()) {
+            run.error("No reply before timeout")
             throw IllegalStateException(
                 "OpenClaw Gateway accepted the message, but the agent did not return a reply. Check the host OpenClaw agent/model authentication."
             )
         }
+        run.onToken(responseText.length)
+        run.complete(responseText.length)
         return Reply(text = responseText, sourceDisplayName = target.displayName)
     }
 }

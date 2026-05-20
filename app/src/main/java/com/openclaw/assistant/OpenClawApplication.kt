@@ -7,6 +7,9 @@ import androidx.core.os.LocaleListCompat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.openclaw.assistant.backend.BackendMigration
+import com.openclaw.assistant.backend.AgentDiagnostics
+import com.openclaw.assistant.bridge.BridgeActivityLog
+import com.openclaw.assistant.bridge.WakeLockManager
 import com.openclaw.assistant.data.SettingsRepository
 import com.openclaw.assistant.node.NodeRuntime
 import java.security.Security
@@ -68,6 +71,9 @@ class OpenClawApplication : Application() {
         } catch (e: Throwable) {
             Log.w("OpenClawApp", "Backend migration skipped: ${e.message}")
         }
+        AgentDiagnostics.initialize(this)
+        BridgeActivityLog.initialize(this)
+        WakeLockManager.initialize(this)
     }
 
     private fun applySavedAppLocale() {

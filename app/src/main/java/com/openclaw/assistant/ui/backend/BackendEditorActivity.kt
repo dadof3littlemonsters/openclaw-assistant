@@ -22,6 +22,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -37,8 +38,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.openclaw.assistant.backend.AgentBackendConfig
 import com.openclaw.assistant.backend.AgentClientFactory
+import com.openclaw.assistant.backend.AgentContextInspector
+import com.openclaw.assistant.backend.AgentDiagnostics
 import com.openclaw.assistant.backend.BackendRepository
 import com.openclaw.assistant.backend.BackendType
+import com.openclaw.assistant.backend.HermesConfigApi
+import com.openclaw.assistant.backend.HermesModelOption
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -77,6 +82,9 @@ fun BackendEditorScreen(existingId: String?, onDone: () -> Unit) {
     var port by remember { mutableStateOf(existing?.port?.toString().orEmpty()) }
     var useTls by remember { mutableStateOf(existing?.useTls ?: true) }
     var modelName by remember { mutableStateOf(existing?.modelName ?: "default") }
+    var agentContextName by remember { mutableStateOf(existing?.agentContextName.orEmpty()) }
+    var agentContextDetail by remember { mutableStateOf(existing?.agentContextDetail.orEmpty()) }
+    var preferredEndpointRole by remember { mutableStateOf(existing?.preferredEndpointRole.orEmpty()) }
     var useRunsApi by remember { mutableStateOf(existing?.useRunsApi ?: true) }
     var useStreaming by remember { mutableStateOf(existing?.useStreaming ?: true) }
     var setPrimary by remember { mutableStateOf(existing?.isPrimary ?: backends.isEmpty()) }
@@ -84,6 +92,8 @@ fun BackendEditorScreen(existingId: String?, onDone: () -> Unit) {
     var tailscaleUrl by remember { mutableStateOf(existing?.secondaryUrls?.getOrNull(1).orEmpty()) }
     var publicUrl by remember { mutableStateOf(existing?.secondaryUrls?.getOrNull(2).orEmpty()) }
     var status by remember { mutableStateOf<String?>(null) }
+    var hermesModels by remember { mutableStateOf<List<HermesModelOption>>(emptyList()) }
+    var hermesProviders by remember { mutableStateOf<List<String>>(emptyList()) }
     val scope = rememberCoroutineScope()
 
     Scaffold(topBar = { TopAppBar(title = { Text(if (existing == null) androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.add_backend) else androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.av_backends_edit)) }) }) { padding ->
@@ -102,12 +112,67 @@ fun BackendEditorScreen(existingId: String?, onDone: () -> Unit) {
 
             OutlinedTextField(value = displayName, onValueChange = { displayName = it }, label = { Text("Display name") }, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(8.dp))
+            Text("Agent Context", style = MaterialTheme.typography.labelLarge)
+            Spacer(Modifier.height(4.dp))
+            OutlinedTextField(
+                value = agentContextName,
+                onValueChange = { agentContextName = it },
+                label = { Text("Profile / agent name (optional)") },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(4.dp))
+            OutlinedTextField(
+                value = agentContextDetail,
+                onValueChange = { agentContextDetail = it },
+                label = { Text("Model / personality note (optional)") },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(4.dp))
+            OutlinedTextField(
+                value = preferredEndpointRole,
+                onValueChange = { preferredEndpointRole = it },
+                label = { Text("Preferred route label (optional)") },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            if (type == BackendType.HERMES_API_SERVER) {
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(onClick = {
+                    val config = buildConfig(
+                        existing = existing,
+                        type = type,
+                        displayName = displayName,
+                        baseUrl = baseUrl,
+                        token = token,
+                        host = host,
+                        port = port,
+                        useTls = useTls,
+                        modelName = modelName,
+                        useRunsApi = useRunsApi,
+                        useStreaming = useStreaming,
+                        isPrimary = setPrimary,
+                        secondaryUrls = listOf(lanUrl, tailscaleUrl, publicUrl).filter { it.isNotBlank() },
+                        agentContextName = agentContextName,
+                        agentContextDetail = agentContextDetail,
+                        preferredEndpointRole = preferredEndpointRole,
+                    )
+                    scope.launch {
+                        status = "Inspecting agent context..."
+                        val inspection = AgentContextInspector().inspect(config)
+                        inspection.contextName?.let { agentContextName = it }
+                        inspection.contextDetail?.let { agentContextDetail = it }
+                        status = inspection.summary
+                    }
+                }, enabled = baseUrl.isNotBlank()) {
+                    Text("Inspect Agent Context")
+                }
+            }
+            Spacer(Modifier.height(12.dp))
 
             when (type) {
                 BackendType.HERMES_API_SERVER -> {
                     OutlinedTextField(value = baseUrl, onValueChange = { baseUrl = it }, label = { Text("Primary URL (e.g. http://host:8642)") }, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(8.dp))
-                    Text("Additional endpoints — raced in parallel on every connect, fastest wins (Hermes-Relay style):", style = MaterialTheme.typography.bodySmall)
+                    Text("Additional endpoints — raced in parallel on every connect, fastest reachable route wins:", style = MaterialTheme.typography.bodySmall)
                     Spacer(Modifier.height(4.dp))
                     OutlinedTextField(value = lanUrl, onValueChange = { lanUrl = it }, label = { Text("LAN URL (optional)") }, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(4.dp))
@@ -119,6 +184,68 @@ fun BackendEditorScreen(existingId: String?, onDone: () -> Unit) {
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(value = modelName, onValueChange = { modelName = it }, label = { Text(androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.av_import_model)) }, modifier = Modifier.fillMaxWidth())
                     Text(androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.av_import_model_help), style = MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.height(6.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = {
+                            val config = buildConfig(existing, type, displayName, baseUrl, token, host, port, useTls, modelName, useRunsApi, useStreaming, setPrimary, listOf(lanUrl, tailscaleUrl, publicUrl).filter { it.isNotBlank() }, agentContextName, agentContextDetail, preferredEndpointRole)
+                            scope.launch {
+                                status = "Loading Hermes models..."
+                                runCatching { HermesConfigApi().fetchCatalog(config) }
+                                    .onSuccess { catalog ->
+                                        hermesModels = catalog.models
+                                        hermesProviders = catalog.providers
+                                        catalog.config?.model?.takeIf { it.isNotBlank() }?.let { modelName = it }
+                                        status = buildString {
+                                            append("Loaded ${catalog.models.size} model")
+                                            if (catalog.models.size != 1) append("s")
+                                            catalog.config?.provider?.takeIf { it.isNotBlank() }?.let { append(" · provider: ").append(it) }
+                                        }
+                                    }
+                                    .onFailure { status = "Could not load Hermes models: ${it.message ?: it.javaClass.simpleName}" }
+                            }
+                        }, enabled = baseUrl.isNotBlank()) {
+                            Text("Load Models")
+                        }
+                        OutlinedButton(onClick = {
+                            val config = buildConfig(existing, type, displayName, baseUrl, token, host, port, useTls, modelName, useRunsApi, useStreaming, setPrimary, listOf(lanUrl, tailscaleUrl, publicUrl).filter { it.isNotBlank() }, agentContextName, agentContextDetail, preferredEndpointRole)
+                            scope.launch {
+                                status = "Applying model to Hermes..."
+                                runCatching { HermesConfigApi().updateModel(config, modelName) }
+                                    .onSuccess { state ->
+                                        val saved = config.copy(modelName = state.model ?: modelName.trim().ifBlank { "default" })
+                                        repo.upsert(saved)
+                                        if (setPrimary) repo.setPrimary(saved.id)
+                                        status = "Hermes model updated: ${state.model ?: modelName}"
+                                    }
+                                    .onFailure { status = "Could not update Hermes model: ${it.message ?: it.javaClass.simpleName}" }
+                            }
+                        }, enabled = baseUrl.isNotBlank() && modelName.isNotBlank()) {
+                            Text("Apply to Hermes")
+                        }
+                    }
+                    if (hermesProviders.isNotEmpty()) {
+                        Spacer(Modifier.height(4.dp))
+                        Text("Providers: ${hermesProviders.joinToString(", ")}", style = MaterialTheme.typography.bodySmall)
+                    }
+                    if (hermesModels.isNotEmpty()) {
+                        Spacer(Modifier.height(6.dp))
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            hermesModels.take(8).forEach { option ->
+                                AssistChip(
+                                    onClick = { modelName = option.id },
+                                    label = {
+                                        Text(
+                                            listOfNotNull(option.id, option.description?.takeIf { it.isNotBlank() }).joinToString(" · "),
+                                            style = MaterialTheme.typography.labelSmall,
+                                        )
+                                    },
+                                )
+                            }
+                            if (hermesModels.size > 8) {
+                                Text("+${hermesModels.size - 8} more", style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
                     Spacer(Modifier.height(8.dp))
                     Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                         Checkbox(checked = useRunsApi, onCheckedChange = { useRunsApi = it }); Text(androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.av_hermes_use_runs_api))
@@ -158,17 +285,18 @@ fun BackendEditorScreen(existingId: String?, onDone: () -> Unit) {
             val secondary = listOf(lanUrl, tailscaleUrl, publicUrl).filter { it.isNotBlank() }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = {
-                    val config = buildConfig(existing, type, displayName, baseUrl, token, host, port, useTls, modelName, useRunsApi, useStreaming, setPrimary, secondary)
+                    val config = buildConfig(existing, type, displayName, baseUrl, token, host, port, useTls, modelName, useRunsApi, useStreaming, setPrimary, secondary, agentContextName, agentContextDetail, preferredEndpointRole)
                     repo.upsert(config)
                     if (setPrimary) repo.setPrimary(config.id)
                     onDone()
                 }) { Text("Save") }
 
                 Button(onClick = {
-                    val config = buildConfig(existing, type, displayName, baseUrl, token, host, port, useTls, modelName, useRunsApi, useStreaming, setPrimary, secondary)
+                    val config = buildConfig(existing, type, displayName, baseUrl, token, host, port, useTls, modelName, useRunsApi, useStreaming, setPrimary, secondary, agentContextName, agentContextDetail, preferredEndpointRole)
                     scope.launch {
                         status = "Testing…"
                         val r = withContext(Dispatchers.IO) { AgentClientFactory.create(config).testConnection() }
+                        AgentDiagnostics.recordHealth(context, config, r.ok, r.latencyMs, if (r.ok) null else r.message)
                         status = if (r.ok) "✓ ${r.message}" else "✗ ${r.message}"
                     }
                 }) { Text("Test") }
@@ -192,6 +320,9 @@ private fun buildConfig(
     useStreaming: Boolean,
     isPrimary: Boolean,
     secondaryUrls: List<String> = emptyList(),
+    agentContextName: String = "",
+    agentContextDetail: String = "",
+    preferredEndpointRole: String = "",
 ): AgentBackendConfig {
     val base = existing ?: AgentBackendConfig(displayName = displayName, type = type)
     return base.copy(
@@ -207,6 +338,9 @@ private fun buildConfig(
         useStreaming = useStreaming,
         isPrimary = isPrimary,
         secondaryUrls = secondaryUrls,
+        agentContextName = agentContextName.ifBlank { null },
+        agentContextDetail = agentContextDetail.ifBlank { null },
+        preferredEndpointRole = preferredEndpointRole.ifBlank { null },
     )
 }
 

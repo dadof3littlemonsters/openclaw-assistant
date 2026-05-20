@@ -183,7 +183,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     runtime.abortChat()
   }
 
-  fun sendChat(message: String, thinking: String, attachments: List<OutgoingAttachment>) {
-    runtime.sendChat(message = message, thinking = thinking, attachments = attachments)
+  fun sendChat(message: String, thinking: String, attachments: List<OutgoingAttachment>, modelName: String? = null) {
+    runtime.sendChat(message = message, thinking = thinking, attachments = attachments, modelName = modelName)
   }
 }

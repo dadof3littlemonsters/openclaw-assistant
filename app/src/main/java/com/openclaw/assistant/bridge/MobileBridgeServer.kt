@@ -228,18 +228,21 @@ open class MobileBridgeServer(
         val allowed = config.allowedCapabilityGroups.value
         val cap = registry.byName(capabilityName)
         if (cap == null || !cap.isAvailable(context) || cap.group !in allowed) {
+            BridgeActivityLog.record(context, capabilityName, cap?.riskLevel, "blocked", "unsupported or disabled")
             return HttpResponse(200, errorEnvelope(requestId, "unsupported_capability", "Capability is not supported"))
         }
 
         if (requiresApproval(cap)) {
             val approved = approvalGate(requestId, capabilityName, arguments)
             if (!approved) {
+                BridgeActivityLog.record(context, capabilityName, cap.riskLevel, "denied", "User denied or approval timed out")
                 return HttpResponse(200, errorEnvelope(requestId, "approval_denied", "User denied or approval timed out"))
             }
         }
 
         return try {
             val result = cap.execute(context, arguments)
+            BridgeActivityLog.record(context, capabilityName, cap.riskLevel, "completed")
             HttpResponse(200, buildJsonObject {
                 put("requestId", requestId)
                 put("status", "completed")
@@ -247,6 +250,7 @@ open class MobileBridgeServer(
                 put("error", kotlinx.serialization.json.JsonNull)
             }.toString())
         } catch (e: Exception) {
+            BridgeActivityLog.record(context, capabilityName, cap.riskLevel, "failed", e.message ?: e.javaClass.simpleName)
             HttpResponse(200, errorEnvelope(requestId, "execution_failed", e.message ?: "Unknown error"))
         }
     }
@@ -262,9 +266,8 @@ open class MobileBridgeServer(
      * [BridgeApprovalRegistry]; tests substitute a deterministic gate.
      */
     internal open suspend fun approvalGate(requestId: String, capability: String, arguments: kotlinx.serialization.json.JsonObject): Boolean {
-        // Honour outstanding grants — these are Hermes-Relay style "per-channel
-        // grants with user-chosen TTLs". A destructive verb forces a fresh
-        // prompt regardless of the grant.
+        // Honour outstanding grants with user-chosen TTLs. A destructive verb
+        // forces a fresh prompt regardless of the grant.
         val destructive = com.openclaw.assistant.bridge.grants.DestructiveVerbs.isDestructive(capability)
         if (!destructive && com.openclaw.assistant.bridge.grants.BridgeGrants.isGranted(capability)) return true
         runCatching { BridgeApprovalNotifier.notify(context, requestId, capability) }

@@ -50,6 +50,7 @@ import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,6 +63,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.openclaw.assistant.R
+import com.openclaw.assistant.bridge.BridgeActivityLog
 import com.openclaw.assistant.bridge.BridgeApprovalMode
 import com.openclaw.assistant.bridge.BridgeBindMode
 import com.openclaw.assistant.bridge.MobileBridgeConfig
@@ -84,6 +86,8 @@ fun MobileBridgeSettingsScreen() {
     val bindMode by cfg.bindMode.collectAsState()
     val approvalMode by cfg.approvalMode.collectAsState()
     val allowedGroups by cfg.allowedCapabilityGroups.collectAsState()
+    LaunchedEffect(Unit) { BridgeActivityLog.initialize(context) }
+    val activityEntries by BridgeActivityLog.entries.collectAsState()
     var portText by remember(port) { mutableStateOf(port.toString()) }
     var showToken by remember { mutableStateOf(false) }
     var rotated by remember { mutableStateOf(0) }
@@ -206,7 +210,7 @@ fun MobileBridgeSettingsScreen() {
                 )
                 Spacer(Modifier.height(10.dp))
                 FlowChipRow {
-                    listOf("device", "apps", "clipboard.read", "medium").forEach { group ->
+                    listOf("device", "apps", "accessibility", "clipboard.read", "clipboard.write", "media", "notifications", "sms", "contacts", "calendar", "camera").forEach { group ->
                         FilterChip(
                             selected = group in allowedGroups,
                             onClick = {
@@ -265,6 +269,34 @@ fun MobileBridgeSettingsScreen() {
                     }
                     OutlinedButton(onClick = { com.openclaw.assistant.bridge.grants.BridgeGrants.revokeAll() }) {
                         Text(stringResource(R.string.av_bridge_revoke_all))
+                    }
+                }
+            }
+
+            SettingsCard(title = "Bridge Activity", icon = Icons.Default.CheckCircle) {
+                Text(
+                    "Recent local capability calls. Arguments, screen text, screenshots, and tokens are not stored.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(10.dp))
+                if (activityEntries.isEmpty()) {
+                    Text("No bridge activity yet.", style = MaterialTheme.typography.bodySmall)
+                } else {
+                    activityEntries.take(8).forEach { entry ->
+                        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+                            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                                Text(entry.capability, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                                AssistChip(onClick = {}, label = { Text(entry.status) })
+                            }
+                            val detail = listOf(entry.riskLevel.takeIf { it.isNotBlank() }, entry.message).filterNotNull().joinToString(" · ")
+                            if (detail.isNotBlank()) {
+                                Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                    OutlinedButton(onClick = { BridgeActivityLog.clear(context) }) {
+                        Text("Clear activity")
                     }
                 }
             }

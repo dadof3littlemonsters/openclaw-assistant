@@ -15,7 +15,7 @@ import java.security.MessageDigest
  * that host MUST match.
  *
  * This is a defence against MITM on a paired backend's public URL — the
- * exact threat hermes-relay calls out with "TOFU cert pinning".
+ * exact threat handled with TOFU cert pinning.
  *
  * Pin format follows [CertificatePinner.pin] — `sha256/<base64-encoded-hash>`.
  */

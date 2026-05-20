@@ -536,7 +536,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     nodeRuntime.sendChat(
                         message = text,
                         thinking = "low",
-                        attachments = outgoing
+                        attachments = outgoing,
+                        modelName = resolveSelectedOpenClawModel(),
                     )
                 } catch (e: Exception) {
                     pendingNodeChatTts = false
@@ -632,6 +633,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     sessionId = sessionId,
                     authToken = authToken,
                     agentId = effectiveAgentId,
+                    modelName = resolveSelectedOpenClawModel(),
                     attachments = attachments.map { Pair(it.mimeType, it.base64) }
                 )
 
@@ -1214,5 +1216,21 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             sessionId = sessionId,
             agentId = agentId,
         )?.text
+    }
+
+    private suspend fun resolveSelectedOpenClawModel(): String? {
+        val ctx = getApplication<Application>().applicationContext
+        val backends = com.openclaw.assistant.backend.BackendRepository.getInstance(ctx).backends.first()
+            .filter { it.enabled }
+        val overrideId = com.openclaw.assistant.ui.backend.ChatBackendTarget.selectedId.value
+        val target = if (overrideId != null) {
+            backends.firstOrNull { it.id == overrideId }
+        } else {
+            backends.firstOrNull { it.isPrimary }
+        }
+        return target?.takeIf {
+            it.type == com.openclaw.assistant.backend.BackendType.OPENCLAW_GATEWAY ||
+                it.type == com.openclaw.assistant.backend.BackendType.OPENCLAW_HTTP
+        }?.modelName?.takeIf { it.isNotBlank() }
     }
 }

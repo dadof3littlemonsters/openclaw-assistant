@@ -47,6 +47,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.openclaw.assistant.backend.AgentBackendConfig
 import com.openclaw.assistant.backend.AgentClientFactory
+import com.openclaw.assistant.backend.AgentDiagnostics
 import com.openclaw.assistant.backend.BackendRepository
 import com.openclaw.assistant.backend.BackendType
 import com.openclaw.assistant.backend.ConnectionTestResult
@@ -77,7 +78,9 @@ class BackendListViewModel(app: Application) : AndroidViewModel(app) {
     fun delete(id: String) = repo.delete(id)
 
     suspend fun testConnection(config: AgentBackendConfig): ConnectionTestResult = withContext(Dispatchers.IO) {
-        AgentClientFactory.create(config).testConnection()
+        val result = AgentClientFactory.create(config).testConnection()
+        AgentDiagnostics.recordHealth(getApplication<Application>().applicationContext, config, result.ok, result.latencyMs, if (result.ok) null else result.message)
+        result
     }
 }
 

@@ -39,9 +39,8 @@ class MobileBridgeConfig internal constructor(private val prefs: SharedPreferenc
 
     /**
      * Package names that `apps.launch` will refuse to start. Mirrors the
-     * Hermes-Relay "per-app blocklist" concept: a user can shield banking,
-     * password, or work-profile apps even when `apps.launch` is otherwise
-     * granted.
+     * Per-app blocklist: a user can shield banking, password, or work-profile
+     * apps even when `apps.launch` is otherwise granted.
      */
     private val _packageBlocklist = MutableStateFlow(loadBlocklist())
     val packageBlocklist: StateFlow<Set<String>> = _packageBlocklist.asStateFlow()

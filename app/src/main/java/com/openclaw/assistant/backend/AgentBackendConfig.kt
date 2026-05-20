@@ -24,9 +24,8 @@ data class AgentBackendConfig(
     val updatedAt: Long = System.currentTimeMillis(),
     /**
      * Additional endpoints to race alongside [baseUrl] at connect time.
-     * Inspired by Hermes-Relay's "LAN + Tailscale + public URLs" model: the
-     * client tries all candidates in parallel on every connect and on every
-     * network change, using whichever responds first.
+     * Additional routes such as LAN, VPN, and public URLs. The client tries all
+     * candidates in parallel on connect and uses the first reachable route.
      */
     val secondaryUrls: List<String> = emptyList(),
     /**
@@ -36,6 +35,12 @@ data class AgentBackendConfig(
      */
     val terminalUrl: String? = null,
     val terminalSessionToken: String? = null,
+    /** Optional cross-backend agent/profile label selected by the user. */
+    val agentContextName: String? = null,
+    /** Optional model/personality/profile hint shown in shared Agent Context UI. */
+    val agentContextDetail: String? = null,
+    /** Optional preferred endpoint role, such as lan, vpn, or public. */
+    val preferredEndpointRole: String? = null,
 ) {
     val hermesMode: HermesMode
         get() = if (useRunsApi) HermesMode.RUNS_API else HermesMode.CHAT_COMPLETIONS

@@ -39,7 +39,7 @@ import com.openclaw.assistant.R
 import com.openclaw.assistant.bridge.MobileBridgeConfig
 
 /**
- * Pairing screen — Hermes-Relay style. Generates a short-lived offer and
+ * Pairing screen. Generates a short-lived offer and
  * displays both the 6-character human-typeable code (for a `hermes-pair`
  * style CLI) and the full `agentvoice://pair?...` URL (for QR scanners that
  * can read it off the screen, or to paste into a desktop pairing tool).

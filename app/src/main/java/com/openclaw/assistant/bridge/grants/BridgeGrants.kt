@@ -3,8 +3,7 @@ package com.openclaw.assistant.bridge.grants
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Per-capability grant store with TTL — Hermes-Relay calls these
- * "per-channel grants, user-chosen TTLs, revocable from any client".
+ * Per-capability grant store with user-chosen TTLs, revocable from any client.
  *
  * A grant lets a capability run without re-prompting for [Grant.expiresAtMs]
  * milliseconds. Default TTL choices are 10 minutes / 1 hour / "until I revoke"
@@ -37,8 +36,8 @@ object BridgeGrants {
 }
 
 /**
- * Destructive-verb list. Hermes-Relay enforces an extra "are you sure?"
- * prompt when a capability's name (or arguments) match a destructive verb.
+ * Destructive-verb list. The bridge enforces an extra confirmation prompt when
+ * a capability's name (or arguments) match a destructive verb.
  *
  * Matching is case-insensitive substring on the capability name; tools that
  * want to bypass the check would have to pick a non-destructive name, which
