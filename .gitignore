@@ -16,3 +16,11 @@ AGENTS.md
 
 # Claude Code settings
 .claude/
+
+# Local agent/tooling artifacts
+.claude_bak/
+.kotlin/
+.playwright-mcp/
+artifacts/
+artifacts-current.png
+__pycache__/
