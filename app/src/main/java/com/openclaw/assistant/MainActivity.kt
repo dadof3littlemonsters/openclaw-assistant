@@ -1310,6 +1310,7 @@ fun SuggestionItem(suggestion: com.openclaw.assistant.speech.diagnostics.Diagnos
 
 @Composable
 fun CompactActionCard(modifier: Modifier = Modifier, icon: ImageVector, title: String, description: String, isActive: Boolean = false, onClick: (() -> Unit)? = null, showSwitch: Boolean = false, switchValue: Boolean = false, onSwitchChange: ((Boolean) -> Unit)? = null, showInfoIcon: Boolean = false, onInfoClick: (() -> Unit)? = null) {
+    val textColor = MaterialTheme.colorScheme.onSurfaceVariant
     Card(modifier = modifier, onClick = { onClick?.invoke() }, enabled = onClick != null && !showSwitch, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant, disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant)) {
         Column(modifier = Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Column(modifier = Modifier.weight(1f).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -1319,9 +1320,9 @@ fun CompactActionCard(modifier: Modifier = Modifier, icon: ImageVector, title: S
                     if (showSwitch) Switch(checked = switchValue, onCheckedChange = onSwitchChange, modifier = Modifier.scale(0.8f).offset(y = (-8).dp))
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(text = title, fontSize = 14.sp, fontWeight = FontWeight.Medium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                Text(text = title, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = textColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             }
-            Text(text = description, fontSize = 12.sp, color = if (isActive) Color(0xFF4CAF50) else MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            Text(text = description, fontSize = 12.sp, color = if (isActive) Color(0xFF4CAF50) else textColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
         }
     }
 }
