@@ -48,18 +48,20 @@ class HermesConfigApi(
         val baseUrl = requireBaseUrl(config)
         val catalog = getJson(config, HermesUrl.availableModelsUrl(baseUrl))
         val v1Models = getJson(config, HermesUrl.modelsUrl(baseUrl))
-        val models = (parseModels(catalog) + parseModels(v1Models))
+        val dashboardOptions = fetchDashboardModelOptions(config)
+        val effectiveConfig = current ?: dashboardOptions?.let(::parseConfig)
+        val models = (parseDashboardModels(dashboardOptions) + parseModels(catalog) + parseModels(v1Models))
             .ifEmpty {
-                current?.model
+                effectiveConfig?.model
                     ?.takeIf { it.isNotBlank() }
                     ?.let { listOf(HermesModelOption(it, "current")) }
                     .orEmpty()
             }
             .distinctBy { it.id }
         HermesModelCatalog(
-            config = current,
+            config = effectiveConfig,
             models = models,
-            providers = parseProviders(catalog),
+            providers = (parseProviders(dashboardOptions) + parseProviders(catalog)).distinct(),
         )
     }
 
@@ -86,6 +88,30 @@ class HermesConfigApi(
             val text = response.body?.string()?.takeIf { it.isNotBlank() } ?: return null
             return json.parseToJsonElement(text).jsonObject
         }
+    }
+
+    private fun getDashboardJson(config: AgentBackendConfig, url: String): JsonObject? {
+        val request = Request.Builder()
+            .url(url)
+            .get()
+            .apply {
+                config.terminalSessionToken
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { header("X-Hermes-Session-Token", it) }
+            }
+            .build()
+        httpClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) return null
+            val text = response.body?.string()?.takeIf { it.isNotBlank() } ?: return null
+            return json.parseToJsonElement(text).jsonObject
+        }
+    }
+
+    private fun fetchDashboardModelOptions(config: AgentBackendConfig): JsonObject? {
+        val terminalUrl = config.terminalUrl?.takeIf { it.isNotBlank() } ?: return null
+        val token = config.terminalSessionToken?.takeIf { it.isNotBlank() } ?: return null
+        if (token.isBlank()) return null
+        return getDashboardJson(config, HermesUrl.dashboardModelOptionsUrl(terminalUrl))
     }
 
     private fun authed(config: AgentBackendConfig, builder: Request.Builder): Request.Builder {
@@ -128,10 +154,50 @@ class HermesConfigApi(
         }
     }
 
+    private fun parseDashboardModels(obj: JsonObject?): List<HermesModelOption> {
+        val providers = obj?.get("providers") as? JsonArray ?: return emptyList()
+        return providers.flatMap { providerItem ->
+            val provider = providerItem as? JsonObject ?: return@flatMap emptyList()
+            val providerName = providerName(provider)
+            val models = provider["models"] as? JsonArray ?: return@flatMap emptyList()
+            models.mapNotNull { modelItem ->
+                when (modelItem) {
+                    is JsonPrimitive -> modelItem.contentOrNull?.let { HermesModelOption(it, providerName) }
+                    is JsonObject -> {
+                        val id = modelItem["id"]?.jsonPrimitive?.contentOrNull
+                            ?: modelItem["model"]?.jsonPrimitive?.contentOrNull
+                            ?: modelItem["name"]?.jsonPrimitive?.contentOrNull
+                        id?.takeIf { it.isNotBlank() }?.let {
+                            HermesModelOption(
+                                id = it,
+                                description = modelItem["description"]?.jsonPrimitive?.contentOrNull
+                                    ?: modelItem["label"]?.jsonPrimitive?.contentOrNull
+                                    ?: providerName,
+                            )
+                        }
+                    }
+                    else -> null
+                }
+            }
+        }
+    }
+
     private fun parseProviders(obj: JsonObject?): List<String> {
         val array = obj?.get("providers")?.jsonArray ?: return emptyList()
-        return array.mapNotNull { it.jsonPrimitive.contentOrNull?.takeIf(String::isNotBlank) }
+        return array.mapNotNull { item ->
+            when (item) {
+                is JsonPrimitive -> item.contentOrNull?.takeIf(String::isNotBlank)
+                is JsonObject -> providerName(item)?.takeIf(String::isNotBlank)
+                else -> null
+            }
+        }
     }
+
+    private fun providerName(obj: JsonObject): String? =
+        obj["name"]?.jsonPrimitive?.contentOrNull
+            ?: obj["provider"]?.jsonPrimitive?.contentOrNull
+            ?: obj["id"]?.jsonPrimitive?.contentOrNull
+            ?: obj["slug"]?.jsonPrimitive?.contentOrNull
 
     private fun extractError(text: String): String = runCatching {
         val obj = json.parseToJsonElement(text).jsonObject

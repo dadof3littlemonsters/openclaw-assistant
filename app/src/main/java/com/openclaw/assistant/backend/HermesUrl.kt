@@ -27,6 +27,7 @@ internal object HermesUrl {
     fun apiBase(base: String) = normalizeBase(base).removeSuffix("/v1")
     fun configUrl(base: String) = "${apiBase(base)}/api/config"
     fun availableModelsUrl(base: String) = "${apiBase(base)}/api/available-models"
+    fun dashboardModelOptionsUrl(base: String) = "${base.trim().trimEnd('/')}/api/model/options"
     fun healthUrl(base: String): String {
         val n = normalizeBase(base)
         return "$n/health"

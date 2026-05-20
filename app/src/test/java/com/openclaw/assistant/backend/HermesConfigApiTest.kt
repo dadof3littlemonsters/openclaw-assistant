@@ -93,6 +93,62 @@ class HermesConfigApiTest {
         assertEquals("current", catalog.models.single().description)
     }
 
+    @Test fun `fetchCatalog reads dashboard model options when terminal is paired`() = runBlocking {
+        server.enqueue(MockResponse().setResponseCode(404))
+        server.enqueue(MockResponse().setResponseCode(404))
+        server.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody("""{"object":"list","data":[{"id":"hermes-agent","owned_by":"hermes"}]}"""),
+        )
+        server.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody(
+                    """
+                    {
+                      "model": "anthropic/claude-sonnet-4.6",
+                      "provider": "openrouter",
+                      "providers": [
+                        {
+                          "name": "OpenRouter",
+                          "models": [
+                            {"id": "anthropic/claude-sonnet-4.6", "label": "Claude Sonnet"},
+                            {"id": "openrouter/auto"}
+                          ]
+                        },
+                        {
+                          "name": "OpenAI Codex",
+                          "models": ["gpt-5.5"]
+                        }
+                      ]
+                    }
+                    """.trimIndent(),
+                ),
+        )
+
+        val catalog = HermesConfigApi().fetchCatalog(
+            config().copy(
+                terminalUrl = server.url("/").toString().trimEnd('/'),
+                terminalSessionToken = "session-token",
+            ),
+        )
+
+        assertEquals(
+            listOf("anthropic/claude-sonnet-4.6", "openrouter/auto", "gpt-5.5", "hermes-agent"),
+            catalog.models.map { it.id },
+        )
+        assertEquals("anthropic/claude-sonnet-4.6", catalog.config?.model)
+        assertEquals("openrouter", catalog.config?.provider)
+        assertEquals(listOf("OpenRouter", "OpenAI Codex"), catalog.providers)
+        assertEquals("/api/config", server.takeRequest().path)
+        assertEquals("/api/available-models", server.takeRequest().path)
+        assertEquals("/v1/models", server.takeRequest().path)
+        val dashboardRequest = server.takeRequest()
+        assertEquals("/api/model/options", dashboardRequest.path)
+        assertEquals("session-token", dashboardRequest.getHeader("X-Hermes-Session-Token"))
+    }
+
     private fun config() = AgentBackendConfig(
         id = "hermes-config-api-test",
         displayName = "Hermes",
