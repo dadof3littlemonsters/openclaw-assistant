@@ -12,7 +12,9 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.media.AudioFormat
 import android.media.AudioRecord
+import android.media.AudioManager
 import android.media.MediaRecorder
+import android.media.ToneGenerator
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
@@ -524,7 +526,7 @@ class HotwordService : Service(), VoskRecognitionListener {
 
         try {
             // Get wake words from settings; add [unk] so Vosk can absorb non-matching speech
-            val wakeWords = settings.getWakeWords()
+            val wakeWords = settings.getWakeWordTargets().map { it.phrase }
             val wakeWordsJson = (wakeWords + "[unk]").joinToString("\", \"", "[\"", "\"]")
             Log.d(TAG, "Starting hotword detection with words: $wakeWordsJson")
             debugLog("Listening for: ${wakeWords.joinToString()} (sensitivity=${settings.wakeWordSensitivity})")
@@ -594,22 +596,27 @@ class HotwordService : Service(), VoskRecognitionListener {
                 val text = json.optString("text", "")
 
                 // Check against configured wake words with confidence threshold
-                val wakeWords = settings.getWakeWords()
+                val wakeWordTargets = settings.getWakeWordTargets()
                 var maxConfidence = 0f
-                val detected = wakeWords.any { word ->
-                    val conf = parseWakeWordConfidence(text, word)
+                var detectedTarget: SettingsRepository.WakeWordTarget? = null
+                wakeWordTargets.forEach { target ->
+                    val conf = parseWakeWordConfidence(text, target.phrase)
                     if (conf > maxConfidence) maxConfidence = conf
-                    conf >= settings.wakeWordSensitivity
+                    if (conf >= settings.wakeWordSensitivity &&
+                        (detectedTarget == null || conf >= parseWakeWordConfidence(text, detectedTarget!!.phrase))
+                    ) {
+                        detectedTarget = target
+                    }
                 }
 
                 if (text.isNotEmpty()) {
                     debugLog("heard: \"$text\" conf=${"%.2f".format(maxConfidence)}")
                 }
 
-                if (detected) {
+                detectedTarget?.let { target ->
                     Log.e(TAG, "Hotword detected! Text: $text")
-                    debugLog("DETECTED: \"$text\" conf=${"%.2f".format(maxConfidence)}")
-                    onHotwordDetected()
+                    debugLog("DETECTED: \"$text\" -> ${target.target} conf=${"%.2f".format(maxConfidence)}")
+                    onHotwordDetected(target)
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to parse Vosk result: $it", e)
@@ -639,12 +646,13 @@ class HotwordService : Service(), VoskRecognitionListener {
         }
     }
 
-    private fun onHotwordDetected() {
+    private fun onHotwordDetected(target: SettingsRepository.WakeWordTarget) {
         if (isListeningForCommand || (isSessionActive && !settings.ttsBargeInEnabled)) return
         isListeningForCommand = true
         startWatchdog()
 
-        Log.d(TAG, "Hotword Detected! Triggering Assistant Overlay or Barge-in...")
+        Log.d(TAG, "Hotword Detected! Triggering ${target.target} Assistant Overlay or Barge-in...")
+        playWakeSound(target.wakeSound)
 
         // Broadcast to interrupt ongoing TTS (Barge-in)
         val interruptIntent = Intent("com.openclaw.assistant.ACTION_INTERRUPT_TTS")
@@ -675,6 +683,7 @@ class HotwordService : Service(), VoskRecognitionListener {
             isSessionActive = true
             val intent = Intent(this@HotwordService, OpenClawAssistantService::class.java).apply {
                 action = OpenClawAssistantService.ACTION_SHOW_ASSISTANT
+                putExtra(OpenClawAssistantService.EXTRA_VOICE_TARGET, target.target)
             }
             try {
                 startService(intent)
@@ -683,21 +692,43 @@ class HotwordService : Service(), VoskRecognitionListener {
                 Log.w(TAG, "Background start failed, falling back to broadcast", e)
                 val broadcastIntent = Intent(OpenClawAssistantService.ACTION_SHOW_ASSISTANT).apply {
                     setPackage(packageName)
+                    putExtra(OpenClawAssistantService.EXTRA_VOICE_TARGET, target.target)
                 }
                 sendBroadcast(broadcastIntent)
             } catch (e: SecurityException) {
                 Log.w(TAG, "Background start failed, falling back to broadcast", e)
                 val broadcastIntent = Intent(OpenClawAssistantService.ACTION_SHOW_ASSISTANT).apply {
                     setPackage(packageName)
+                    putExtra(OpenClawAssistantService.EXTRA_VOICE_TARGET, target.target)
                 }
                 sendBroadcast(broadcastIntent)
             } catch (e: Exception) {
                 Log.w(TAG, "Background start failed, falling back to broadcast", e)
                 val broadcastIntent = Intent(OpenClawAssistantService.ACTION_SHOW_ASSISTANT).apply {
                     setPackage(packageName)
+                    putExtra(OpenClawAssistantService.EXTRA_VOICE_TARGET, target.target)
                 }
                 sendBroadcast(broadcastIntent)
             }
+        }
+    }
+
+    private fun playWakeSound(sound: String) {
+        val tone = when (sound) {
+            SettingsRepository.WAKE_SOUND_NONE -> return
+            SettingsRepository.WAKE_SOUND_HIGH -> ToneGenerator.TONE_PROP_ACK
+            SettingsRepository.WAKE_SOUND_LOW -> ToneGenerator.TONE_PROP_NACK
+            else -> ToneGenerator.TONE_PROP_BEEP
+        }
+        runCatching {
+            val generator = ToneGenerator(AudioManager.STREAM_MUSIC, 80)
+            generator.startTone(tone, 140)
+            scope.launch {
+                delay(180)
+                generator.release()
+            }
+        }.onFailure { error ->
+            Log.w(TAG, "Failed to play wake sound", error)
         }
     }
 

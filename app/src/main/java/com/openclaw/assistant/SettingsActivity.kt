@@ -12,6 +12,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.*
@@ -41,6 +42,8 @@ import androidx.core.os.LocaleListCompat
 import com.openclaw.assistant.R
 import com.openclaw.assistant.api.OpenClawClient
 import com.openclaw.assistant.backend.AgentBackendConfig
+import com.openclaw.assistant.backend.AgentDiagnostics
+import com.openclaw.assistant.backend.AgentDiagnosticSnapshot
 import com.openclaw.assistant.backend.BackendRepository
 import com.openclaw.assistant.backend.BackendType
 
@@ -54,6 +57,7 @@ import com.openclaw.assistant.ui.components.PairingRequiredCard
 import com.openclaw.assistant.ui.components.StatusIndicator
 import com.openclaw.assistant.gateway.AgentInfo
 import com.openclaw.assistant.ui.backend.BackendListActivity
+import com.openclaw.assistant.ui.backend.ToolProgressFeed
 import com.openclaw.assistant.ui.bridge.MobileBridgeSettingsActivity
 import com.openclaw.assistant.ui.theme.OpenClawAssistantTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -257,8 +261,10 @@ fun SettingsScreen(
     var ttsSpeed by rememberSaveable { mutableStateOf(settings.ttsSpeed) }
     var continuousMode by rememberSaveable { mutableStateOf(settings.continuousMode) }
     var resumeLatestSession by rememberSaveable { mutableStateOf(settings.resumeLatestSession) }
-    var wakeWordPreset by rememberSaveable { mutableStateOf(settings.wakeWordPreset) }
-    var customWakeWord by rememberSaveable { mutableStateOf(settings.customWakeWord) }
+    var openClawWakeWord by rememberSaveable { mutableStateOf(settings.openClawWakeWord) }
+    var hermesWakeWord by rememberSaveable { mutableStateOf(settings.hermesWakeWord) }
+    var openClawWakeSound by rememberSaveable { mutableStateOf(settings.openClawWakeSound) }
+    var hermesWakeSound by rememberSaveable { mutableStateOf(settings.hermesWakeSound) }
     var wakeWordSensitivity by rememberSaveable { mutableStateOf(settings.wakeWordSensitivity) }
     var speechSilenceTimeout by rememberSaveable { mutableStateOf(settings.speechSilenceTimeout.toFloat().coerceIn(5000f, 30000f)) }
     var speechLanguage by rememberSaveable { mutableStateOf(settings.speechLanguage) }
@@ -270,7 +276,6 @@ fun SettingsScreen(
     var mediaButtonEnabled by rememberSaveable { mutableStateOf(settings.mediaButtonEnabled) }
 
     var showAuthToken by rememberSaveable { mutableStateOf(false) }
-    var showWakeWordMenu by rememberSaveable { mutableStateOf(false) }
     var showLanguageMenu by rememberSaveable { mutableStateOf(false) }
     var showDisplayLanguageMenu by rememberSaveable { mutableStateOf(false) }
     var wakewordConnectionType by rememberSaveable { mutableStateOf(settings.wakewordConnectionType) }
@@ -411,13 +416,11 @@ fun SettingsScreen(
         isLoadingLanguages = false
     }
 
-    // Wake word options
-    val wakeWordOptions = listOf(
-        SettingsRepository.WAKE_WORD_OPEN_CLAW to stringResource(R.string.wake_word_openclaw),
-        SettingsRepository.WAKE_WORD_HEY_ASSISTANT to stringResource(R.string.wake_word_hey_assistant),
-        SettingsRepository.WAKE_WORD_JARVIS to stringResource(R.string.wake_word_jarvis),
-        SettingsRepository.WAKE_WORD_COMPUTER to stringResource(R.string.wake_word_computer),
-        SettingsRepository.WAKE_WORD_CUSTOM to stringResource(R.string.wake_word_custom)
+    val wakeSoundOptions = listOf(
+        SettingsRepository.WAKE_SOUND_NONE to stringResource(R.string.wake_word_sound_none),
+        SettingsRepository.WAKE_SOUND_STANDARD to stringResource(R.string.wake_word_sound_standard),
+        SettingsRepository.WAKE_SOUND_HIGH to stringResource(R.string.wake_word_sound_high),
+        SettingsRepository.WAKE_SOUND_LOW to stringResource(R.string.wake_word_sound_low)
     )
 
     var selectedSettingsCategoryName by rememberSaveable { mutableStateOf(SettingsCategory.Overview.name) }
@@ -505,8 +508,10 @@ fun SettingsScreen(
                                 settings.voiceVoxTermsAccepted = voiceVoxTermsAccepted
                                 settings.continuousMode = continuousMode
                                 settings.resumeLatestSession = resumeLatestSession
-                                settings.wakeWordPreset = wakeWordPreset
-                                settings.customWakeWord = customWakeWord
+                                settings.openClawWakeWord = openClawWakeWord
+                                settings.hermesWakeWord = hermesWakeWord
+                                settings.openClawWakeSound = openClawWakeSound
+                                settings.hermesWakeSound = hermesWakeSound
                                 settings.wakeWordSensitivity = wakeWordSensitivity
                                 settings.wakewordConnectionType = wakewordConnectionType
                                 settings.speechSilenceTimeout = speechSilenceTimeout.toLong()
@@ -1445,6 +1450,28 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
             }
 
+            if (selectedSettingsCategory == SettingsCategory.Diagnostics) {
+                AgentDiagnostics.initialize(context)
+                val diagnostics by AgentDiagnostics.snapshots.collectAsState()
+                val toolEvents by ToolProgressFeed.events.collectAsState()
+                CollapsibleSection(
+                    title = "Agent Diagnostics",
+                    subtitle = "Local-only status counters",
+                    initiallyExpanded = true,
+                    collapsible = false,
+                ) {
+                    DiagnosticsPanel(
+                        diagnostics = diagnostics,
+                        toolEvents = toolEvents,
+                        onClear = {
+                            AgentDiagnostics.clear(context)
+                            ToolProgressFeed.clear()
+                        },
+                    )
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+
             // === WAKE WORD SECTION ===
             if (selectedSettingsCategory == SettingsCategory.WakeWord) {
             CollapsibleSection(title = stringResource(R.string.wake_word), collapsible = false) {
@@ -1458,63 +1485,29 @@ fun SettingsScreen(
                     )
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = stringResource(R.string.wake_word_classic_title),
-                                style = MaterialTheme.typography.titleSmall
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            ExposedDropdownMenuBox(
-                                expanded = showWakeWordMenu,
-                                onExpandedChange = { showWakeWordMenu = it }
-                            ) {
-                                OutlinedTextField(
-                                    value = wakeWordOptions.find { it.first == wakeWordPreset }?.second ?: stringResource(R.string.wake_word_openclaw),
-                                    onValueChange = {},
-                                    readOnly = true,
-                                    label = { Text(stringResource(R.string.activation_phrase)) },
-                                    leadingIcon = { Icon(Icons.Default.Mic, contentDescription = null) },
-                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showWakeWordMenu) },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .menuAnchor()
-                                )
-                                
-                                ExposedDropdownMenu(
-                                    expanded = showWakeWordMenu,
-                                    onDismissRequest = { showWakeWordMenu = false }
-                                ) {
-                                    wakeWordOptions.forEach { (value, label) ->
-                                        DropdownMenuItem(
-                                            text = { Text(label) },
-                                            onClick = {
-                                                wakeWordPreset = value
-                                                showWakeWordMenu = false
-                                            },
-                                            leadingIcon = {
-                                                if (wakeWordPreset == value) {
-                                                    Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                                                }
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-                            
-                            if (wakeWordPreset == SettingsRepository.WAKE_WORD_CUSTOM) {
-                                Spacer(modifier = Modifier.height(12.dp))
-                                OutlinedTextField(
-                                    value = customWakeWord,
-                                    onValueChange = { customWakeWord = it.lowercase() },
-                                    label = { Text(stringResource(R.string.custom_wake_word)) },
-                                    placeholder = { Text(stringResource(R.string.custom_wake_word_hint)) },
-                                    leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true,
-                                    supportingText = {
-                                        Text(stringResource(R.string.custom_wake_word_help), color = Color.Gray, fontSize = 12.sp)
-                                    }
-                                )
-                            }
+                        Text(
+                            text = stringResource(R.string.wake_word_dual_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        WakeWordTargetSettingsCard(
+                            title = stringResource(R.string.wake_word_openclaw),
+                            wakeWord = openClawWakeWord,
+                            onWakeWordChange = { openClawWakeWord = it.lowercase() },
+                            wakeSound = openClawWakeSound,
+                            onWakeSoundChange = { openClawWakeSound = it },
+                            soundOptions = wakeSoundOptions
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        WakeWordTargetSettingsCard(
+                            title = stringResource(R.string.wake_word_hermes_agent),
+                            wakeWord = hermesWakeWord,
+                            onWakeWordChange = { hermesWakeWord = it.lowercase() },
+                            wakeSound = hermesWakeSound,
+                            onWakeSoundChange = { hermesWakeSound = it },
+                            soundOptions = wakeSoundOptions
+                        )
 
                         HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp)
 
@@ -1896,6 +1889,7 @@ private enum class SettingsCategory {
     Chat,
     Voice,
     WakeWord,
+    Diagnostics,
     Language,
     Support,
 }
@@ -1907,6 +1901,7 @@ private fun SettingsCategory.title(): String = when (this) {
     SettingsCategory.Chat -> stringResource(R.string.settings_category_chat)
     SettingsCategory.Voice -> stringResource(R.string.settings_category_voice_mode)
     SettingsCategory.WakeWord -> stringResource(R.string.wake_word)
+    SettingsCategory.Diagnostics -> "Diagnostics"
     SettingsCategory.Language -> stringResource(R.string.language_section)
     SettingsCategory.Support -> stringResource(R.string.support_section)
 }
@@ -1941,6 +1936,12 @@ private fun SettingsOverviewMenu(
             subtitle = stringResource(R.string.settings_category_mobile_bridge_desc),
             icon = Icons.Default.Security,
             onClick = { context.startActivity(Intent(context, MobileBridgeSettingsActivity::class.java)) },
+        ),
+        SettingsOverviewItem(
+            title = "Diagnostics",
+            subtitle = "Agent health, stream timing, and tool progress",
+            icon = Icons.Default.Analytics,
+            onClick = { onSelected(SettingsCategory.Diagnostics) },
         ),
         SettingsOverviewItem(
             title = stringResource(R.string.wake_word),
@@ -2060,6 +2061,13 @@ private fun BackendSummaryBlock(
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
+                            backend.agentContextLabel()?.let { label ->
+                                Text(
+                                    label,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
                         }
                         if (backend.isPrimary) {
                             AssistChip(onClick = {}, label = { Text(stringResource(R.string.primary_backend)) })
@@ -2077,10 +2085,88 @@ private fun BackendSummaryBlock(
 }
 
 @Composable
+private fun DiagnosticsPanel(
+    diagnostics: List<AgentDiagnosticSnapshot>,
+    toolEvents: List<com.openclaw.assistant.backend.AgentEvent.ToolProgress>,
+    onClear: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        if (diagnostics.isEmpty()) {
+            Text(
+                "No agent diagnostics yet. Send a message or run a connection test to populate this panel.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            diagnostics.forEach { item ->
+                Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(item.backendName, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+                            AssistChip(onClick = {}, label = { Text(item.backendType.removePrefix("OPENCLAW_")) })
+                        }
+                        Text(
+                            "messages ${item.totalMessages} · completed ${item.streamsCompleted} · errors ${item.streamsErrored} · cancelled ${item.streamsCancelled}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            "TTFT ${item.averageTimeToFirstTokenMs}ms · completion ${item.averageCompletionMs}ms · chars in/out ${item.totalInputChars}/${item.totalOutputChars}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        item.lastHealthOk?.let { ok ->
+                            Text(
+                                "health ${if (ok) "OK" else "failed"}${item.lastHealthLatencyMs?.let { " · ${it}ms" }.orEmpty()}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (ok) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                            )
+                        }
+                        item.lastError?.let { error ->
+                            Text(error, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                }
+            }
+        }
+
+        Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))) {
+            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("Recent Tool Progress", style = MaterialTheme.typography.titleSmall)
+                if (toolEvents.isEmpty()) {
+                    Text("No recent tool progress.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                } else {
+                    toolEvents.take(6).forEach { event ->
+                        Text(
+                            "${event.tool} · ${event.stage}${event.detail?.let { " · $it" }.orEmpty()}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        }
+
+        OutlinedButton(onClick = onClear, modifier = Modifier.fillMaxWidth()) {
+            Text("Clear diagnostics")
+        }
+    }
+}
+
+@Composable
 private fun AgentBackendConfig.settingsTypeLabel(): String = when (type) {
     BackendType.HERMES_API_SERVER -> "Hermes Agent · ${baseUrl ?: stringResource(R.string.av_backend_url_unset)}"
     BackendType.OPENCLAW_GATEWAY -> "OpenClaw · ${host ?: stringResource(R.string.av_backend_host_unset)}:${port ?: "?"}"
     BackendType.OPENCLAW_HTTP -> "OpenClaw API · ${baseUrl ?: stringResource(R.string.av_backend_url_unset)}"
+}
+
+private fun AgentBackendConfig.agentContextLabel(): String? {
+    val parts = listOfNotNull(
+        agentContextName?.takeIf { it.isNotBlank() },
+        agentContextDetail?.takeIf { it.isNotBlank() },
+        preferredEndpointRole?.takeIf { it.isNotBlank() }?.let { "route: $it" },
+    )
+    return parts.takeIf { it.isNotEmpty() }?.joinToString(" · ")
 }
 
 private fun applyAppLanguage(languageTag: String) {
@@ -2917,6 +3003,62 @@ fun VoiceVoxSettingsCard(
                 refreshStatus()
             }
         )
+    }
+}
+
+@Composable
+private fun WakeWordTargetSettingsCard(
+    title: String,
+    wakeWord: String,
+    onWakeWordChange: (String) -> Unit,
+    wakeSound: String,
+    onWakeSoundChange: (String) -> Unit,
+    soundOptions: List<Pair<String, String>>
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
+            .padding(12.dp)
+    ) {
+        Text(title, style = MaterialTheme.typography.titleSmall)
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(
+            value = wakeWord,
+            onValueChange = onWakeWordChange,
+            label = { Text(stringResource(R.string.wake_word_phrase_label)) },
+            placeholder = { Text(stringResource(R.string.custom_wake_word_hint)) },
+            leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+            supportingText = {
+                Text(stringResource(R.string.custom_wake_word_help), color = Color.Gray, fontSize = 12.sp)
+            }
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(stringResource(R.string.wake_word_sound), style = MaterialTheme.typography.bodyMedium)
+        Spacer(modifier = Modifier.height(6.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            soundOptions.chunked(2).forEach { rowOptions ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    rowOptions.forEach { (value, label) ->
+                        FilterChip(
+                            selected = wakeSound == value,
+                            onClick = { onWakeSoundChange(value) },
+                            label = { Text(label) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    if (rowOptions.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+        }
     }
 }
 

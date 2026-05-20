@@ -418,6 +418,14 @@
     <string name="custom_wake_word">Custom Wake Word</string>
     <string name="custom_wake_word_hint">e.g., hey buddy</string>
     <string name="custom_wake_word_help">Enter 2-3 English words, lowercase</string>
+    <string name="wake_word_dual_desc">Wake Word can route directly to OpenClaw or Hermes Agent. Manual starts use the voice session connection below.</string>
+    <string name="wake_word_phrase_label">Wake Word</string>
+    <string name="wake_word_hermes_agent">Hermes Agent</string>
+    <string name="wake_word_sound">Startup sound</string>
+    <string name="wake_word_sound_none">None</string>
+    <string name="wake_word_sound_standard">Standard</string>
+    <string name="wake_word_sound_high">High</string>
+    <string name="wake_word_sound_low">Low</string>
     <string name="testing">Testing…</string>
     <string name="connected">Connected!</string>
     <string name="failed">Failed: %s</string>
@@ -683,7 +691,7 @@
     <string name="http_ignore_ssl_errors_desc">Allow self-signed or invalid HTTPS certificates. Use only on trusted networks.</string>
     <string name="http_ignore_ssl_errors_warning">⚠️ Security Risk: Disabling SSL verification makes your connection vulnerable to man-in-the-middle (MITM) attacks. An attacker on the same network could intercept or tamper with your data. Only enable this if you fully trust your network and cannot install a proper certificate.</string>
     <string name="wakeword_connection_type">Voice Session Connection</string>
-    <string name="wakeword_connection_type_desc">Choose which backend receives voice sessions started from wake word or long-press Home.</string>
+    <string name="wakeword_connection_type_desc">Choose the backend for voice sessions started without a wake word, such as long-press Home or headset button.</string>
     <string name="wakeword_use_gateway">OpenClaw</string>
     <string name="wakeword_use_http">Hermes Agent</string>
     <string name="enter_session_name">Enter session name</string>

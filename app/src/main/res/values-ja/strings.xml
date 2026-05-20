@@ -208,6 +208,14 @@
 <string name="custom_wake_word">カスタムウェイクワード</string>
 <string name="custom_wake_word_hint">例: hey buddy</string>
 <string name="custom_wake_word_help">2〜3語の英単語を小文字で入力（例: hey buddy）</string>
+<string name="wake_word_dual_desc">Wake WordごとにOpenClawまたはHermes Agentへ直接振り分けます。手動起動は下の音声セッション接続方式を使います。</string>
+<string name="wake_word_phrase_label">Wake Word</string>
+<string name="wake_word_hermes_agent">Hermes Agent</string>
+<string name="wake_word_sound">起動音</string>
+<string name="wake_word_sound_none">なし</string>
+<string name="wake_word_sound_standard">標準</string>
+<string name="wake_word_sound_high">高め</string>
+<string name="wake_word_sound_low">低め</string>
 <string name="testing">テスト中…</string>
 <string name="connected">接続成功！</string>
 <string name="failed">失敗: %s</string>
@@ -413,7 +421,7 @@
 <string name="http_ignore_ssl_errors_desc">自己署名証明書や無効なHTTPS証明書を許可します。信頼できるネットワークでのみ使用してください。</string>
 <string name="http_ignore_ssl_errors_warning">⚠️ セキュリティリスク: SSL検証を無効にすると、中間者攻撃（MITM）に対して脆弱になります。同じネットワーク上の攻撃者がデータを傍受・改ざんできる可能性があります。ネットワークを完全に信頼できる場合、かつ適切な証明書をインストールできない場合のみ有効にしてください。</string>
 <string name="wakeword_connection_type">音声セッション接続方式</string>
-<string name="wakeword_connection_type_desc">ウェイクワードまたはホームボタン長押しで開始した音声セッションの送信先を選択します。</string>
+<string name="wakeword_connection_type_desc">ホーム長押し・メディアボタンなど、Wake Word以外で開始した音声セッションの送信先を選択します。</string>
 <string name="wakeword_use_gateway">OpenClaw</string>
 <string name="wakeword_use_http">Hermes Agent</string>
 <string name="enter_session_name">セッション名を入力</string>

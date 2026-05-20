@@ -10,6 +10,11 @@ import java.util.UUID
  * Secure settings storage
  */
 class SettingsRepository(context: Context) {
+    data class WakeWordTarget(
+        val phrase: String,
+        val target: String,
+        val wakeSound: String
+    )
 
     private val masterKey = MasterKey.Builder(context)
         .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
@@ -63,6 +68,46 @@ class SettingsRepository(context: Context) {
         get() = prefs.getString(KEY_CUSTOM_WAKE_WORD, "") ?: ""
         set(value) = prefs.edit().putString(KEY_CUSTOM_WAKE_WORD, value).apply()
 
+    var openClawWakeWord: String
+        get() {
+            ensureDualWakeWordsMigrated()
+            return normalizeWakeWord(
+                prefs.getString(KEY_OPENCLAW_WAKE_WORD, DEFAULT_OPENCLAW_WAKE_WORD) ?: DEFAULT_OPENCLAW_WAKE_WORD,
+                DEFAULT_OPENCLAW_WAKE_WORD
+            )
+        }
+        set(value) {
+            ensureDualWakeWordsMigrated()
+            prefs.edit().putString(KEY_OPENCLAW_WAKE_WORD, normalizeWakeWord(value, DEFAULT_OPENCLAW_WAKE_WORD)).apply()
+        }
+
+    var hermesWakeWord: String
+        get() {
+            ensureDualWakeWordsMigrated()
+            return normalizeWakeWord(
+                prefs.getString(KEY_HERMES_WAKE_WORD, DEFAULT_HERMES_WAKE_WORD) ?: DEFAULT_HERMES_WAKE_WORD,
+                DEFAULT_HERMES_WAKE_WORD
+            )
+        }
+        set(value) {
+            ensureDualWakeWordsMigrated()
+            prefs.edit().putString(KEY_HERMES_WAKE_WORD, normalizeWakeWord(value, DEFAULT_HERMES_WAKE_WORD)).apply()
+        }
+
+    var openClawWakeSound: String
+        get() {
+            ensureDualWakeWordsMigrated()
+            return prefs.getString(KEY_OPENCLAW_WAKE_SOUND, WAKE_SOUND_STANDARD) ?: WAKE_SOUND_STANDARD
+        }
+        set(value) = prefs.edit().putString(KEY_OPENCLAW_WAKE_SOUND, normalizeWakeSound(value, WAKE_SOUND_STANDARD)).apply()
+
+    var hermesWakeSound: String
+        get() {
+            ensureDualWakeWordsMigrated()
+            return prefs.getString(KEY_HERMES_WAKE_SOUND, WAKE_SOUND_HIGH) ?: WAKE_SOUND_HIGH
+        }
+        set(value) = prefs.edit().putString(KEY_HERMES_WAKE_SOUND, normalizeWakeSound(value, WAKE_SOUND_HIGH)).apply()
+
     // Wake word detection sensitivity threshold (0.0 = easiest to trigger, 1.0 = hardest)
     var wakeWordSensitivity: Float
         get() = prefs.getFloat(KEY_WAKE_WORD_SENSITIVITY, 0.7f)
@@ -70,6 +115,18 @@ class SettingsRepository(context: Context) {
 
     // Get the actual wake words list for Vosk
     fun getWakeWords(): List<String> {
+        return getWakeWordTargets().map { it.phrase }.distinct()
+    }
+
+    fun getWakeWordTargets(): List<WakeWordTarget> {
+        ensureDualWakeWordsMigrated()
+        return listOf(
+            WakeWordTarget(openClawWakeWord, VOICE_TARGET_OPENCLAW, openClawWakeSound),
+            WakeWordTarget(hermesWakeWord, VOICE_TARGET_HERMES, hermesWakeSound)
+        ).filter { it.phrase.isNotBlank() }
+    }
+
+    private fun getLegacyWakeWords(): List<String> {
         return when (wakeWordPreset) {
             WAKE_WORD_OPEN_CLAW -> listOf("open claw")
             WAKE_WORD_HEY_ASSISTANT -> listOf("hey assistant")
@@ -85,14 +142,36 @@ class SettingsRepository(context: Context) {
 
     // Get display name for current wake word
     fun getWakeWordDisplayName(): String {
-        return when (wakeWordPreset) {
-            WAKE_WORD_OPEN_CLAW -> "Open Claw"
-            WAKE_WORD_HEY_ASSISTANT -> "Hey Assistant"
-            WAKE_WORD_JARVIS -> "Jarvis"
-            WAKE_WORD_COMPUTER -> "Computer"
-            WAKE_WORD_CUSTOM -> customWakeWord.ifEmpty { "Custom" }
-            else -> "Open Claw"
+        return getWakeWords().joinToString(" / ")
+    }
+
+    private fun normalizeWakeWord(value: String, fallback: String): String {
+        return value.trim().lowercase().replace(Regex("\\s+"), " ").ifBlank { fallback }
+    }
+
+    private fun normalizeWakeSound(value: String, fallback: String): String {
+        return when (value) {
+            WAKE_SOUND_NONE, WAKE_SOUND_STANDARD, WAKE_SOUND_HIGH, WAKE_SOUND_LOW -> value
+            else -> fallback
         }
+    }
+
+    private fun ensureDualWakeWordsMigrated() {
+        if (prefs.getBoolean(KEY_DUAL_WAKE_WORDS_MIGRATED, false)) return
+        val editor = prefs.edit()
+        if (!prefs.contains(KEY_OPENCLAW_WAKE_WORD)) {
+            editor.putString(KEY_OPENCLAW_WAKE_WORD, getLegacyWakeWords().firstOrNull()?.takeIf { it.isNotBlank() } ?: DEFAULT_OPENCLAW_WAKE_WORD)
+        }
+        if (!prefs.contains(KEY_HERMES_WAKE_WORD)) {
+            editor.putString(KEY_HERMES_WAKE_WORD, DEFAULT_HERMES_WAKE_WORD)
+        }
+        if (!prefs.contains(KEY_OPENCLAW_WAKE_SOUND)) {
+            editor.putString(KEY_OPENCLAW_WAKE_SOUND, WAKE_SOUND_STANDARD)
+        }
+        if (!prefs.contains(KEY_HERMES_WAKE_SOUND)) {
+            editor.putString(KEY_HERMES_WAKE_SOUND, WAKE_SOUND_HIGH)
+        }
+        editor.putBoolean(KEY_DUAL_WAKE_WORDS_MIGRATED, true).apply()
     }
 
     // TTS enabled
@@ -297,6 +376,11 @@ class SettingsRepository(context: Context) {
         private const val KEY_HOTWORD_ENABLED = "hotword_enabled"
         private const val KEY_WAKE_WORD_PRESET = "wake_word_preset"
         private const val KEY_CUSTOM_WAKE_WORD = "custom_wake_word"
+        private const val KEY_OPENCLAW_WAKE_WORD = "openclaw_wake_word"
+        private const val KEY_HERMES_WAKE_WORD = "hermes_wake_word"
+        private const val KEY_OPENCLAW_WAKE_SOUND = "openclaw_wake_sound"
+        private const val KEY_HERMES_WAKE_SOUND = "hermes_wake_sound"
+        private const val KEY_DUAL_WAKE_WORDS_MIGRATED = "dual_wake_words_migrated"
         private const val KEY_WAKE_WORD_SENSITIVITY = "wake_word_sensitivity"
         private const val KEY_IS_VERIFIED = "is_verified"
         private const val KEY_TTS_ENABLED = "tts_enabled"
@@ -339,6 +423,15 @@ class SettingsRepository(context: Context) {
         const val WAKE_WORD_JARVIS = "jarvis"
         const val WAKE_WORD_COMPUTER = "computer"
         const val WAKE_WORD_CUSTOM = "custom"
+
+        const val DEFAULT_OPENCLAW_WAKE_WORD = "hey claw"
+        const val DEFAULT_HERMES_WAKE_WORD = "hey hermes"
+        const val VOICE_TARGET_OPENCLAW = "openclaw"
+        const val VOICE_TARGET_HERMES = "hermes"
+        const val WAKE_SOUND_NONE = "none"
+        const val WAKE_SOUND_STANDARD = "standard"
+        const val WAKE_SOUND_HIGH = "high"
+        const val WAKE_SOUND_LOW = "low"
         
         const val CONNECTION_TYPE_GATEWAY = "gateway"
         const val CONNECTION_TYPE_HTTP = "http"

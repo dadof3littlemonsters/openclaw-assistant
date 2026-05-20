@@ -64,7 +64,10 @@ import com.openclaw.assistant.ui.theme.OpenClawAssistantTheme
  * Voice Interaction Session
  * Handles actual voice interaction
  */
-class OpenClawSession(context: Context) : VoiceInteractionSession(context), 
+class OpenClawSession(
+    context: Context,
+    initialSessionArgs: Bundle? = null
+) : VoiceInteractionSession(context),
     androidx.lifecycle.LifecycleOwner,
     androidx.savedstate.SavedStateRegistryOwner,
     androidx.lifecycle.ViewModelStoreOwner {
@@ -76,6 +79,7 @@ class OpenClawSession(context: Context) : VoiceInteractionSession(context),
     }
 
     private val settings = SettingsRepository.getInstance(context)
+    private var sessionArgs: Bundle? = initialSessionArgs
     private val apiClient = OpenClawClient()
     private lateinit var speechManager: SpeechRecognizerManager
     private lateinit var ttsManager: TTSManager
@@ -105,6 +109,20 @@ class OpenClawSession(context: Context) : VoiceInteractionSession(context),
     private var partialText = mutableStateOf("")
     private var errorMessage = mutableStateOf<String?>(null)
     private var audioLevel = mutableStateOf(0f) // Audio level for visualization
+
+    private fun effectiveVoiceTarget(): String {
+        return sessionArgs?.getString(OpenClawAssistantService.EXTRA_VOICE_TARGET)
+            ?.takeIf { it == SettingsRepository.VOICE_TARGET_OPENCLAW || it == SettingsRepository.VOICE_TARGET_HERMES }
+            ?: if (settings.wakewordConnectionType == SettingsRepository.CONNECTION_TYPE_GATEWAY) {
+                SettingsRepository.VOICE_TARGET_OPENCLAW
+            } else {
+                SettingsRepository.VOICE_TARGET_HERMES
+            }
+    }
+
+    private fun isOpenClawVoiceTarget(): Boolean {
+        return effectiveVoiceTarget() == SettingsRepository.VOICE_TARGET_OPENCLAW
+    }
 
     // WakeLock to keep CPU alive during voice conversation when screen is off
     private var wakeLock: PowerManager.WakeLock? = null
@@ -207,6 +225,7 @@ class OpenClawSession(context: Context) : VoiceInteractionSession(context),
 
     override fun onShow(args: Bundle?, showFlags: Int) {
         super.onShow(args, showFlags)
+        sessionArgs = args
 
         // Recreate scope if it was cancelled by a previous onHide()
         if (!scope.isActive) {
@@ -235,7 +254,7 @@ class OpenClawSession(context: Context) : VoiceInteractionSession(context),
         sendPauseBroadcast()
         
         // SESSION MANAGEMENT
-        if (settings.wakewordConnectionType == SettingsRepository.CONNECTION_TYPE_GATEWAY) {
+        if (isOpenClawVoiceTarget()) {
             // Gateway mode: manage session on the gateway side, not in local DB
             val nodeRuntime = (context.applicationContext as OpenClawApplication).nodeRuntime
             if (!settings.resumeLatestSession) {
@@ -279,7 +298,7 @@ class OpenClawSession(context: Context) : VoiceInteractionSession(context),
         }
 
         // For Gateway mode, fail fast if the gateway is not healthy
-        if (settings.wakewordConnectionType == SettingsRepository.CONNECTION_TYPE_GATEWAY) {
+        if (isOpenClawVoiceTarget()) {
             val nodeRuntime = (context.applicationContext as OpenClawApplication).nodeRuntime
             if (!nodeRuntime.chatHealthOk.value) {
                 currentState.value = AssistantState.ERROR
@@ -550,7 +569,7 @@ class OpenClawSession(context: Context) : VoiceInteractionSession(context),
         scope.launch {
             val agentId = settings.defaultAgentId.takeIf { it.isNotBlank() && it != "main" }
             val voiceBackendId = resolveVoiceSessionBackendId()
-            if (settings.wakewordConnectionType != SettingsRepository.CONNECTION_TYPE_GATEWAY && voiceBackendId == null) {
+            if (!isOpenClawVoiceTarget() && voiceBackendId == null) {
                 cancelInitialFillerPhrase()
                 cancelWaitPhraseTimer()
                 stopThinkingSound()
@@ -592,7 +611,7 @@ class OpenClawSession(context: Context) : VoiceInteractionSession(context),
                 return@launch
             }
 
-            if (settings.wakewordConnectionType != SettingsRepository.CONNECTION_TYPE_GATEWAY) {
+            if (!isOpenClawVoiceTarget()) {
                 cancelInitialFillerPhrase()
                 cancelWaitPhraseTimer()
                 stopThinkingSound()
@@ -602,13 +621,13 @@ class OpenClawSession(context: Context) : VoiceInteractionSession(context),
             }
 
             // Save user message to local DB only for HTTP mode
-            if (settings.wakewordConnectionType != SettingsRepository.CONNECTION_TYPE_GATEWAY) {
+            if (!isOpenClawVoiceTarget()) {
                 currentSessionId?.let { sessionId ->
                     chatRepository.addMessage(sessionId, message, isUser = true)
                 }
             }
 
-            if (settings.wakewordConnectionType == SettingsRepository.CONNECTION_TYPE_GATEWAY) {
+            if (isOpenClawVoiceTarget()) {
                 sendViaGateway(message)
             } else {
                 sendViaHttp(message)
@@ -619,7 +638,7 @@ class OpenClawSession(context: Context) : VoiceInteractionSession(context),
     private suspend fun resolveVoiceSessionBackendId(): String? {
         val backends = com.openclaw.assistant.backend.BackendRepository.getInstance(context).backends.first()
             .filter { it.enabled }
-        return if (settings.wakewordConnectionType == SettingsRepository.CONNECTION_TYPE_GATEWAY) {
+        return if (isOpenClawVoiceTarget()) {
             backends.firstOrNull {
                 it.isPrimary && (
                     it.type == com.openclaw.assistant.backend.BackendType.OPENCLAW_GATEWAY ||
@@ -848,7 +867,7 @@ class OpenClawSession(context: Context) : VoiceInteractionSession(context),
         stopAuxiliarySpeech()
 
         // Save AI response to local DB only for HTTP mode
-        if (settings.wakewordConnectionType != SettingsRepository.CONNECTION_TYPE_GATEWAY) {
+        if (!isOpenClawVoiceTarget()) {
             currentSessionId?.let { sessionId ->
                 chatRepository.addMessage(sessionId, responseText, isUser = false)
             }
@@ -1125,7 +1144,7 @@ fun AssistantUI(
             // When speaking loudly, the voice reaction should dominate.
             val finalScale = if (state == AssistantState.LISTENING) maxOf(baseScale, animatedLevelScale) else 1f
 
-            // Hermes-Relay style morphing sphere — audio-reactive blob that
+            // Morphing sphere — audio-reactive blob that
             // breathes / ripples / pulses by state. The mic icon floats above
             // the sphere so the existing tap-to-interrupt affordance still
             // works while the assistant is speaking.

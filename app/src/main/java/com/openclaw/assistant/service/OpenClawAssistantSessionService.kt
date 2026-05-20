@@ -9,6 +9,6 @@ import android.service.voice.VoiceInteractionSessionService
  */
 class OpenClawAssistantSessionService : VoiceInteractionSessionService() {
     override fun onNewSession(args: Bundle?): VoiceInteractionSession {
-        return OpenClawSession(this)
+        return OpenClawSession(this, args)
     }
 }
