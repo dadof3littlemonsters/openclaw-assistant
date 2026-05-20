@@ -80,6 +80,7 @@ fun PrimaryBackendCard(
                     connected = hermesTest?.ok == true,
                     statusText = when {
                         hermesTest?.ok == true -> stringResource(R.string.av_home_connected)
+                        hermesTest != null -> hermesTest?.message ?: stringResource(R.string.av_home_disconnected)
                         hermes != null -> stringResource(R.string.av_home_disconnected)
                         else -> stringResource(R.string.av_home_not_configured)
                     },

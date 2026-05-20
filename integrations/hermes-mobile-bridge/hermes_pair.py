@@ -23,6 +23,7 @@ import os
 import re
 import shutil
 import secrets
+import signal
 import socket
 import struct
 import subprocess
@@ -219,6 +220,18 @@ def discover_dashboard_terminal(local_url: str = "http://127.0.0.1:9119") -> Opt
     return {"url": normalize_url(local_url), "token": token_match.group(1)}
 
 
+def dashboard_terminal_url(no_tailscale: bool, no_lan: bool, port: int = 9119) -> str:
+    if not no_tailscale:
+        for host in [tailscale_dns_name(), tailscale_ip()]:
+            if host:
+                return f"http://{host}:{port}"
+    if not no_lan:
+        lan = first_lan_ip()
+        if lan:
+            return f"http://{lan}:{port}"
+    return f"http://127.0.0.1:{port}"
+
+
 def start_cloudflared_tunnel(local_url: str, label: str, timeout_seconds: float = 35.0) -> Optional[str]:
     cloudflared = shutil.which("cloudflared")
     if not cloudflared:
@@ -332,6 +345,151 @@ def start_public_tunnel(local_url: str, label: str, provider: str = "auto") -> O
         if url:
             return url
     return None
+
+
+MUX_HERMES_PREFIX = "/__agentvoice_hermes_api"
+MUX_DASHBOARD_PREFIX = "/__agentvoice_hermes_dashboard"
+
+
+def stop_temp_process(label: str, provider: str) -> None:
+    pid_path = Path(tempfile.gettempdir()) / f"agentvoice-{label}-{provider}.pid"
+    try:
+        pid = int(pid_path.read_text().strip())
+    except Exception:
+        return
+    try:
+        os.kill(pid, signal.SIGTERM)
+    except ProcessLookupError:
+        pass
+    except Exception:
+        return
+    try:
+        pid_path.unlink()
+    except Exception:
+        pass
+
+
+def find_free_local_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        return int(sock.getsockname()[1])
+
+
+def start_multiplex_proxy(port: int) -> Optional[str]:
+    node = shutil.which("node")
+    if not node:
+        return None
+    script_path = Path(tempfile.gettempdir()) / "agentvoice-public-mux.js"
+    script_path.write_text(
+        r"""
+const http = require('http');
+const net = require('net');
+
+const port = Number(process.argv[2]);
+const routes = [
+  { prefix: '/__agentvoice_hermes_api', host: '127.0.0.1', port: 8642 },
+  { prefix: '/__agentvoice_hermes_dashboard', host: '127.0.0.1', port: 9119 },
+];
+const fallback = { host: '127.0.0.1', port: 18789 };
+
+function routeFor(url) {
+  for (const route of routes) {
+    if (url === route.prefix || url.startsWith(route.prefix + '/')) {
+      const stripped = url.slice(route.prefix.length) || '/';
+      return { ...route, path: stripped };
+    }
+  }
+  return { ...fallback, path: url || '/' };
+}
+
+const server = http.createServer((req, res) => {
+  const target = routeFor(req.url);
+  const headers = { ...req.headers, host: `${target.host}:${target.port}` };
+  const proxy = http.request(
+    { host: target.host, port: target.port, method: req.method, path: target.path, headers },
+    (upstream) => {
+      res.writeHead(upstream.statusCode || 502, upstream.headers);
+      upstream.pipe(res);
+    },
+  );
+  proxy.on('error', (err) => {
+    res.writeHead(502, { 'content-type': 'text/plain; charset=utf-8' });
+    res.end(`agentvoice mux upstream error: ${err.message}`);
+  });
+  req.pipe(proxy);
+});
+
+server.on('upgrade', (req, socket, head) => {
+  const target = routeFor(req.url);
+  const upstream = net.connect(target.port, target.host, () => {
+    const headers = { ...req.headers, host: `${target.host}:${target.port}` };
+    const lines = [`${req.method} ${target.path} HTTP/${req.httpVersion}`];
+    for (const [key, value] of Object.entries(headers)) {
+      if (Array.isArray(value)) {
+        for (const item of value) lines.push(`${key}: ${item}`);
+      } else if (value !== undefined) {
+        lines.push(`${key}: ${value}`);
+      }
+    }
+    upstream.write(lines.join('\r\n') + '\r\n\r\n');
+    if (head && head.length) upstream.write(head);
+    upstream.pipe(socket);
+    socket.pipe(upstream);
+  });
+  upstream.on('error', () => socket.destroy());
+});
+
+server.listen(port, '127.0.0.1');
+""".strip()
+        + "\n"
+    )
+    log_path = Path(tempfile.gettempdir()) / "agentvoice-public-mux.log"
+    log_file = log_path.open("w+")
+    proc = subprocess.Popen(
+        [node, str(script_path), str(port)],
+        stdout=log_file,
+        stderr=subprocess.STDOUT,
+        stdin=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    deadline = time.monotonic() + 5.0
+    while time.monotonic() < deadline:
+        if proc.poll() is not None:
+            log_file.close()
+            return None
+        if is_port_open("127.0.0.1", port, timeout=0.2):
+            log_file.close()
+            (Path(tempfile.gettempdir()) / "agentvoice-public-mux.pid").write_text(str(proc.pid))
+            return f"http://127.0.0.1:{port}"
+        time.sleep(0.1)
+    proc.terminate()
+    log_file.close()
+    return None
+
+
+def start_multiplexed_public_tunnel(provider: str) -> Optional[str]:
+    if provider not in ("auto", "ngrok"):
+        return None
+    stop_temp_process("mux", "ngrok")
+    stop_temp_process("openclaw", "ngrok")
+    try:
+        pid = int((Path(tempfile.gettempdir()) / "agentvoice-public-mux.pid").read_text().strip())
+        os.kill(pid, signal.SIGTERM)
+    except Exception:
+        pass
+    port = find_free_local_port()
+    local_url = start_multiplex_proxy(port)
+    if not local_url:
+        return None
+    public_url = start_ngrok_tunnel(local_url, "mux")
+    if not public_url:
+        try:
+            pid = int((Path(tempfile.gettempdir()) / "agentvoice-public-mux.pid").read_text().strip())
+            os.kill(pid, signal.SIGTERM)
+        except Exception:
+            pass
+        return None
+    return public_url.rstrip("/")
 
 
 def maybe_configure_hermes_remote_access(hermes_key: Optional[str], remote_host: Optional[str]) -> Optional[str]:
@@ -1220,17 +1378,31 @@ def main(argv: Optional[List[str]] = None) -> int:
     terminal_pairing: Optional[dict] = discover_dashboard_terminal() if include_hermes and dashboard_port_open else None
     openclaw_public_url: Optional[str] = None
     if use_public_tunnel:
-        if include_hermes and hermes_port_open:
+        mux_public_url = None
+        if include_hermes and include_openclaw and hermes_port_open and dashboard_port_open and openclaw_port_open and terminal_pairing:
+            mux_public_url = start_multiplexed_public_tunnel(args.tunnel_provider)
+            if mux_public_url:
+                hermes_public_url = mux_public_url + MUX_HERMES_PREFIX
+                openclaw_public_url = mux_public_url
+                terminal_pairing = dict(terminal_pairing)
+                terminal_pairing["url"] = mux_public_url + MUX_DASHBOARD_PREFIX
+                print(f"Started temporary public tunnel for Hermes/OpenClaw/Terminal: {mux_public_url}")
+        if not mux_public_url and include_hermes and hermes_port_open:
             hermes_public_url = start_public_tunnel("http://127.0.0.1:8642", "hermes", args.tunnel_provider)
-        if include_hermes and terminal_pairing and dashboard_port_open:
+        if not mux_public_url and include_hermes and terminal_pairing and dashboard_port_open:
             dashboard_public_url = start_public_tunnel("http://127.0.0.1:9119", "hermes-dashboard", args.tunnel_provider)
             if dashboard_public_url and wait_for_http_url(dashboard_public_url, timeout_seconds=8.0):
                 terminal_pairing = dict(terminal_pairing)
                 terminal_pairing["url"] = dashboard_public_url
             elif args.public_tunnel:
-                print("Hermes Terminal dashboard tunnel could not be verified; omitting Terminal from the QR.", file=sys.stderr)
-                terminal_pairing = None
-        if include_openclaw and openclaw_port_open:
+                fallback = dashboard_terminal_url(args.no_tailscale, args.no_lan)
+                terminal_pairing = dict(terminal_pairing)
+                terminal_pairing["url"] = fallback
+                print(
+                    f"Hermes Terminal dashboard tunnel could not be verified; using {fallback} instead.",
+                    file=sys.stderr,
+                )
+        if not mux_public_url and include_openclaw and openclaw_port_open:
             openclaw_public_url = start_public_tunnel("http://127.0.0.1:18789", "openclaw", args.tunnel_provider)
 
     if include_hermes:
@@ -1285,7 +1457,12 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     openclaw_setup_code: Optional[str] = None
     if include_openclaw:
-        openclaw_setup_code = discovered_openclaw_setup_code or openclaw_setup_code_from_local_install()
+        if args.openclaw_setup_code:
+            openclaw_setup_code = args.openclaw_setup_code
+        elif args.public_tunnel and openclaw_port_open:
+            openclaw_setup_code = openclaw_setup_code_from_local_install() or discovered_openclaw_setup_code
+        else:
+            openclaw_setup_code = discovered_openclaw_setup_code or openclaw_setup_code_from_local_install()
         if openclaw_public_url and openclaw_setup_code and wait_for_http_url(openclaw_public_url.rstrip("/") + "/health"):
             openclaw_setup_code = setup_code_with_url(openclaw_setup_code, openclaw_public_url)
         elif openclaw_public_url and openclaw_setup_code:

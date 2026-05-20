@@ -88,10 +88,18 @@ import java.util.Locale
  *   oc is an OpenClaw Gateway setup code, as printed by `openclaw qr`.
  */
 class HermesImportActivity : ComponentActivity() {
+    private var importUri by mutableStateOf<Uri?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val uri: Uri? = intent?.data
-        setContent { MaterialTheme { ImportScreen(uri, onFinish = ::done, onCancel = ::cancel) } }
+        importUri = intent?.data
+        setContent { MaterialTheme { ImportScreen(importUri, onFinish = ::done, onCancel = ::cancel) } }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        importUri = intent.data
     }
 
     private fun done() {
