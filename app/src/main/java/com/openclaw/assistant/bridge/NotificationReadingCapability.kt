@@ -18,7 +18,7 @@ import kotlinx.serialization.json.put
  * Mirrors Hermes-Relay's "notifications" surface. Reads the current active
  * notifications via [OpenClawNotificationListenerService] (which Android
  * grants only after the user has explicitly enabled
- * "Notification access" for Agent Voice).
+ * "Notification access" for WakeHermesClaw).
  *
  * `isAvailable` checks the system-level grant via
  * [NotificationManagerCompat.getEnabledListenerPackages]; if the package is

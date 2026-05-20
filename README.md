@@ -1,8 +1,8 @@
-# Agent Voice for Android 🦞
+# WakeHermesClaw for Android 🦞
 
 > **A native Android voice client for OpenClaw and Hermes Agent.**
 >
-> Agent Voice is the successor to *OpenClaw Assistant*. It keeps every
+> WakeHermesClaw is the successor to *OpenClaw Assistant*. It keeps every
 > OpenClaw feature you already have — wake word, Voice Overlay, Gateway
 > + HTTP backends, Wear OS, on-device node capabilities, continuous
 > conversation — and adds first-class support for **Hermes Agent** as a
@@ -13,7 +13,7 @@
 > - OpenClaw HTTP (OpenAI-compatible chat)
 > - Hermes API Server (`/v1/chat/completions` streaming + `/v1/runs` Runs API)
 >
-> **Mobile Bridge (optional, off by default).** Agent Voice can expose a
+> **Mobile Bridge (optional, off by default).** WakeHermesClaw can expose a
 > bearer-token-protected local HTTP service that lets Hermes reach a
 > curated set of Android capabilities. See
 > [`docs/hermes-mobile-bridge.md`](docs/hermes-mobile-bridge.md) and
@@ -29,12 +29,12 @@
 > **Hermes setup in 30 seconds.** Run `hermes gateway` with the API
 > server enabled (default port `8642`), bind it to your LAN/VPN,
 > generate an API key, and add it in **Settings → Backends → Add Hermes
-> API Server**. Agent Voice accepts both `http://host:8642` and
+> API Server**. WakeHermesClaw accepts both `http://host:8642` and
 > `http://host:8642/v1`. Authentication uses `Authorization: Bearer
 > <key>`; the default model name is `hermes-agent`. Connection test
 > calls `GET /v1/models` and falls back to `/health`.
 >
-> **Hermes-Relay feature parity.** Agent Voice mirrors the patterns in
+> **Hermes-Relay feature parity.** WakeHermesClaw mirrors the patterns in
 > [hermes-relay](https://codename-11.github.io/hermes-relay/):
 > 6-character pairing codes + deep-link QR payload (`agentvoice://pair?...`),
 > multi-endpoint candidates (LAN + Tailscale + public) raced in parallel on

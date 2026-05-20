@@ -222,7 +222,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         setContent {
             OpenClawAssistantTheme {
                 val hasCompletedSetup by remember { mutableStateOf(settings.hasCompletedSetup) }
-                // Agent Voice users who already configured at least one backend
+                // WakeHermesClaw users who already configured at least one backend
                 // (either via migration from a legacy OpenClaw install, or
                 // through the new BackendListActivity) should skip the legacy
                 // OpenClaw setup guide entirely.
