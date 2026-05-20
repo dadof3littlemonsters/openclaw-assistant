@@ -387,10 +387,10 @@ const net = require('net');
 
 const port = Number(process.argv[2]);
 const routes = [
-  { prefix: '/__agentvoice_hermes_api', host: '127.0.0.1', port: 8642 },
-  { prefix: '/__agentvoice_hermes_dashboard', host: '127.0.0.1', port: 9119 },
+  { prefix: '/__agentvoice_hermes_api', host: '127.0.0.1', port: 8642, rewriteHost: true },
+  { prefix: '/__agentvoice_hermes_dashboard', host: '127.0.0.1', port: 9119, rewriteHost: true },
 ];
-const fallback = { host: '127.0.0.1', port: 18789 };
+const fallback = { host: '127.0.0.1', port: 18789, rewriteHost: false };
 
 function routeFor(url) {
   for (const route of routes) {
@@ -404,7 +404,8 @@ function routeFor(url) {
 
 const server = http.createServer((req, res) => {
   const target = routeFor(req.url);
-  const headers = { ...req.headers, host: `${target.host}:${target.port}` };
+  const headers = { ...req.headers };
+  if (target.rewriteHost) headers.host = `${target.host}:${target.port}`;
   const proxy = http.request(
     { host: target.host, port: target.port, method: req.method, path: target.path, headers },
     (upstream) => {
@@ -422,7 +423,8 @@ const server = http.createServer((req, res) => {
 server.on('upgrade', (req, socket, head) => {
   const target = routeFor(req.url);
   const upstream = net.connect(target.port, target.host, () => {
-    const headers = { ...req.headers, host: `${target.host}:${target.port}` };
+    const headers = { ...req.headers };
+    if (target.rewriteHost) headers.host = `${target.host}:${target.port}`;
     const lines = [`${req.method} ${target.path} HTTP/${req.httpVersion}`];
     for (const [key, value] of Object.entries(headers)) {
       if (Array.isArray(value)) {
@@ -490,6 +492,72 @@ def start_multiplexed_public_tunnel(provider: str) -> Optional[str]:
             pass
         return None
     return public_url.rstrip("/")
+
+
+def origin_variants_for_url(url: str) -> List[str]:
+    parsed = urllib.parse.urlparse(url)
+    scheme = parsed.scheme.lower()
+    if scheme not in ("http", "https") or not parsed.hostname:
+        return []
+    default_port = 443 if scheme == "https" else 80
+    port = parsed.port or default_port
+    host = parsed.hostname
+    if ":" in host and not host.startswith("["):
+        host = f"[{host}]"
+    default_origin = f"{scheme}://{host}" if port == default_port else f"{scheme}://{host}:{port}"
+    origins = [default_origin]
+    explicit_origin = f"{scheme}://{host}:{port}"
+    if explicit_origin not in origins:
+        origins.append(explicit_origin)
+    return origins
+
+
+def configure_openclaw_allowed_origin(public_url: str) -> bool:
+    openclaw = shutil.which("openclaw")
+    if not openclaw:
+        return False
+    origins_to_add = origin_variants_for_url(public_url)
+    if not origins_to_add:
+        return False
+    current_raw = run([openclaw, "config", "get", "gateway.controlUi.allowedOrigins"], timeout=10)
+    try:
+        current = json.loads(current_raw or "[]")
+    except Exception:
+        current = []
+    if not isinstance(current, list):
+        current = []
+    merged = [str(item) for item in current if str(item).strip()]
+    changed = False
+    for origin in origins_to_add:
+        if origin not in merged:
+            merged.append(origin)
+            changed = True
+    if not changed:
+        return True
+    patch = json.dumps({"gateway": {"controlUi": {"allowedOrigins": merged}}}, ensure_ascii=False)
+    try:
+        subprocess.run(
+            [openclaw, "config", "patch", "--stdin"],
+            input=patch,
+            text=True,
+            capture_output=True,
+            check=True,
+            timeout=45,
+        )
+    except Exception as err:
+        print(f"Warning: could not add OpenClaw allowed origin for public tunnel: {err}", file=sys.stderr)
+        return False
+    restarted = subprocess.run(
+        [openclaw, "gateway", "restart", "--force", "--wait", "15s"],
+        capture_output=True,
+        text=True,
+        timeout=25,
+    )
+    if restarted.returncode != 0:
+        print("Warning: OpenClaw allowed origin was updated, but Gateway restart failed. Run `openclaw gateway restart --force`.", file=sys.stderr)
+        return False
+    print(f"Configured OpenClaw Gateway allowed origin for public tunnel: {origins_to_add[0]}")
+    return True
 
 
 def maybe_configure_hermes_remote_access(hermes_key: Optional[str], remote_host: Optional[str]) -> Optional[str]:
@@ -1404,6 +1472,8 @@ def main(argv: Optional[List[str]] = None) -> int:
                 )
         if not mux_public_url and include_openclaw and openclaw_port_open:
             openclaw_public_url = start_public_tunnel("http://127.0.0.1:18789", "openclaw", args.tunnel_provider)
+        if openclaw_public_url:
+            configure_openclaw_allowed_origin(openclaw_public_url)
 
     if include_hermes:
         hermes_candidates: List[str] = []

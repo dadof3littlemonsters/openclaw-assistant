@@ -87,6 +87,9 @@ class GatewaySession(
       return "$scheme://$formattedHost$portSuffix$suffix"
     }
 
+    internal fun buildOrigin(scheme: String, host: String, port: Int): String =
+      buildCanvasUrl(scheme, host, port, "")
+
     internal fun resolveInvokeResultAckTimeoutMs(invokeTimeoutMs: Long?): Long {
       if (invokeTimeoutMs == null) return 15_000L
       return minOf(maxOf(invokeTimeoutMs + 5_000L, 15_000L), 120_000L)
@@ -301,7 +304,7 @@ class GatewaySession(
       val scheme = if (tls != null) "wss" else "ws"
       val url = "$scheme://${endpoint.host}:${endpoint.port}"
       val httpScheme = if (tls != null) "https" else "http"
-      val origin = "$httpScheme://${endpoint.host}:${endpoint.port}"
+      val origin = buildOrigin(httpScheme, endpoint.host, endpoint.port)
       val request = Request.Builder()
         .url(url)
         .header("Origin", origin)

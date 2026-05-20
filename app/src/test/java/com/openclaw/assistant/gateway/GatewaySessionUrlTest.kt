@@ -103,6 +103,16 @@ class GatewaySessionUrlTest {
         assertEquals("https://example.com", GatewaySession.buildCanvasUrl("https", "example.com", 0, ""))
     }
 
+    @Test
+    fun `buildOrigin - omits default TLS port`() {
+        assertEquals("https://example.com", GatewaySession.buildOrigin("https", "example.com", 443))
+    }
+
+    @Test
+    fun `buildOrigin - keeps non-standard port`() {
+        assertEquals("https://example.com:8443", GatewaySession.buildOrigin("https", "example.com", 8443))
+    }
+
     // ---------------------------------------------------------------------------
     // isLoopbackHost
     // ---------------------------------------------------------------------------
