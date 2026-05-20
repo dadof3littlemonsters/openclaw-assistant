@@ -42,6 +42,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.openclaw.assistant.R
 import com.openclaw.assistant.OpenClawApplication
+import com.openclaw.assistant.backend.VoiceBackendSelector
 import com.openclaw.assistant.data.SettingsRepository
 import com.openclaw.assistant.api.OpenClawClient
 import com.openclaw.assistant.speech.SpeechRecognizerManager
@@ -637,22 +638,11 @@ class OpenClawSession(
 
     private suspend fun resolveVoiceSessionBackendId(): String? {
         val backends = com.openclaw.assistant.backend.BackendRepository.getInstance(context).backends.first()
-            .filter { it.enabled }
-        return if (isOpenClawVoiceTarget()) {
-            backends.firstOrNull {
-                it.isPrimary && (
-                    it.type == com.openclaw.assistant.backend.BackendType.OPENCLAW_GATEWAY ||
-                        it.type == com.openclaw.assistant.backend.BackendType.OPENCLAW_HTTP
-                    )
-            }?.id
-                ?: backends.firstOrNull { it.type == com.openclaw.assistant.backend.BackendType.OPENCLAW_GATEWAY }?.id
-                ?: backends.firstOrNull { it.type == com.openclaw.assistant.backend.BackendType.OPENCLAW_HTTP }?.id
-        } else {
-            backends.firstOrNull {
-                it.isPrimary && it.type == com.openclaw.assistant.backend.BackendType.HERMES_API_SERVER
-            }?.id
-                ?: backends.firstOrNull { it.type == com.openclaw.assistant.backend.BackendType.HERMES_API_SERVER }?.id
-        }
+        return VoiceBackendSelector.selectBackendId(
+            voiceTarget = effectiveVoiceTarget(),
+            backends = backends,
+            gatewayHealthy = (context.applicationContext as OpenClawApplication).nodeRuntime.chatHealthOk.value,
+        )
     }
 
     private suspend fun resolveOpenClawGatewayModel(): String? {
