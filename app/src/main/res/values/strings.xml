@@ -119,6 +119,10 @@
     <string name="av_bridge_allowlist">Capability allowlist</string>
     <string name="av_bridge_run_self_check">Run self-check</string>
     <string name="av_bridge_play_warning">This build is configured for Play distribution: Accessibility Bridge and SMS are hidden.</string>
+    <string name="av_bridge_activity_title">Bridge activity</string>
+    <string name="av_bridge_activity_desc">Recent local capability calls. Arguments, screen text, screenshots, and tokens are not stored.</string>
+    <string name="av_bridge_activity_empty">No bridge activity yet.</string>
+    <string name="av_bridge_activity_clear">Clear activity</string>
 
     <!-- Self-check -->
     <string name="av_selfcheck_title">Self-check</string>
@@ -250,6 +254,9 @@
     <string name="settings_category_voice_desc">Interaction mode, silence threshold, providers</string>
     <string name="settings_category_mobile_bridge">Mobile Bridge</string>
     <string name="settings_category_mobile_bridge_desc">Pairing, bridge security, capability allowlist</string>
+    <string name="settings_category_diagnostics_desc">Agent health, stream timing, and tool progress</string>
+    <string name="settings_category_agent_diagnostics">Agent diagnostics</string>
+    <string name="settings_category_agent_diagnostics_desc">Local-only status counters</string>
     <string name="settings_category_wake_word_desc">Activation phrase, sensitivity, media button</string>
     <string name="settings_category_language_desc">Display language and speech recognition language</string>
     <string name="settings_category_support_desc">Issue reports, update checks, version, support links</string>
@@ -578,6 +585,10 @@
     <string name="capability_location">Location</string>
     <string name="capability_motion">Motion</string>
     <string name="diagnostics_title">Diagnostics</string>
+    <string name="diagnostics_empty">No agent diagnostics yet. Send a message or run a connection test to populate this panel.</string>
+    <string name="diagnostics_recent_tool_progress">Recent tool progress</string>
+    <string name="diagnostics_no_tool_progress">No recent tool progress.</string>
+    <string name="diagnostics_clear">Clear diagnostics</string>
     <string name="setup_required_hint">Please configure connection in Settings</string>
 
     <!-- Gateway Settings -->

@@ -78,7 +78,29 @@ class MobileBridgeSettingsActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MobileBridgeSettingsScreen() {
+fun MobileBridgeSettingsScreen(embedded: Boolean = false) {
+    if (embedded) {
+        MobileBridgeSettingsContent(
+            modifier = Modifier.fillMaxWidth(),
+            scrollable = false,
+        )
+        return
+    }
+    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.mobile_bridge_title)) }) }) { padding ->
+        MobileBridgeSettingsContent(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            scrollable = true,
+        )
+    }
+}
+
+@Composable
+private fun MobileBridgeSettingsContent(
+    modifier: Modifier = Modifier,
+    scrollable: Boolean,
+) {
     val context = LocalContext.current
     val cfg = remember { MobileBridgeConfig.getInstance(context) }
     val enabled by cfg.enabled.collectAsState()
@@ -93,16 +115,14 @@ fun MobileBridgeSettingsScreen() {
     var rotated by remember { mutableStateOf(0) }
     val token = remember(rotated, enabled) { cfg.tokenOrNull() ?: "" }
     val a11yEnabled = com.openclaw.assistant.bridge.accessibility.AgentVoiceAccessibilityService.isRunning()
+    val scrollModifier = if (scrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier
 
-    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.mobile_bridge_title)) }) }) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
+    Column(
+        modifier = modifier
+            .then(scrollModifier)
+            .padding(if (scrollable) 16.dp else 0.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
             BridgeStatusCard(
                 enabled = enabled,
                 port = port,
@@ -218,10 +238,9 @@ fun MobileBridgeSettingsScreen() {
                                 cfg.setAllowedCapabilityGroups(next)
                             },
                             label = { Text(group) },
-                        )
-                    }
-                }
-            }
+            )
+        }
+    }
 
             SettingsCard(title = stringResource(R.string.av_bridge_a11y_section), icon = Icons.Default.SettingsAccessibility) {
                 StatusLine(
@@ -273,15 +292,15 @@ fun MobileBridgeSettingsScreen() {
                 }
             }
 
-            SettingsCard(title = "Bridge Activity", icon = Icons.Default.CheckCircle) {
+            SettingsCard(title = stringResource(R.string.av_bridge_activity_title), icon = Icons.Default.CheckCircle) {
                 Text(
-                    "Recent local capability calls. Arguments, screen text, screenshots, and tokens are not stored.",
+                    stringResource(R.string.av_bridge_activity_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.height(10.dp))
                 if (activityEntries.isEmpty()) {
-                    Text("No bridge activity yet.", style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.av_bridge_activity_empty), style = MaterialTheme.typography.bodySmall)
                 } else {
                     activityEntries.take(8).forEach { entry ->
                         Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
@@ -296,7 +315,7 @@ fun MobileBridgeSettingsScreen() {
                         }
                     }
                     OutlinedButton(onClick = { BridgeActivityLog.clear(context) }) {
-                        Text("Clear activity")
+                        Text(stringResource(R.string.av_bridge_activity_clear))
                     }
                 }
             }

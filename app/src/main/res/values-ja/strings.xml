@@ -43,6 +43,9 @@
 <string name="settings_category_voice_desc">対話モード、無音判定、プロバイダー</string>
 <string name="settings_category_mobile_bridge">モバイルブリッジ</string>
 <string name="settings_category_mobile_bridge_desc">ペアリング、ブリッジ安全設定、機能許可リスト</string>
+<string name="settings_category_diagnostics_desc">Agentの状態、ストリーム時間、ツール進行状況</string>
+<string name="settings_category_agent_diagnostics">Agent診断</string>
+<string name="settings_category_agent_diagnostics_desc">端末内だけの状態カウンター</string>
 <string name="settings_category_wake_word_desc">起動フレーズ、感度、メディアボタン</string>
 <string name="settings_category_language_desc">表示言語と音声認識言語</string>
 <string name="settings_category_support_desc">問題報告、更新確認、バージョン、サポートリンク</string>
@@ -336,6 +339,10 @@
 <string name="capability_location">位置情報</string>
 <string name="capability_motion">モーション</string>
 <string name="diagnostics_title">診断</string>
+<string name="diagnostics_empty">Agent診断はまだありません。メッセージ送信または接続テストを実行すると表示されます。</string>
+<string name="diagnostics_recent_tool_progress">最近のツール進行状況</string>
+<string name="diagnostics_no_tool_progress">最近のツール進行状況はありません。</string>
+<string name="diagnostics_clear">診断をクリア</string>
 <string name="setup_required_hint">設定画面で接続設定を行ってください</string>
 <string name="settings_gateway_title">OpenClaw接続</string>
 <string name="disconnected">未接続</string>
@@ -700,6 +707,10 @@
     <string name="av_bridge_allowlist">許可する Capability グループ</string>
     <string name="av_bridge_run_self_check">セルフチェックを実行</string>
     <string name="av_bridge_play_warning">このビルドは Play 配布向けのため、ユーザー補助ブリッジとSMSは無効化されています。</string>
+    <string name="av_bridge_activity_title">ブリッジアクティビティ</string>
+    <string name="av_bridge_activity_desc">最近の端末内 capability 呼び出しです。引数、画面本文、スクリーンショット、トークンは保存しません。</string>
+    <string name="av_bridge_activity_empty">ブリッジアクティビティはまだありません。</string>
+    <string name="av_bridge_activity_clear">アクティビティをクリア</string>
     <string name="av_bridge_connection_section">接続</string>
     <string name="av_bridge_port">ポート</string>
     <string name="av_bridge_lan_warning">LAN / VPN はこの端末をネットワーク上に公開します。信頼できるWi-FiまたはTailscaleでのみ使用してください。</string>

@@ -11,12 +11,16 @@ class HermesLiveLocalTest {
 
     @Test
     fun localHermesRunsApiConnectsAndReplies() = runBlocking {
+        val apiKey = System.getenv("API_SERVER_KEY")
+            ?: System.getenv("HERMES_LOCAL_API_KEY")
+            ?: System.getenv("HERMES_API_SERVER_KEY")
         val client = HermesApiServerClient(
             AgentBackendConfig(
                 id = "local-hermes-live-test",
                 displayName = "Local Hermes",
                 type = BackendType.HERMES_API_SERVER,
                 baseUrl = "http://127.0.0.1:8642",
+                apiKeyOrToken = apiKey,
                 modelName = "default",
                 useRunsApi = true,
                 useStreaming = true,
@@ -43,5 +47,26 @@ class HermesLiveLocalTest {
         }
 
         assertTrue("Hermes returned an empty setup-check reply", reply.toString().isNotBlank())
+    }
+
+    @Test
+    fun localHermesModelCatalogReturnsAtLeastOneModel() = runBlocking {
+        val apiKey = System.getenv("API_SERVER_KEY")
+            ?: System.getenv("HERMES_LOCAL_API_KEY")
+            ?: System.getenv("HERMES_API_SERVER_KEY")
+        assumeTrue("Local Hermes API key is not available", !apiKey.isNullOrBlank())
+
+        val catalog = HermesConfigApi().fetchCatalog(
+            AgentBackendConfig(
+                id = "local-hermes-catalog-live-test",
+                displayName = "Local Hermes",
+                type = BackendType.HERMES_API_SERVER,
+                baseUrl = "http://127.0.0.1:8642",
+                apiKeyOrToken = apiKey,
+                modelName = "default",
+            ),
+        )
+
+        assertTrue("Local Hermes model catalog was empty", catalog.models.isNotEmpty())
     }
 }

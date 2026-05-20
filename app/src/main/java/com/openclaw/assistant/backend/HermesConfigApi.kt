@@ -45,10 +45,20 @@ class HermesConfigApi(
 ) {
     suspend fun fetchCatalog(config: AgentBackendConfig): HermesModelCatalog = withContext(Dispatchers.IO) {
         val current = fetchConfig(config)
-        val catalog = getJson(config, HermesUrl.availableModelsUrl(requireBaseUrl(config)))
+        val baseUrl = requireBaseUrl(config)
+        val catalog = getJson(config, HermesUrl.availableModelsUrl(baseUrl))
+        val v1Models = getJson(config, HermesUrl.modelsUrl(baseUrl))
+        val models = (parseModels(catalog) + parseModels(v1Models))
+            .ifEmpty {
+                current?.model
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { listOf(HermesModelOption(it, "current")) }
+                    .orEmpty()
+            }
+            .distinctBy { it.id }
         HermesModelCatalog(
             config = current,
-            models = parseModels(catalog),
+            models = models,
             providers = parseProviders(catalog),
         )
     }
@@ -94,16 +104,22 @@ class HermesConfigApi(
     )
 
     private fun parseModels(obj: JsonObject?): List<HermesModelOption> {
-        val array = obj?.get("models") as? JsonArray ?: return emptyList()
+        val array = (obj?.get("models") as? JsonArray)
+            ?: (obj?.get("data") as? JsonArray)
+            ?: (obj?.get("items") as? JsonArray)
+            ?: return emptyList()
         return array.mapNotNull { item ->
             when (val value = item) {
                 is JsonPrimitive -> value.contentOrNull?.let { HermesModelOption(it) }
                 is JsonObject -> {
-                    val id = value["id"]?.jsonPrimitive?.contentOrNull ?: value["model"]?.jsonPrimitive?.contentOrNull
+                    val id = value["id"]?.jsonPrimitive?.contentOrNull
+                        ?: value["model"]?.jsonPrimitive?.contentOrNull
+                        ?: value["name"]?.jsonPrimitive?.contentOrNull
                     id?.takeIf { it.isNotBlank() }?.let {
                         HermesModelOption(
                             id = it,
-                            description = value["description"]?.jsonPrimitive?.contentOrNull,
+                            description = value["description"]?.jsonPrimitive?.contentOrNull
+                                ?: value["owned_by"]?.jsonPrimitive?.contentOrNull,
                         )
                     }
                 }

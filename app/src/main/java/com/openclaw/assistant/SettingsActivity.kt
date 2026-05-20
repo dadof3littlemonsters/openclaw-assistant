@@ -58,7 +58,7 @@ import com.openclaw.assistant.ui.components.StatusIndicator
 import com.openclaw.assistant.gateway.AgentInfo
 import com.openclaw.assistant.ui.backend.BackendListActivity
 import com.openclaw.assistant.ui.backend.ToolProgressFeed
-import com.openclaw.assistant.ui.bridge.MobileBridgeSettingsActivity
+import com.openclaw.assistant.ui.bridge.MobileBridgeSettingsScreen
 import com.openclaw.assistant.ui.theme.OpenClawAssistantTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.openclaw.assistant.utils.GatewayConfigUtils
@@ -1455,8 +1455,8 @@ fun SettingsScreen(
                 val diagnostics by AgentDiagnostics.snapshots.collectAsState()
                 val toolEvents by ToolProgressFeed.events.collectAsState()
                 CollapsibleSection(
-                    title = "Agent Diagnostics",
-                    subtitle = "Local-only status counters",
+                    title = stringResource(R.string.settings_category_agent_diagnostics),
+                    subtitle = stringResource(R.string.settings_category_agent_diagnostics_desc),
                     initiallyExpanded = true,
                     collapsible = false,
                 ) {
@@ -1469,6 +1469,11 @@ fun SettingsScreen(
                         },
                     )
                 }
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+
+            if (selectedSettingsCategory == SettingsCategory.MobileBridge) {
+                MobileBridgeSettingsScreen(embedded = true)
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
@@ -1888,6 +1893,7 @@ private enum class SettingsCategory {
     Backend,
     Chat,
     Voice,
+    MobileBridge,
     WakeWord,
     Diagnostics,
     Language,
@@ -1900,8 +1906,9 @@ private fun SettingsCategory.title(): String = when (this) {
     SettingsCategory.Backend -> stringResource(R.string.settings_category_connections)
     SettingsCategory.Chat -> stringResource(R.string.settings_category_chat)
     SettingsCategory.Voice -> stringResource(R.string.settings_category_voice_mode)
+    SettingsCategory.MobileBridge -> stringResource(R.string.settings_category_mobile_bridge)
     SettingsCategory.WakeWord -> stringResource(R.string.wake_word)
-    SettingsCategory.Diagnostics -> "Diagnostics"
+    SettingsCategory.Diagnostics -> stringResource(R.string.diagnostics_title)
     SettingsCategory.Language -> stringResource(R.string.language_section)
     SettingsCategory.Support -> stringResource(R.string.support_section)
 }
@@ -1911,7 +1918,6 @@ private fun SettingsOverviewMenu(
     onSelected: (SettingsCategory) -> Unit,
     onCredits: () -> Unit,
 ) {
-    val context = LocalContext.current
     val items = listOf(
         SettingsOverviewItem(
             title = stringResource(R.string.settings_category_connections),
@@ -1935,11 +1941,11 @@ private fun SettingsOverviewMenu(
             title = stringResource(R.string.settings_category_mobile_bridge),
             subtitle = stringResource(R.string.settings_category_mobile_bridge_desc),
             icon = Icons.Default.Security,
-            onClick = { context.startActivity(Intent(context, MobileBridgeSettingsActivity::class.java)) },
+            onClick = { onSelected(SettingsCategory.MobileBridge) },
         ),
         SettingsOverviewItem(
-            title = "Diagnostics",
-            subtitle = "Agent health, stream timing, and tool progress",
+            title = stringResource(R.string.diagnostics_title),
+            subtitle = stringResource(R.string.settings_category_diagnostics_desc),
             icon = Icons.Default.Analytics,
             onClick = { onSelected(SettingsCategory.Diagnostics) },
         ),
@@ -2093,7 +2099,7 @@ private fun DiagnosticsPanel(
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         if (diagnostics.isEmpty()) {
             Text(
-                "No agent diagnostics yet. Send a message or run a connection test to populate this panel.",
+                stringResource(R.string.diagnostics_empty),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -2132,9 +2138,9 @@ private fun DiagnosticsPanel(
 
         Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))) {
             Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Recent Tool Progress", style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.diagnostics_recent_tool_progress), style = MaterialTheme.typography.titleSmall)
                 if (toolEvents.isEmpty()) {
-                    Text("No recent tool progress.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.diagnostics_no_tool_progress), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else {
                     toolEvents.take(6).forEach { event ->
                         Text(
@@ -2148,7 +2154,7 @@ private fun DiagnosticsPanel(
         }
 
         OutlinedButton(onClick = onClear, modifier = Modifier.fillMaxWidth()) {
-            Text("Clear diagnostics")
+            Text(stringResource(R.string.diagnostics_clear))
         }
     }
 }
