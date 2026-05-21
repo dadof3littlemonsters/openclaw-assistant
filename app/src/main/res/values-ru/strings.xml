@@ -327,13 +327,14 @@
 <string name="fix_request_message">Пожалуйста, предоставьте область действия \'operator.read\' для моего текущего токена API.</string>
 <string name="action_ask_ai">Попросите ИИ исправить</string>
 <string name="pairing_required_title">Требуется сопряжение устройств</string>
-<string name="pairing_required_desc">Это устройство еще не одобрено сервером. WakeHermesClaw сначала попробует одобрить его через OpenClaw; если это недоступно, выполните команду на хосте.</string>
+<string name="pairing_required_desc">Это устройство еще не одобрено сервером. WakeHermesClaw попробует автоматически одобрить его через хостовый командный endpoint из ссылки настройки; если это недоступно, выполните команду на хосте.</string>
 <string name="pairing_requested_scopes">Запрашиваемые права OpenClaw: operator.read, operator.write, operator.admin, operator.pairing, operator.talk.secrets, operator.approvals.</string>
 <string name="pairing_copy_command">Команда копирования</string>
 <string name="pairing_command_copied">Команда скопирована в буфер обмена</string>
 <string name="pairing_device_id">Идентификатор устройства: %s</string>
 <string name="pairing_approve_command">Утвердить команду (копировать)</string>
 <string name="pairing_reject_command">Отклонить команду (копировать)</string>
+<string name="pairing_host_command_required">Выполните на хосте OpenClaw: %1$s</string>
 <string name="pairing_refresh_status">Обновить статус</string>
 <string name="pairing_guide_title">Как одобрить это устройство:</string>
 <string name="pairing_guide_step_1">1. Получите доступ к серверному терминалу OpenClaw.</string>

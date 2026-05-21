@@ -326,13 +326,14 @@
 <string name="fix_request_message">請將“operator.read”範圍授予我目前的 API 令牌。</string>
 <string name="action_ask_ai">請求 AI 修復</string>
 <string name="pairing_required_title">需要設備配對</string>
-<string name="pairing_required_desc">此裝置尚未獲得伺服器批准。WakeHermesClaw 會先嘗試透過 OpenClaw 批准它；如果不可用，請在主機上執行該命令。</string>
+<string name="pairing_required_desc">此裝置尚未獲得伺服器批准。WakeHermesClaw 會嘗試透過設定連結中的主機命令端點自動批准它；如果不可用，請在主機上執行該命令。</string>
 <string name="pairing_requested_scopes">要求的 OpenClaw 權限：operator.read、operator.write、operator.admin、operator.pairing、operator.talk.secrets、operator.approvals。</string>
 <string name="pairing_copy_command">複製指令</string>
 <string name="pairing_command_copied">命令已複製到剪貼簿</string>
 <string name="pairing_device_id">設備 ID：%s</string>
 <string name="pairing_approve_command">批准命令（副本）</string>
 <string name="pairing_reject_command">拒絕命令（複製）</string>
+<string name="pairing_host_command_required">在 OpenClaw 主機上執行：%1$s</string>
 <string name="pairing_refresh_status">刷新狀態</string>
 <string name="pairing_guide_title">如何批准該設備：</string>
 <string name="pairing_guide_step_1">1. 存取您的 OpenClaw 伺服器終端。</string>

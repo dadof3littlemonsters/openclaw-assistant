@@ -327,13 +327,14 @@ Para más detalles, consulta el sitio oficial de VOICEVOX.</string>
 <string name="fix_request_message">Por favor, otorgue alcance \'operator.read\' a mi token API actual.</string>
 <string name="action_ask_ai">Pídale a AI que lo arregle</string>
 <string name="pairing_required_title">Se requiere emparejamiento de dispositivos</string>
-<string name="pairing_required_desc">Este dispositivo aún no ha sido aprobado por el servidor. WakeHermesClaw intentará aprobarlo primero mediante OpenClaw; si no está disponible, ejecuta el comando en el host.</string>
+<string name="pairing_required_desc">Este dispositivo aún no ha sido aprobado por el servidor. WakeHermesClaw intentará aprobarlo automáticamente mediante el endpoint de comandos del host del enlace de configuración; si no está disponible, ejecuta el comando en el host.</string>
 <string name="pairing_requested_scopes">Permisos de OpenClaw solicitados: operator.read, operator.write, operator.admin, operator.pairing, operator.talk.secrets, operator.approvals.</string>
 <string name="pairing_copy_command">Copiar comando</string>
 <string name="pairing_command_copied">Comando copiado al portapapeles</string>
 <string name="pairing_device_id">ID del dispositivo: %s</string>
 <string name="pairing_approve_command">Aprobar comando (copia)</string>
 <string name="pairing_reject_command">Rechazar comando (Copiar)</string>
+<string name="pairing_host_command_required">Ejecuta esto en el host de OpenClaw: %1$s</string>
 <string name="pairing_refresh_status">Actualizar estado</string>
 <string name="pairing_guide_title">Cómo aprobar este dispositivo:</string>
 <string name="pairing_guide_step_1">1. Acceda a su terminal de servidor OpenClaw.</string>

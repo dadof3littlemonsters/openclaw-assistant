@@ -521,6 +521,7 @@ def start_terminal_command_server() -> Optional[dict]:
         r'''
 import json
 import os
+import re
 import subprocess
 import sys
 import urllib.parse
@@ -529,6 +530,26 @@ from pathlib import Path
 
 port = int(sys.argv[1])
 secret = sys.argv[2]
+
+def run_command(command, timeout):
+    return subprocess.run(
+        command,
+        shell=True,
+        cwd=str(Path.home()),
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+        executable=os.environ.get("SHELL") or "/bin/zsh",
+    )
+
+def resolve_openclaw_latest_approval(command, proc, timeout):
+    if command != "openclaw devices approve --latest" or proc.returncode == 0:
+        return proc
+    combined = (proc.stdout or "") + "\n" + (proc.stderr or "")
+    match = re.search(r"openclaw\s+devices\s+approve\s+([0-9a-fA-F-]{36})(?:\s+--json)?", combined)
+    if not match:
+        return proc
+    return run_command(f"openclaw devices approve {match.group(1)}", timeout)
 
 class TerminalHandler(BaseHTTPRequestHandler):
     server_version = "AgentVoiceTerminal/1"
@@ -569,15 +590,8 @@ class TerminalHandler(BaseHTTPRequestHandler):
         timeout = int(body.get("timeoutSeconds") or 30)
         timeout = max(1, min(timeout, 120))
         try:
-            proc = subprocess.run(
-                command,
-                shell=True,
-                cwd=str(Path.home()),
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-                executable=os.environ.get("SHELL") or "/bin/zsh",
-            )
+            proc = run_command(command, timeout)
+            proc = resolve_openclaw_latest_approval(command, proc, timeout)
         except subprocess.TimeoutExpired:
             self._json(504, {"ok": False, "error": "timeout"})
             return
@@ -1621,6 +1635,15 @@ def main(argv: Optional[List[str]] = None) -> int:
                 )
         if not mux_public_url and include_openclaw and openclaw_port_open:
             openclaw_public_url = start_public_tunnel("http://127.0.0.1:18789", "openclaw", args.tunnel_provider)
+        if not mux_public_url and terminal_command_pairing and terminal_command_pairing.get("port"):
+            terminal_public_url = start_public_tunnel(
+                f"http://127.0.0.1:{terminal_command_pairing['port']}",
+                "agentvoice-terminal",
+                args.tunnel_provider,
+            )
+            if terminal_public_url:
+                terminal_command_pairing = dict(terminal_command_pairing)
+                terminal_command_pairing["url"] = terminal_public_url.rstrip("/") + "/run"
         if openclaw_public_url:
             configure_openclaw_allowed_origin(openclaw_public_url)
 

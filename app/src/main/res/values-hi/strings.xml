@@ -327,13 +327,14 @@
 <string name="fix_request_message">कृपया मेरे वर्तमान एपीआई टोकन को \'operator.read\' का दायरा प्रदान करें।</string>
 <string name="action_ask_ai">एआई को ठीक करने के लिए कहें</string>
 <string name="pairing_required_title">डिवाइस पेयरिंग आवश्यक है</string>
-<string name="pairing_required_desc">यह डिवाइस अभी तक सर्वर द्वारा स्वीकृत नहीं है. WakeHermesClaw पहले OpenClaw के जरिए इसे approve करने की कोशिश करेगा; अगर वह उपलब्ध न हो, तो host पर command चलाएँ.</string>
+<string name="pairing_required_desc">यह डिवाइस अभी तक सर्वर द्वारा स्वीकृत नहीं है. WakeHermesClaw setup link के host command endpoint से इसे अपने आप approve करने की कोशिश करेगा; अगर वह उपलब्ध न हो, तो host पर command चलाएँ.</string>
 <string name="pairing_requested_scopes">Requested OpenClaw scopes: operator.read, operator.write, operator.admin, operator.pairing, operator.talk.secrets, operator.approvals.</string>
 <string name="pairing_copy_command">कमांड कॉपी करें</string>
 <string name="pairing_command_copied">कमांड को क्लिपबोर्ड पर कॉपी किया गया</string>
 <string name="pairing_device_id">डिवाइस आईडी: %s</string>
 <string name="pairing_approve_command">आदेश स्वीकृत करें (कॉपी करें)</string>
 <string name="pairing_reject_command">आदेश अस्वीकार करें (कॉपी करें)</string>
+<string name="pairing_host_command_required">इसे OpenClaw host पर चलाएँ: %1$s</string>
 <string name="pairing_refresh_status">ताज़ा स्थिति</string>
 <string name="pairing_guide_title">इस डिवाइस को कैसे स्वीकृत करें:</string>
 <string name="pairing_guide_step_1">1. अपने OpenClaw सर्वर टर्मिनल तक पहुंचें।</string>

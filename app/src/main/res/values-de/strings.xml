@@ -326,13 +326,14 @@ Weitere Informationen finden Sie auf der offiziellen Website von VOICEVOX.</stri
 <string name="fix_request_message">Bitte gewähren Sie meinem aktuellen API-Token den Geltungsbereich „operator.read“.</string>
 <string name="action_ask_ai">Bitten Sie die KI, das Problem zu beheben</string>
 <string name="pairing_required_title">Gerätekopplung erforderlich</string>
-<string name="pairing_required_desc">Dieses Gerät ist noch nicht vom Server genehmigt. WakeHermesClaw versucht zuerst, es über OpenClaw zu genehmigen. Wenn das nicht verfügbar ist, führe den Befehl auf dem Host aus.</string>
+<string name="pairing_required_desc">Dieses Gerät ist noch nicht vom Server genehmigt. WakeHermesClaw versucht, es über den Host-Befehlsendpunkt des Setup-Links automatisch zu genehmigen. Wenn das nicht verfügbar ist, führe den Befehl auf dem Host aus.</string>
 <string name="pairing_requested_scopes">Angeforderte OpenClaw-Berechtigungen: operator.read, operator.write, operator.admin, operator.pairing, operator.talk.secrets, operator.approvals.</string>
 <string name="pairing_copy_command">Befehl kopieren</string>
 <string name="pairing_command_copied">Befehl in die Zwischenablage kopiert</string>
 <string name="pairing_device_id">Geräte-ID: %s</string>
 <string name="pairing_approve_command">Befehl genehmigen (Kopieren)</string>
 <string name="pairing_reject_command">Befehl ablehnen (Kopieren)</string>
+<string name="pairing_host_command_required">Auf dem OpenClaw-Host ausführen: %1$s</string>
 <string name="pairing_refresh_status">Status aktualisieren</string>
 <string name="pairing_guide_title">So genehmigen Sie dieses Gerät:</string>
 <string name="pairing_guide_step_1">1. Greifen Sie auf Ihr OpenClaw-Serverterminal zu.</string>

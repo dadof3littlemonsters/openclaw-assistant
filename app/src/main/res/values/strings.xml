@@ -593,7 +593,7 @@
 
     <!-- Pairing -->
     <string name="pairing_required_title">Device Pairing Required</string>
-    <string name="pairing_required_desc">This device is not yet approved by the server. WakeHermesClaw will try to approve it through OpenClaw first; if that is not available, run the command on the host.</string>
+    <string name="pairing_required_desc">This device is not yet approved by the server. WakeHermesClaw will try to approve it through the host command endpoint in the setup link; if that is not available, run the command on the host.</string>
     <string name="pairing_requested_scopes">Requested OpenClaw scopes: operator.read, operator.write, operator.admin, operator.pairing, operator.talk.secrets, operator.approvals.</string>
     <string name="pairing_copy_command">Copy Command</string>
     <string name="pairing_command_copied">Command copied to clipboard</string>
@@ -607,6 +607,7 @@
     <string name="pairing_gateway_auto_running">Approving through OpenClaw automatically...</string>
     <string name="pairing_gateway_approve_sent">Pairing approved. Refreshing connection...</string>
     <string name="pairing_gateway_failed">OpenClaw approval failed.</string>
+    <string name="pairing_host_command_required">Run this on the OpenClaw host: %1$s</string>
     <string name="pairing_terminal_running">Running approval command in Terminal...</string>
     <string name="pairing_terminal_auto_running">Terminal is connected. Running approval command automatically...</string>
     <string name="pairing_terminal_approve_sent">Approval command sent. Refreshing connection...</string>

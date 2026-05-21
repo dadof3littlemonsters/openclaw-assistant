@@ -327,13 +327,14 @@ Pour plus de détails, consultez le site officiel de VOICEVOX.</string>
 <string name="fix_request_message">Veuillez accorder la portée \'operator.read\' à mon jeton API actuel.</string>
 <string name="action_ask_ai">Demander à l\'IA de réparer</string>
 <string name="pairing_required_title">Couplage de périphériques requis</string>
-<string name="pairing_required_desc">Cet appareil n’est pas encore approuvé par le serveur. WakeHermesClaw essaiera d’abord de l’approuver via OpenClaw. Si ce n’est pas disponible, exécutez la commande sur l’hôte.</string>
+<string name="pairing_required_desc">Cet appareil n’est pas encore approuvé par le serveur. WakeHermesClaw essaiera de l’approuver automatiquement via l’endpoint de commande hôte du lien de configuration. Si ce n’est pas disponible, exécutez la commande sur l’hôte.</string>
 <string name="pairing_requested_scopes">Autorisations OpenClaw demandées : operator.read, operator.write, operator.admin, operator.pairing, operator.talk.secrets, operator.approvals.</string>
 <string name="pairing_copy_command">Copier la commande</string>
 <string name="pairing_command_copied">Commande copiée dans le presse-papiers</string>
 <string name="pairing_device_id">ID de l\'appareil : %s</string>
 <string name="pairing_approve_command">Approuver la commande (copie)</string>
 <string name="pairing_reject_command">Rejeter la commande (Copie)</string>
+<string name="pairing_host_command_required">Exécutez ceci sur l’hôte OpenClaw : %1$s</string>
 <string name="pairing_refresh_status">Actualiser l\'état</string>
 <string name="pairing_guide_title">Comment approuver cet appareil :</string>
 <string name="pairing_guide_step_1">1. Accédez au terminal de votre serveur OpenClaw.</string>

@@ -358,7 +358,7 @@
 <string name="fix_request_message">現在のAPIトークンに \'operator.read\' 権限を付与してください。</string>
 <string name="action_ask_ai">AIに修正を依頼</string>
 <string name="pairing_required_title">デバイスのペアリングが必要です</string>
-<string name="pairing_required_desc">このデバイスはまだサーバーで承認されていません。まず WakeHermesClaw が OpenClaw 経由で承認を試みます。使えない場合はホスト側でコマンドを実行してください。</string>
+<string name="pairing_required_desc">このデバイスはまだサーバーで承認されていません。WakeHermesClaw はセットアップリンクのホストコマンド経由で自動承認を試みます。使えない場合はホスト側でコマンドを実行してください。</string>
 <string name="pairing_requested_scopes">要求する OpenClaw 権限: operator.read, operator.write, operator.admin, operator.pairing, operator.talk.secrets, operator.approvals。</string>
 <string name="pairing_copy_command">コマンドをコピー</string>
 <string name="pairing_command_copied">コマンドをクリップボードにコピーしました</string>
@@ -370,6 +370,7 @@
 <string name="pairing_gateway_auto_running">OpenClaw経由で自動承認しています...</string>
 <string name="pairing_gateway_approve_sent">ペアリングを承認しました。接続を更新しています...</string>
 <string name="pairing_gateway_failed">OpenClawでの承認に失敗しました。</string>
+<string name="pairing_host_command_required">OpenClaw ホストで実行してください: %1$s</string>
 <string name="pairing_terminal_running">Terminalで承認コマンドを実行中...</string>
 <string name="pairing_terminal_auto_running">Terminalに接続済みです。承認コマンドを自動実行しています...</string>
 <string name="pairing_terminal_approve_sent">承認コマンドを送信しました。接続を更新しています...</string>

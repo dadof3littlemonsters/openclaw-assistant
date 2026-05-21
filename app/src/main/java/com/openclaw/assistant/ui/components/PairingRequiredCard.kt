@@ -48,17 +48,6 @@ fun PairingRequiredCard(deviceId: String, displayName: String = "") {
 
     suspend fun approveWithBestRoute(isAuto: Boolean) {
         runningCommand = true
-        commandStatus = context.getString(
-            if (isAuto) R.string.pairing_gateway_auto_running else R.string.pairing_gateway_running,
-        )
-
-        val gatewayResult = nodeRuntime.approvePendingPairingForDevice(deviceId)
-        if (gatewayResult.approved) {
-            runningCommand = false
-            commandStatus = context.getString(R.string.pairing_gateway_approve_sent)
-            nodeRuntime.refreshGatewayConnection()
-            return
-        }
 
         if (TerminalCommandClient.isConfigured(context) || HermesTerminalClient.resolveEndpoint(context) != null) {
             commandStatus = context.getString(
@@ -88,8 +77,7 @@ fun PairingRequiredCard(deviceId: String, displayName: String = "") {
         }
 
         runningCommand = false
-        commandStatus = gatewayResult.message?.takeIf { it.isNotBlank() }
-            ?: context.getString(R.string.pairing_gateway_failed)
+        commandStatus = context.getString(R.string.pairing_host_command_required, approveCommand)
         if (!isAuto) {
             val clip = ClipData.newPlainText("OpenClaw Approve", approveCommand)
             clipboardManager.setPrimaryClip(clip)
@@ -154,6 +142,19 @@ fun PairingRequiredCard(deviceId: String, displayName: String = "") {
                 text = stringResource(R.string.pairing_requested_scopes),
                 style = MaterialTheme.typography.bodySmall
             )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            SelectionContainer {
+                Text(
+                    text = approveCommand,
+                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.error.copy(alpha = 0.1f), RoundedCornerShape(4.dp))
+                        .padding(horizontal = 8.dp, vertical = 6.dp)
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
