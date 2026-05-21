@@ -703,6 +703,7 @@ internal fun applyPairingPayload(
             .copy(
                 id = target?.id ?: incomingConfig.id,
                 createdAt = target?.createdAt ?: System.currentTimeMillis(),
+                apiKeyOrToken = incomingConfig.apiKeyOrToken ?: target?.apiKeyOrToken,
             )
         duplicates.filterNot { it.id == config.id }.forEach { repo.delete(it.id) }
         repo.upsert(config)

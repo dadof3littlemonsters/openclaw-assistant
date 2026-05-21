@@ -568,7 +568,7 @@ private fun ConnectionStep(
                 color = OnboardingTextSecondary
             )
             Spacer(modifier = Modifier.height(8.dp))
-            CommandBlock("agentvoice-pair --public-tunnel --terminal-qr")
+            CommandBlock("agentvoice-pair")
             Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedButton(
@@ -780,7 +780,7 @@ private fun AgentVoiceUnifiedPairingContent(configuredBackendCount: Int) {
                 Text(stringResource(R.string.av_pairing_card_step1), style = MaterialTheme.typography.bodyMedium, color = OnboardingTextPrimary)
                 CommandBlock("curl -fsSL https://raw.githubusercontent.com/yuga-hashimoto/openclaw-assistant/main/integrations/agentvoice-pair/install.sh | bash")
                 Text(stringResource(R.string.av_pairing_card_step2), style = MaterialTheme.typography.bodyMedium, color = OnboardingTextPrimary)
-                CommandBlock("agentvoice-pair --public-tunnel --terminal-qr")
+                CommandBlock("agentvoice-pair")
                 Text(stringResource(R.string.av_pairing_card_step3), style = MaterialTheme.typography.bodyMedium, color = OnboardingTextPrimary)
                 Text(stringResource(R.string.av_pairing_card_note), style = MaterialTheme.typography.bodySmall, color = OnboardingTextSecondary)
                 if (configuredBackendCount > 0) {
@@ -1662,11 +1662,7 @@ private suspend fun sendSetupProbeMessage(
 @Composable
 private fun PairingGuideBlock(deviceId: String?) {
     val context = LocalContext.current
-    val approveCmd = if (deviceId != null) {
-        context.getString(R.string.approve_command_format, deviceId)
-    } else {
-        "openclaw devices approve <RequestId>"
-    }
+    val approveCmd = context.getString(R.string.approve_command_format, deviceId.orEmpty())
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -1690,7 +1686,6 @@ private fun PairingGuideBlock(deviceId: String?) {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        CommandBlock("openclaw devices list")
         CommandBlock(approveCmd)
         Text(
             text = stringResource(R.string.setup_guide_pairing_retest_desc),

@@ -340,7 +340,7 @@
 <string name="pairing_guide_step_2">2. Approve कमांड को पेस्ट करें और चलाएँ।</string>
 <string name="pairing_guide_step_3">3. एक बार जब सर्वर कहता है \"डिवाइस स्वीकृत है\", तो नीचे ताज़ा स्थिति पर टैप करें।</string>
 <string name="pairing_troubleshooting_title">समस्या निवारण</string>
-<string name="pairing_troubleshooting_desc">• सुनिश्चित करें कि सेटिंग्स में सर्वर यूआरएल सही है।\n• यदि कमांड विफल हो जाता है, तो जांचें कि क्या ओपनक्लाव सीएलआई स्थापित है।\n• आप इसका उपयोग करके मैन्युअल रूप से भी अनुमोदन कर सकते हैं: openclaw devices approve &amp;lt;REQUEST_ID&amp;gt;</string>
+<string name="pairing_troubleshooting_desc">• सुनिश्चित करें कि सेटिंग्स में सर्वर यूआरएल सही है।\n• यदि कमांड विफल हो जाता है, तो जांचें कि क्या ओपनक्लाव सीएलआई स्थापित है।\n• आप इसका उपयोग करके मैन्युअल रूप से भी अनुमोदन कर सकते हैं: openclaw devices approve --latest</string>
 <string name="language_section">भाषा</string>
 <string name="support_section">सहायता</string>
 <string name="report_issue">रिपोर्ट मुद्दा</string>
@@ -470,7 +470,7 @@
 <string name="setup_guide_mode_setup_code">OpenClaw</string>
 <string name="setup_guide_mode_manual">मैनुअल</string>
 <string name="setup_guide_setup_code_label">सेटअप कोड</string>
-<string name="setup_guide_setup_code_hint">`openclaw qr --setup-code-only` से कोड चिपकाएँ</string>
+<string name="setup_guide_setup_code_hint">`agentvoice-pair` से code चिपकाएँ</string>
 <string name="setup_guide_manual_host">मेज़बान</string>
 <string name="setup_guide_manual_port">पत्तन</string>
 <string name="setup_guide_manual_tls">टीएलएस का प्रयोग करें</string>
@@ -575,11 +575,11 @@
 <string name="permission_summary_title">Permissions Summary</string>
 <string name="permission_summary_format">%1$d standard permissions, %2$d special access granted</string>
     <!-- Missing translations -->
-    <string name="approve_command_format">openclaw devices approve $(openclaw devices list --json | jq -r \'.pending[] | select(.deviceId == \"%s\") | .requestId\')</string>
+    <string name="approve_command_format">openclaw devices approve --latest</string>
     <string name="credits_support_description">このアプリが役に立った場合は、Ko-fiでの支援をご検討ください。</string>
     <string name="credits_support_kofi_button">Support the Developer</string>
     <string name="credits_support_title">開発をサポートする</string>
-    <string name="operator_offline_command">openclaw devices approve $(openclaw devices list --json | tr \'{\' \'\\n\' | grep \'\"deviceId\":\"%s\"\' | grep -o \'\"requestId\":\"[^\"]*\"\' | cut -d\'\"\' -f4)</string>
+    <string name="operator_offline_command">openclaw devices approve --latest</string>
     <string name="qr_scan_desc">Align the QR code within the frame to scan it</string>
     <string name="qr_scan_prompt">Scan QR Code</string>
     <string name="qr_scan_unavailable">QR स्कैनिंग उपलब्ध नहीं है। कृपया Google Play Services अपडेट करें।</string>

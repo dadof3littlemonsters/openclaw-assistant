@@ -410,6 +410,16 @@ function routeFor(url) {
   return { ...fallback, path: url || '/' };
 }
 
+function sanitizeUpgradeHeaders(headers, target) {
+  const result = { ...headers };
+  if (target.port === 9119) {
+    delete result['forwarded'];
+    delete result['x-forwarded-for'];
+    delete result['x-real-ip'];
+  }
+  return result;
+}
+
 const server = http.createServer((req, res) => {
   const target = routeFor(req.url);
   const headers = { ...req.headers };
@@ -431,7 +441,7 @@ const server = http.createServer((req, res) => {
 server.on('upgrade', (req, socket, head) => {
   const target = routeFor(req.url);
   const upstream = net.connect(target.port, target.host, () => {
-    const headers = { ...req.headers };
+    const headers = sanitizeUpgradeHeaders(req.headers, target);
     if (target.rewriteHost) headers.host = `${target.host}:${target.port}`;
     const lines = [`${req.method} ${target.path} HTTP/${req.httpVersion}`];
     for (const [key, value] of Object.entries(headers)) {
@@ -1501,7 +1511,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     p.add_argument("--yes", action="store_true", help="Accept detected defaults without prompts. This is the normal behavior.")
     p.add_argument("--no-lan", action="store_true", help="Do not add LAN endpoint candidates automatically.")
     p.add_argument("--no-tailscale", action="store_true", help="Do not add Tailscale endpoint candidates automatically.")
-    p.add_argument("--public-tunnel", action="store_true", help="Start temporary public tunnel URLs for detected local backends.")
+    p.add_argument("--public-tunnel", action="store_true", default=True, help="Start temporary public tunnel URLs for detected local backends. This is the default.")
     p.add_argument("--no-public-tunnel", action="store_true", help="Do not offer temporary public tunnels.")
     p.add_argument(
         "--tunnel-provider",
@@ -1510,7 +1520,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         help="Public tunnel provider for --public-tunnel. Auto prefers ngrok, then Cloudflare.",
     )
     p.add_argument("--large-qr", action="store_true", help="Render a larger legacy ASCII QR instead of the compact terminal QR.")
-    p.add_argument("--terminal-qr", action="store_true", help="Always print the terminal QR even when it does not fit the current terminal.")
+    p.add_argument("--terminal-qr", action="store_true", default=True, help="Always print the terminal QR even when it does not fit the current terminal. This is the default.")
+    p.add_argument("--no-terminal-qr", action="store_true", help="Skip the terminal QR when it does not fit the current terminal.")
     p.add_argument("--no-open", action="store_true", help="Do not open the generated QR image automatically.")
     p.set_defaults(runs=None, streaming=None)
     args = p.parse_args(argv)
@@ -1559,7 +1570,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         include_hermes = auto_hermes
         include_openclaw = auto_openclaw
     include_tailscale = tailscale_installed and not args.no_tailscale and (not args.interactive or ask_yes_no("Include Tailscale/VPN endpoint candidates?", True))
-    use_public_tunnel = args.public_tunnel
+    use_public_tunnel = args.public_tunnel and not args.no_public_tunnel
     if (
         not use_public_tunnel
         and not args.no_public_tunnel
@@ -1600,7 +1611,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             if dashboard_public_url and wait_for_http_url(dashboard_public_url, timeout_seconds=8.0):
                 terminal_pairing = dict(terminal_pairing)
                 terminal_pairing["url"] = dashboard_public_url
-            elif args.public_tunnel:
+            elif use_public_tunnel:
                 fallback = dashboard_terminal_url(args.no_tailscale, args.no_lan)
                 terminal_pairing = dict(terminal_pairing)
                 terminal_pairing["url"] = fallback
@@ -1667,7 +1678,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     if include_openclaw:
         if args.openclaw_setup_code:
             openclaw_setup_code = args.openclaw_setup_code
-        elif args.public_tunnel and openclaw_port_open:
+        elif use_public_tunnel and openclaw_port_open:
             openclaw_setup_code = openclaw_setup_code_from_local_install() or discovered_openclaw_setup_code
         else:
             openclaw_setup_code = discovered_openclaw_setup_code or openclaw_setup_code_from_local_install()
@@ -1675,9 +1686,9 @@ def main(argv: Optional[List[str]] = None) -> int:
             openclaw_setup_code = setup_code_with_url(openclaw_setup_code, openclaw_public_url)
         elif openclaw_public_url and openclaw_setup_code:
             print(f"Skipping OpenClaw public tunnel because /health is not reachable yet: {openclaw_public_url}", file=sys.stderr)
-            if args.public_tunnel:
+            if use_public_tunnel:
                 openclaw_setup_code = None
-        elif args.public_tunnel and openclaw_port_open:
+        elif use_public_tunnel and openclaw_port_open:
             print("OpenClaw public tunnel could not be created; refusing to emit a phone QR with a loopback/Tailscale-only URL.", file=sys.stderr)
             openclaw_setup_code = None
         if not openclaw_setup_code and args.interactive:
@@ -1730,7 +1741,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         print("  Opened the QR image in your desktop viewer.")
     else:
         print("  Open this file if the terminal QR does not fit on screen.")
-    if fits_terminal or args.terminal_qr or args.large_qr:
+    if fits_terminal or (args.terminal_qr and not args.no_terminal_qr) or args.large_qr:
         print()
         rendered = render_qr(qr_payload, compact = not args.large_qr)
         if not rendered:

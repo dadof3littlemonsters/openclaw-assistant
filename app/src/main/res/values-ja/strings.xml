@@ -381,7 +381,7 @@
 <string name="pairing_guide_step_2">2. 承認コマンドを貼り付けて実行します。</string>
 <string name="pairing_guide_step_3">3. サーバーで「Device approved」と表示されたら、下の「ステータスを更新」をタップします。</string>
 <string name="pairing_troubleshooting_title">トラブルシューティング</string>
-<string name="pairing_troubleshooting_desc">• 設定のサーバーURLが正しいか確認してください。\n• コマンドが失敗する場合は、openclaw CLIがインストールされているか確認してください。\n• 手動で承認する場合: openclaw devices approve &amp;lt;REQUEST_ID&amp;gt;</string>
+<string name="pairing_troubleshooting_desc">• 設定のサーバーURLが正しいか確認してください。\n• コマンドが失敗する場合は、openclaw CLIがインストールされているか確認してください。\n• 手動で承認する場合: openclaw devices approve --latest</string>
 <string name="language_section">言語</string>
 <string name="support_section">サポート</string>
 <string name="report_issue">問題を報告</string>
@@ -517,7 +517,7 @@
 <string name="setup_guide_mode_setup_code">OpenClaw</string>
 <string name="setup_guide_mode_manual">手動入力</string>
 <string name="setup_guide_setup_code_label">セットアップコード</string>
-<string name="setup_guide_setup_code_hint">`agentvoice-pair --public-tunnel --terminal-qr` で取得したコードを貼り付けてください</string>
+<string name="setup_guide_setup_code_hint">`agentvoice-pair` で取得したコードを貼り付けてください</string>
 <string name="setup_guide_manual_host">ホスト</string>
 <string name="setup_guide_manual_port">ポート</string>
 <string name="setup_guide_manual_tls">TLSを使用</string>
@@ -636,11 +636,11 @@
     <string name="qr_scan_unavailable">QRスキャンが利用できません。Google Play開発者サービスを更新してください。</string>
 
     <!-- Missing translations -->
-    <string name="approve_command_format">openclaw devices approve $(openclaw devices list --json | jq -r \'.pending[] | select(.deviceId == \"%s\") | .requestId\')</string>
+    <string name="approve_command_format">openclaw devices approve --latest</string>
     <string name="credits_support_description">このアプリが役に立った場合は、Ko-fiでの支援をご検討ください。</string>
     <string name="credits_support_kofi_button">Support the Developer</string>
     <string name="credits_support_title">開発をサポートする</string>
-    <string name="operator_offline_command">openclaw devices approve $(openclaw devices list --json | tr \'{\' \'\\n\' | grep \'\"deviceId\":\"%s\"\' | grep -o \'\"requestId\":\"[^\"]*\"\' | cut -d\'\"\' -f4)</string>
+    <string name="operator_offline_command">openclaw devices approve --latest</string>
     <string name="reject_command_format">openclaw devices reject $(openclaw devices list --json | jq -r \'.pending[] | select(.deviceId == \"%s\") | .requestId\')</string>
 
     <!-- Bottom tab navigation -->

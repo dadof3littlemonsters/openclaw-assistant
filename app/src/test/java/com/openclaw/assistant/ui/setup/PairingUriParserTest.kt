@@ -73,7 +73,7 @@ class PairingUriParserTest {
             scheme = "agentvoice",
             host = "setup",
             u = listOf("http://tail:8642", "http://lan:8642", "http://127.0.0.1:8642"),
-            params = mapOf("hm" to "default", "hr" to "0", "hs" to "1", "oc" to "abc")
+            params = mapOf("hk" to "api-key", "hm" to "default", "hr" to "0", "hs" to "1", "oc" to "abc")
         )
 
         val p = parsePairingUri(u)!!
@@ -81,6 +81,7 @@ class PairingUriParserTest {
         val h = p.hermes!!
         assertEquals("http://tail:8642", h.baseUrl)
         assertEquals(listOf("http://lan:8642"), h.secondaryUrls)
+        assertEquals("api-key", h.apiKey)
     }
 
     @Test fun `combined setup json supports Hermes urls and OpenClaw code`() {

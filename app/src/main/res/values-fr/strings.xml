@@ -340,7 +340,7 @@ Pour plus de détails, consultez le site officiel de VOICEVOX.</string>
 <string name="pairing_guide_step_2">2. Collez et exécutez la commande Approuver.</string>
 <string name="pairing_guide_step_3">3. Une fois que le serveur indique \"Appareil approuvé\", appuyez sur Actualiser l\'état ci-dessous.</string>
 <string name="pairing_troubleshooting_title">Dépannage</string>
-<string name="pairing_troubleshooting_desc">• Assurez-vous que l\'URL du serveur dans Paramètres est correcte.\n• Si la commande échoue, vérifiez si la CLI openclaw est installée.\n• Vous pouvez également approuver manuellement en utilisant : openclaw devices approve &amp;lt;REQUEST_ID&amp;gt;</string>
+<string name="pairing_troubleshooting_desc">• Assurez-vous que l\'URL du serveur dans Paramètres est correcte.\n• Si la commande échoue, vérifiez si la CLI openclaw est installée.\n• Vous pouvez également approuver manuellement en utilisant : openclaw devices approve --latest</string>
 <string name="language_section">Langue</string>
 <string name="support_section">Support</string>
 <string name="report_issue">Signaler un problème</string>
@@ -470,7 +470,7 @@ Pour plus de détails, consultez le site officiel de VOICEVOX.</string>
 <string name="setup_guide_mode_setup_code">OpenClaw</string>
 <string name="setup_guide_mode_manual">Manuel</string>
 <string name="setup_guide_setup_code_label">CODE DE CONFIGURATION</string>
-<string name="setup_guide_setup_code_hint">Coller le code depuis `openclaw qr --setup-code-only`</string>
+<string name="setup_guide_setup_code_hint">Coller le code depuis `agentvoice-pair`</string>
 <string name="setup_guide_manual_host">HÔTE</string>
 <string name="setup_guide_manual_port">PORT</string>
 <string name="setup_guide_manual_tls">Utiliser TLS</string>
@@ -575,11 +575,11 @@ Pour plus de détails, consultez le site officiel de VOICEVOX.</string>
 <string name="permission_summary_title">Résumé des autorisations</string>
 <string name="permission_summary_format">%1$d autorisations standard, %2$d accès spéciaux accordés</string>
     <!-- Missing translations -->
-    <string name="approve_command_format">openclaw devices approve $(openclaw devices list --json | jq -r \'.pending[] | select(.deviceId == \"%s\") | .requestId\')</string>
+    <string name="approve_command_format">openclaw devices approve --latest</string>
     <string name="credits_support_description">このアプリが役に立った場合は、Ko-fiでの支援をご検討ください。</string>
     <string name="credits_support_kofi_button">Support the Developer</string>
     <string name="credits_support_title">開発をサポートする</string>
-    <string name="operator_offline_command">openclaw devices approve $(openclaw devices list --json | tr \'{\' \'\\n\' | grep \'\"deviceId\":\"%s\"\' | grep -o \'\"requestId\":\"[^\"]*\"\' | cut -d\'\"\' -f4)</string>
+    <string name="operator_offline_command">openclaw devices approve --latest</string>
     <string name="qr_scan_desc">Align the QR code within the frame to scan it</string>
     <string name="qr_scan_prompt">Scan QR Code</string>
     <string name="qr_scan_unavailable">La numérisation QR n\'est pas disponible. Veuillez mettre à jour les services Google Play.</string>

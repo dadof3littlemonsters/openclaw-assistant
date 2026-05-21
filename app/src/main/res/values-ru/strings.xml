@@ -340,7 +340,7 @@
 <string name="pairing_guide_step_2">2. Вставьте и запустите команду «Утвердить».</string>
 <string name="pairing_guide_step_3">3. Как только сервер сообщит: «Устройство одобрено», нажмите «Обновить статус» ниже.</string>
 <string name="pairing_troubleshooting_title">Устранение неполадок</string>
-<string name="pairing_troubleshooting_desc">• Убедитесь, что URL-адрес сервера в настройках указан правильно.\n• Если команда не выполнена, проверьте, установлен ли интерфейс командной строки openclaw.\n• Вы также можете подтвердить это вручную, используя: openclaw devices approve &amp;lt;REQUEST_ID&amp;gt;</string>
+<string name="pairing_troubleshooting_desc">• Убедитесь, что URL-адрес сервера в настройках указан правильно.\n• Если команда не выполнена, проверьте, установлен ли интерфейс командной строки openclaw.\n• Вы также можете подтвердить это вручную, используя: openclaw devices approve --latest</string>
 <string name="language_section">Язык</string>
 <string name="support_section">Поддержка</string>
 <string name="report_issue">Сообщить о проблеме</string>
@@ -470,7 +470,7 @@
 <string name="setup_guide_mode_setup_code">OpenClaw</string>
 <string name="setup_guide_mode_manual">Вручную</string>
 <string name="setup_guide_setup_code_label">КОД НАСТРОЙКИ</string>
-<string name="setup_guide_setup_code_hint">Вставьте код из `openclaw qr --setup-code-only`</string>
+<string name="setup_guide_setup_code_hint">Вставьте код из `agentvoice-pair`</string>
 <string name="setup_guide_manual_host">ХОСТ</string>
 <string name="setup_guide_manual_port">PORT</string>
 <string name="setup_guide_manual_tls">Использовать TLS</string>
@@ -575,11 +575,11 @@
 <string name="permission_summary_title">Permissions Summary</string>
 <string name="permission_summary_format">%1$d standard permissions, %2$d special access granted</string>
     <!-- Missing translations -->
-    <string name="approve_command_format">openclaw devices approve $(openclaw devices list --json | jq -r \'.pending[] | select(.deviceId == \"%s\") | .requestId\')</string>
+    <string name="approve_command_format">openclaw devices approve --latest</string>
     <string name="credits_support_description">このアプリが役に立った場合は、Ko-fiでの支援をご検討ください。</string>
     <string name="credits_support_kofi_button">Support the Developer</string>
     <string name="credits_support_title">開発をサポートする</string>
-    <string name="operator_offline_command">openclaw devices approve $(openclaw devices list --json | tr \'{\' \'\\n\' | grep \'\"deviceId\":\"%s\"\' | grep -o \'\"requestId\":\"[^\"]*\"\' | cut -d\'\"\' -f4)</string>
+    <string name="operator_offline_command">openclaw devices approve --latest</string>
     <string name="qr_scan_desc">Align the QR code within the frame to scan it</string>
     <string name="qr_scan_prompt">Scan QR Code</string>
     <string name="qr_scan_unavailable">Сканирование QR недоступно. Пожалуйста, обновите сервисы Google Play.</string>

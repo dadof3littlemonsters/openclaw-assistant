@@ -340,7 +340,7 @@
 <string name="pairing_guide_step_2">2.粘贴并运行批准命令。</string>
 <string name="pairing_guide_step_3">3.服务器提示“设备已批准”后，点击下面的“刷新状态”。</string>
 <string name="pairing_troubleshooting_title">疑难解答</string>
-<string name="pairing_troubleshooting_desc">• 确保“设置”中的服务器 URL 正确。\n• 如果命令失败，请检查 openclaw CLI 是否已安装。\n• 您还可以使用以下方式手动批准：openclaw devices approve &amp;lt;REQUEST_ID&amp;gt;</string>
+<string name="pairing_troubleshooting_desc">• 确保“设置”中的服务器 URL 正确。\n• 如果命令失败，请检查 openclaw CLI 是否已安装。\n• 您还可以使用以下方式手动批准：openclaw devices approve --latest</string>
 <string name="language_section">语言</string>
 <string name="support_section">支持</string>
 <string name="report_issue">报告问题</string>
@@ -470,7 +470,7 @@
 <string name="setup_guide_mode_setup_code">OpenClaw</string>
 <string name="setup_guide_mode_manual">手动</string>
 <string name="setup_guide_setup_code_label">设置代码</string>
-<string name="setup_guide_setup_code_hint">粘贴来自`openclaw qr --setup-code-only`的代码</string>
+<string name="setup_guide_setup_code_hint">粘贴来自 `agentvoice-pair` 的代码</string>
 <string name="setup_guide_manual_host">主机</string>
 <string name="setup_guide_manual_port">端口</string>
 <string name="setup_guide_manual_tls">使用 TLS</string>
@@ -575,11 +575,11 @@
 <string name="permission_summary_title">Permissions Summary</string>
 <string name="permission_summary_format">%1$d standard permissions, %2$d special access granted</string>
     <!-- Missing translations -->
-    <string name="approve_command_format">openclaw devices approve $(openclaw devices list --json | jq -r \'.pending[] | select(.deviceId == \"%s\") | .requestId\')</string>
+    <string name="approve_command_format">openclaw devices approve --latest</string>
     <string name="credits_support_description">このアプリが役に立った場合は、Ko-fiでの支援をご検討ください。</string>
     <string name="credits_support_kofi_button">Support the Developer</string>
     <string name="credits_support_title">開発をサポートする</string>
-    <string name="operator_offline_command">openclaw devices approve $(openclaw devices list --json | tr \'{\' \'\\n\' | grep \'\"deviceId\":\"%s\"\' | grep -o \'\"requestId\":\"[^\"]*\"\' | cut -d\'\"\' -f4)</string>
+    <string name="operator_offline_command">openclaw devices approve --latest</string>
     <string name="qr_scan_desc">Align the QR code within the frame to scan it</string>
     <string name="qr_scan_prompt">Scan QR Code</string>
     <string name="qr_scan_unavailable">QR 扫描不可用。请更新 Google Play 服务。</string>
