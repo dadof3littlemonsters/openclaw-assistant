@@ -21,7 +21,9 @@ object TerminalCommandClient {
 
     fun isConfigured(context: Context): Boolean {
         val prefs = (context.applicationContext as OpenClawApplication).nodeRuntime.prefs
-        return !prefs.loadTerminalCommandUrl().isNullOrBlank() && !prefs.loadTerminalCommandSecret().isNullOrBlank()
+        val hasUrl = !prefs.loadTerminalCommandUrl().isNullOrBlank()
+        val hasSecret = !prefs.loadTerminalCommandSecret().isNullOrBlank()
+        return hasUrl && hasSecret
     }
 
     suspend fun run(context: Context, command: String, timeoutSeconds: Int = 30): Result<CommandResult> =

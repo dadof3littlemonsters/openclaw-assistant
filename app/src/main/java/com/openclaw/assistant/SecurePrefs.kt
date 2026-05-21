@@ -199,23 +199,31 @@ class SecurePrefs(context: Context) {
   fun loadTerminalCommandUrl(): String? {
     val key = "terminal.command.url.${_instanceId.value}"
     val stored = prefs.getString(key, null)?.trim()
+      ?: prefs.getString("terminal.command.url", null)?.trim()
     return stored?.takeIf { it.isNotEmpty() }
   }
 
   fun saveTerminalCommandUrl(url: String) {
     val key = "terminal.command.url.${_instanceId.value}"
-    prefs.edit { putString(key, url.trim()) }
+    prefs.edit {
+      putString(key, url.trim())
+      putString("terminal.command.url", url.trim())
+    }
   }
 
   fun loadTerminalCommandSecret(): String? {
     val key = "terminal.command.secret.${_instanceId.value}"
     val stored = prefs.getString(key, null)?.trim()
+      ?: prefs.getString("terminal.command.secret", null)?.trim()
     return stored?.takeIf { it.isNotEmpty() }
   }
 
   fun saveTerminalCommandSecret(secret: String) {
     val key = "terminal.command.secret.${_instanceId.value}"
-    prefs.edit { putString(key, secret.trim()) }
+    prefs.edit {
+      putString(key, secret.trim())
+      putString("terminal.command.secret", secret.trim())
+    }
   }
 
   fun loadGatewayTlsFingerprint(stableId: String): String? {

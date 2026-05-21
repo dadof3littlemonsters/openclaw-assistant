@@ -49,6 +49,19 @@ fun PairingRequiredCard(deviceId: String, displayName: String = "") {
     suspend fun approveWithBestRoute(isAuto: Boolean) {
         runningCommand = true
 
+        suspend fun approveThroughGateway(): Boolean {
+            commandStatus = context.getString(
+                if (isAuto) R.string.pairing_gateway_auto_running else R.string.pairing_gateway_running,
+            )
+            val gatewayResult = nodeRuntime.approvePendingPairingForDevice(deviceId)
+            if (gatewayResult.approved) {
+                commandStatus = context.getString(R.string.pairing_gateway_approve_sent)
+                nodeRuntime.refreshGatewayConnection()
+                return true
+            }
+            return false
+        }
+
         if (TerminalCommandClient.isConfigured(context) || HermesTerminalClient.resolveEndpoint(context) != null) {
             commandStatus = context.getString(
                 if (isAuto) R.string.pairing_terminal_auto_running else R.string.pairing_terminal_running,
@@ -64,6 +77,12 @@ fun PairingRequiredCard(deviceId: String, displayName: String = "") {
                 commandStatus = context.getString(R.string.pairing_terminal_approve_sent)
                 nodeRuntime.refreshGatewayConnection()
             } else {
+                runningCommand = true
+                if (approveThroughGateway()) {
+                    runningCommand = false
+                    return
+                }
+                runningCommand = false
                 commandStatus = context.getString(
                     if (isAuto) R.string.pairing_terminal_auto_failed else R.string.pairing_terminal_failed_copied,
                 )
@@ -73,6 +92,11 @@ fun PairingRequiredCard(deviceId: String, displayName: String = "") {
                     Toast.makeText(context, R.string.pairing_command_copied, Toast.LENGTH_SHORT).show()
                 }
             }
+            return
+        }
+
+        if (approveThroughGateway()) {
+            runningCommand = false
             return
         }
 

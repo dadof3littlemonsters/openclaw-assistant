@@ -714,12 +714,16 @@ internal fun applyPairingPayload(
         val parsed = GatewayConfigUtils.parseGatewayEndpoint(decoded.url) ?: return@let
         val runtime = (context.applicationContext as OpenClawApplication).nodeRuntime
         val settings = SettingsRepository.getInstance(context)
+        val hasHostApproval =
+            !payload.terminalCommandUrl.isNullOrBlank() && !payload.terminalCommandSecret.isNullOrBlank()
+        val bootstrapToken =
+            if (hasHostApproval && decoded.password != null) "" else decoded.bootstrapToken.orEmpty()
         runtime.setManualHost(parsed.host)
         runtime.setManualPort(parsed.port)
         runtime.setManualTls(parsed.tls)
         runtime.prefs.saveTerminalCommandUrl(payload.terminalCommandUrl.orEmpty())
         runtime.prefs.saveTerminalCommandSecret(payload.terminalCommandSecret.orEmpty())
-        runtime.setGatewayBootstrapToken(decoded.bootstrapToken.orEmpty())
+        runtime.setGatewayBootstrapToken(bootstrapToken)
         runtime.setGatewayPassword(decoded.password.orEmpty())
         runtime.setGatewayToken("")
         runtime.prefs.saveGatewayToken(decoded.token.orEmpty())

@@ -68,23 +68,33 @@ class PairingUriParserTest {
         assertEquals(listOf("https://ok"), p.secondaryUrls)
     }
 
-    @Test fun `combined setup uri supports Hermes urls and OpenClaw code`() {
+    @Test fun `combined setup uri supports Hermes urls OpenClaw code and approval endpoint`() {
         val u = uri(
             scheme = "agentvoice",
             host = "setup",
             u = listOf("http://tail:8642", "http://lan:8642", "http://127.0.0.1:8642"),
-            params = mapOf("hk" to "api-key", "hm" to "default", "hr" to "0", "hs" to "1", "oc" to "abc")
+            params = mapOf(
+                "hk" to "api-key",
+                "hm" to "default",
+                "hr" to "0",
+                "hs" to "1",
+                "oc" to "abc",
+                "oau" to "https://terminal.example.com/run",
+                "oas" to "terminal-secret",
+            )
         )
 
         val p = parsePairingUri(u)!!
         assertEquals("abc", p.openClawSetupCode)
+        assertEquals("https://terminal.example.com/run", p.terminalCommandUrl)
+        assertEquals("terminal-secret", p.terminalCommandSecret)
         val h = p.hermes!!
         assertEquals("http://tail:8642", h.baseUrl)
         assertEquals(listOf("http://lan:8642"), h.secondaryUrls)
         assertEquals("api-key", h.apiKey)
     }
 
-    @Test fun `combined setup json supports Hermes urls and OpenClaw code`() {
+    @Test fun `combined setup json supports Hermes urls OpenClaw code and approval endpoint`() {
         val raw = """
             {
               "type": "agent_voice_setup",
@@ -100,13 +110,19 @@ class PairingUriParserTest {
                 }
               },
               "openclaw": {
-                "setupCode": "openclaw-code"
+                "setupCode": "openclaw-code",
+                "approval": {
+                  "url": "https://terminal.example.com/run",
+                  "secret": "terminal-secret"
+                }
               }
             }
         """.trimIndent()
 
         val p = parsePairingPayload(raw)!!
         assertEquals("openclaw-code", p.openClawSetupCode)
+        assertEquals("https://terminal.example.com/run", p.terminalCommandUrl)
+        assertEquals("terminal-secret", p.terminalCommandSecret)
         val h = p.hermes!!
         assertEquals("http://tail:8642", h.baseUrl)
         assertEquals(listOf("http://lan:8642"), h.secondaryUrls)

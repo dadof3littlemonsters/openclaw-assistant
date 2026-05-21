@@ -524,6 +524,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -550,6 +551,82 @@ def resolve_openclaw_latest_approval(command, proc, timeout):
     if not match:
         return proc
     return run_command(f"openclaw devices approve {match.group(1)}", timeout)
+
+def approve_latest_openclaw(timeout):
+    last_error = None
+    approved_stdout = ""
+    approved_stderr = ""
+    attempts = max(1, min(int(timeout * 2), 120))
+    for _ in range(attempts):
+        list_proc = run_command("openclaw devices list --json", timeout)
+        if list_proc.returncode != 0:
+            return list_proc
+        try:
+            payload = json.loads(list_proc.stdout or "{}")
+            pending = payload.get("pending") or []
+            if not pending:
+                last_error = "No pending OpenClaw pairing request.\n"
+                time.sleep(0.5)
+                continue
+            operator_pending = [
+                item for item in pending
+                if item.get("role") == "operator"
+                or "operator" in (item.get("roles") or [])
+                or any(str(scope).startswith("operator.") for scope in (item.get("scopes") or []))
+            ]
+            if not operator_pending:
+                selected = max(pending, key=lambda item: int(item.get("ts") or 0))
+                request_id = str(selected.get("requestId") or "").strip()
+                if not request_id:
+                    last_error = "Latest OpenClaw pairing request has no requestId.\n"
+                    time.sleep(0.5)
+                    continue
+                approve_proc = run_command(f"openclaw devices approve {request_id}", timeout)
+                if approve_proc.returncode == 0:
+                    approved_stdout += approve_proc.stdout or ""
+                    approved_stderr += approve_proc.stderr or ""
+                    last_error = "Approved a preliminary OpenClaw node request; waiting for operator request.\n"
+                    time.sleep(0.5)
+                    continue
+                if "unknown requestId" in ((approve_proc.stderr or "") + (approve_proc.stdout or "")):
+                    last_error = approve_proc.stderr or approve_proc.stdout or "OpenClaw pairing request disappeared before approval.\n"
+                    time.sleep(0.4)
+                    continue
+                return approve_proc
+            selected = max(operator_pending, key=lambda item: int(item.get("ts") or 0))
+            request_id = str(selected.get("requestId") or "").strip()
+        except Exception as exc:
+            return subprocess.CompletedProcess(
+                args="openclaw devices approve --latest",
+                returncode=1,
+                stdout=list_proc.stdout,
+                stderr=f"Could not parse OpenClaw pending device list: {exc}\n",
+            )
+        if not request_id:
+            return subprocess.CompletedProcess(
+                args="openclaw devices approve --latest",
+                returncode=1,
+                stdout=list_proc.stdout,
+                stderr="Latest OpenClaw pairing request has no requestId.\n",
+            )
+        approve_proc = run_command(f"openclaw devices approve {request_id}", timeout)
+        if approve_proc.returncode == 0:
+            return subprocess.CompletedProcess(
+                args="openclaw devices approve --latest",
+                returncode=0,
+                stdout=approved_stdout + (approve_proc.stdout or ""),
+                stderr=approved_stderr + (approve_proc.stderr or ""),
+            )
+        if "unknown requestId" not in ((approve_proc.stderr or "") + (approve_proc.stdout or "")):
+            return approve_proc
+        last_error = approve_proc.stderr or approve_proc.stdout or "OpenClaw pairing request disappeared before approval.\n"
+        time.sleep(0.4)
+    return subprocess.CompletedProcess(
+        args="openclaw devices approve --latest",
+        returncode=1,
+        stdout="",
+        stderr=last_error or "No pending OpenClaw operator pairing request.\n",
+    )
 
 class TerminalHandler(BaseHTTPRequestHandler):
     server_version = "AgentVoiceTerminal/1"
@@ -590,8 +667,11 @@ class TerminalHandler(BaseHTTPRequestHandler):
         timeout = int(body.get("timeoutSeconds") or 30)
         timeout = max(1, min(timeout, 120))
         try:
-            proc = run_command(command, timeout)
-            proc = resolve_openclaw_latest_approval(command, proc, timeout)
+            if command == "openclaw devices approve --latest":
+                proc = approve_latest_openclaw(timeout)
+            else:
+                proc = run_command(command, timeout)
+                proc = resolve_openclaw_latest_approval(command, proc, timeout)
         except subprocess.TimeoutExpired:
             self._json(504, {"ok": False, "error": "timeout"})
             return
@@ -992,6 +1072,16 @@ def decode_setup_code(code: str) -> Optional[dict]:
 def setup_code_with_url(code: str, url: str) -> str:
     payload = decode_setup_code(code) or {}
     payload["url"] = url.rstrip("/")
+    return encode_setup_code(payload)
+
+
+def setup_code_for_host_approval(code: Optional[str], approval: Optional[dict]) -> Optional[str]:
+    if not code or not approval or not approval.get("url") or not approval.get("secret"):
+        return code
+    payload = decode_setup_code(code)
+    if not payload or not payload.get("password"):
+        return code
+    payload.pop("bootstrapToken", None)
     return encode_setup_code(payload)
 
 
@@ -1721,6 +1811,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         if not openclaw_setup_code:
             print("OpenClaw was detected, but no setup code could be resolved. Skipping OpenClaw.", file=sys.stderr)
             include_openclaw = False
+        openclaw_setup_code = setup_code_for_host_approval(openclaw_setup_code, terminal_command_pairing)
 
     if not include_hermes and not include_openclaw:
         raise SystemExit(
