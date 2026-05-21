@@ -35,7 +35,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.openclaw.assistant.R
 import com.openclaw.assistant.backend.AgentBackendConfig
 import com.openclaw.assistant.backend.AgentClientFactory
 import com.openclaw.assistant.backend.AgentContextInspector
@@ -95,10 +97,20 @@ fun BackendEditorScreen(existingId: String?, onDone: () -> Unit) {
     var hermesModels by remember { mutableStateOf<List<HermesModelOption>>(emptyList()) }
     var hermesProviders by remember { mutableStateOf<List<String>>(emptyList()) }
     val scope = rememberCoroutineScope()
+    val defaultModelName = "default"
+    val inspectingAgentContext = stringResource(R.string.backend_inspecting_agent_context)
+    val loadingHermesModels = stringResource(R.string.backend_loading_hermes_models)
+    val applyingHermesModel = stringResource(R.string.backend_applying_hermes_model)
+    val testingLabel = stringResource(R.string.testing)
+    val loadedModelsFormat = stringResource(R.string.backend_loaded_models)
+    val loadedModelsProviderFormat = stringResource(R.string.backend_loaded_models_provider)
+    val hermesModelUpdatedFormat = stringResource(R.string.backend_hermes_model_updated)
+    val hermesModelsLoadFailedFormat = stringResource(R.string.backend_hermes_models_load_failed)
+    val hermesModelUpdateFailedFormat = stringResource(R.string.backend_hermes_model_update_failed)
 
     Scaffold(topBar = { TopAppBar(title = { Text(if (existing == null) androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.add_backend) else androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.av_backends_edit)) }) }) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp).verticalScroll(rememberScrollState())) {
-            Text("Type", style = MaterialTheme.typography.labelLarge)
+            Text(stringResource(R.string.backend_type), style = MaterialTheme.typography.labelLarge)
             Spacer(Modifier.height(4.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 BackendType.values().forEach { t ->
@@ -110,28 +122,28 @@ fun BackendEditorScreen(existingId: String?, onDone: () -> Unit) {
             }
             Spacer(Modifier.height(16.dp))
 
-            OutlinedTextField(value = displayName, onValueChange = { displayName = it }, label = { Text("Display name") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = displayName, onValueChange = { displayName = it }, label = { Text(stringResource(R.string.backend_display_name)) }, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(8.dp))
-            Text("Agent Context", style = MaterialTheme.typography.labelLarge)
+            Text(stringResource(R.string.backend_agent_context), style = MaterialTheme.typography.labelLarge)
             Spacer(Modifier.height(4.dp))
             OutlinedTextField(
                 value = agentContextName,
                 onValueChange = { agentContextName = it },
-                label = { Text("Profile / agent name (optional)") },
+                label = { Text(stringResource(R.string.backend_agent_context_name)) },
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(4.dp))
             OutlinedTextField(
                 value = agentContextDetail,
                 onValueChange = { agentContextDetail = it },
-                label = { Text("Model / personality note (optional)") },
+                label = { Text(stringResource(R.string.backend_agent_context_detail)) },
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(4.dp))
             OutlinedTextField(
                 value = preferredEndpointRole,
                 onValueChange = { preferredEndpointRole = it },
-                label = { Text("Preferred route label (optional)") },
+                label = { Text(stringResource(R.string.backend_preferred_route_label)) },
                 modifier = Modifier.fillMaxWidth(),
             )
             if (type == BackendType.HERMES_API_SERVER) {
@@ -156,31 +168,31 @@ fun BackendEditorScreen(existingId: String?, onDone: () -> Unit) {
                         preferredEndpointRole = preferredEndpointRole,
                     )
                     scope.launch {
-                        status = "Inspecting agent context..."
+                        status = inspectingAgentContext
                         val inspection = AgentContextInspector().inspect(config)
                         inspection.contextName?.let { agentContextName = it }
                         inspection.contextDetail?.let { agentContextDetail = it }
                         status = inspection.summary
                     }
                 }, enabled = baseUrl.isNotBlank()) {
-                    Text("Inspect Agent Context")
+                    Text(stringResource(R.string.backend_inspect_agent_context))
                 }
             }
             Spacer(Modifier.height(12.dp))
 
             when (type) {
                 BackendType.HERMES_API_SERVER -> {
-                    OutlinedTextField(value = baseUrl, onValueChange = { baseUrl = it }, label = { Text("Primary URL (e.g. http://host:8642)") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = baseUrl, onValueChange = { baseUrl = it }, label = { Text(stringResource(R.string.backend_primary_url_label)) }, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(8.dp))
-                    Text("Additional endpoints — raced in parallel on every connect, fastest reachable route wins:", style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.backend_additional_endpoints_desc), style = MaterialTheme.typography.bodySmall)
                     Spacer(Modifier.height(4.dp))
-                    OutlinedTextField(value = lanUrl, onValueChange = { lanUrl = it }, label = { Text("LAN URL (optional)") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = lanUrl, onValueChange = { lanUrl = it }, label = { Text(stringResource(R.string.backend_lan_url)) }, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(4.dp))
-                    OutlinedTextField(value = tailscaleUrl, onValueChange = { tailscaleUrl = it }, label = { Text("Tailscale URL (optional)") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = tailscaleUrl, onValueChange = { tailscaleUrl = it }, label = { Text(stringResource(R.string.backend_tailscale_url)) }, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(4.dp))
-                    OutlinedTextField(value = publicUrl, onValueChange = { publicUrl = it }, label = { Text("Public URL (optional)") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = publicUrl, onValueChange = { publicUrl = it }, label = { Text(stringResource(R.string.backend_public_url)) }, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(value = token, onValueChange = { token = it }, label = { Text("API key") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = token, onValueChange = { token = it }, label = { Text(stringResource(R.string.av_import_api_key)) }, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(value = modelName, onValueChange = { modelName = it }, label = { Text(androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.av_import_model)) }, modifier = Modifier.fillMaxWidth())
                     Text(androidx.compose.ui.res.stringResource(com.openclaw.assistant.R.string.av_import_model_help), style = MaterialTheme.typography.bodySmall)
@@ -189,43 +201,43 @@ fun BackendEditorScreen(existingId: String?, onDone: () -> Unit) {
                         OutlinedButton(onClick = {
                             val config = buildConfig(existing, type, displayName, baseUrl, token, host, port, useTls, modelName, useRunsApi, useStreaming, setPrimary, listOf(lanUrl, tailscaleUrl, publicUrl).filter { it.isNotBlank() }, agentContextName, agentContextDetail, preferredEndpointRole)
                             scope.launch {
-                                status = "Loading Hermes models..."
+                                status = loadingHermesModels
                                 runCatching { HermesConfigApi().fetchCatalog(config) }
                                     .onSuccess { catalog ->
                                         hermesModels = catalog.models
                                         hermesProviders = catalog.providers
                                         catalog.config?.model?.takeIf { it.isNotBlank() }?.let { modelName = it }
                                         status = buildString {
-                                            append("Loaded ${catalog.models.size} model")
-                                            if (catalog.models.size != 1) append("s")
-                                            catalog.config?.provider?.takeIf { it.isNotBlank() }?.let { append(" · provider: ").append(it) }
+                                            val loaded = loadedModelsFormat.format(catalog.models.size)
+                                            append(loaded)
+                                            catalog.config?.provider?.takeIf { it.isNotBlank() }?.let { append(loadedModelsProviderFormat.format(it)) }
                                         }
                                     }
-                                    .onFailure { status = "Could not load Hermes models: ${it.message ?: it.javaClass.simpleName}" }
+                                    .onFailure { status = hermesModelsLoadFailedFormat.format(it.message ?: it.javaClass.simpleName) }
                             }
                         }, enabled = baseUrl.isNotBlank()) {
-                            Text("Load Models")
+                            Text(stringResource(R.string.backend_load_models))
                         }
                         OutlinedButton(onClick = {
                             val config = buildConfig(existing, type, displayName, baseUrl, token, host, port, useTls, modelName, useRunsApi, useStreaming, setPrimary, listOf(lanUrl, tailscaleUrl, publicUrl).filter { it.isNotBlank() }, agentContextName, agentContextDetail, preferredEndpointRole)
                             scope.launch {
-                                status = "Applying model to Hermes..."
+                                status = applyingHermesModel
                                 runCatching { HermesConfigApi().updateModel(config, modelName) }
                                     .onSuccess { state ->
-                                        val saved = config.copy(modelName = state.model ?: modelName.trim().ifBlank { "default" })
+                                        val saved = config.copy(modelName = state.model ?: modelName.trim().ifBlank { defaultModelName })
                                         repo.upsert(saved)
                                         if (setPrimary) repo.setPrimary(saved.id)
-                                        status = "Hermes model updated: ${state.model ?: modelName}"
+                                        status = hermesModelUpdatedFormat.format(state.model ?: modelName)
                                     }
-                                    .onFailure { status = "Could not update Hermes model: ${it.message ?: it.javaClass.simpleName}" }
+                                    .onFailure { status = hermesModelUpdateFailedFormat.format(it.message ?: it.javaClass.simpleName) }
                             }
                         }, enabled = baseUrl.isNotBlank() && modelName.isNotBlank()) {
-                            Text("Apply to Hermes")
+                            Text(stringResource(R.string.backend_apply_to_hermes))
                         }
                     }
                     if (hermesProviders.isNotEmpty()) {
                         Spacer(Modifier.height(4.dp))
-                        Text("Providers: ${hermesProviders.joinToString(", ")}", style = MaterialTheme.typography.bodySmall)
+                        Text(stringResource(R.string.backend_providers_value, hermesProviders.joinToString(", ")), style = MaterialTheme.typography.bodySmall)
                     }
                     if (hermesModels.isNotEmpty()) {
                         Spacer(Modifier.height(6.dp))
@@ -242,7 +254,7 @@ fun BackendEditorScreen(existingId: String?, onDone: () -> Unit) {
                                 )
                             }
                             if (hermesModels.size > 8) {
-                                Text("+${hermesModels.size - 8} more", style = MaterialTheme.typography.bodySmall)
+                                Text(stringResource(R.string.backend_more_models, hermesModels.size - 8), style = MaterialTheme.typography.bodySmall)
                             }
                         }
                     }
@@ -255,30 +267,30 @@ fun BackendEditorScreen(existingId: String?, onDone: () -> Unit) {
                     }
                 }
                 BackendType.OPENCLAW_GATEWAY -> {
-                    OutlinedTextField(value = host, onValueChange = { host = it }, label = { Text("Host") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = host, onValueChange = { host = it }, label = { Text(stringResource(R.string.gateway_host)) }, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(value = port, onValueChange = { port = it.filter(Char::isDigit) }, label = { Text("Port") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = port, onValueChange = { port = it.filter(Char::isDigit) }, label = { Text(stringResource(R.string.gateway_port)) }, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(value = token, onValueChange = { token = it }, label = { Text("OpenClaw token") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = token, onValueChange = { token = it }, label = { Text(stringResource(R.string.backend_openclaw_token)) }, modifier = Modifier.fillMaxWidth())
                     Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                        Checkbox(checked = useTls, onCheckedChange = { useTls = it }); Text("Use TLS")
+                        Checkbox(checked = useTls, onCheckedChange = { useTls = it }); Text(stringResource(R.string.backend_use_tls))
                     }
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "For pairing, QR-code setup, or discovery, use the OpenClaw setup screen on the Home tab — it handles certificate fingerprints and TLS trust prompts. Save this entry once host/port/token are confirmed.",
+                        stringResource(R.string.backend_openclaw_setup_hint),
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
                 BackendType.OPENCLAW_HTTP -> {
-                    OutlinedTextField(value = baseUrl, onValueChange = { baseUrl = it }, label = { Text("Base URL") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = baseUrl, onValueChange = { baseUrl = it }, label = { Text(stringResource(R.string.backend_base_url)) }, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(value = token, onValueChange = { token = it }, label = { Text("Auth token (optional)") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = token, onValueChange = { token = it }, label = { Text(stringResource(R.string.auth_token_label)) }, modifier = Modifier.fillMaxWidth())
                 }
             }
 
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                Checkbox(checked = setPrimary, onCheckedChange = { setPrimary = it }); Text("Mark as Primary")
+                Checkbox(checked = setPrimary, onCheckedChange = { setPrimary = it }); Text(stringResource(R.string.backend_mark_primary))
             }
 
             Spacer(Modifier.height(16.dp))
@@ -289,17 +301,17 @@ fun BackendEditorScreen(existingId: String?, onDone: () -> Unit) {
                     repo.upsert(config)
                     if (setPrimary) repo.setPrimary(config.id)
                     onDone()
-                }) { Text("Save") }
+                }) { Text(stringResource(R.string.save)) }
 
                 Button(onClick = {
                     val config = buildConfig(existing, type, displayName, baseUrl, token, host, port, useTls, modelName, useRunsApi, useStreaming, setPrimary, secondary, agentContextName, agentContextDetail, preferredEndpointRole)
                     scope.launch {
-                        status = "Testing…"
+                        status = testingLabel
                         val r = withContext(Dispatchers.IO) { AgentClientFactory.create(config).testConnection() }
                         AgentDiagnostics.recordHealth(context, config, r.ok, r.latencyMs, if (r.ok) null else r.message)
                         status = if (r.ok) "✓ ${r.message}" else "✗ ${r.message}"
                     }
-                }) { Text("Test") }
+                }) { Text(stringResource(R.string.av_home_test_short)) }
             }
             status?.let { Spacer(Modifier.height(8.dp)); Text(it, style = MaterialTheme.typography.bodySmall) }
         }

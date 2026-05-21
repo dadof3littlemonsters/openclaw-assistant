@@ -714,7 +714,7 @@ fun ChatAttachmentPreview(attachment: com.openclaw.assistant.chat.ChatMessageCon
                     .clip(RoundedCornerShape(8.dp))
             )
         } else if (failed) {
-            Text("Failed to load image", style = MaterialTheme.typography.bodySmall, color = contentColor.copy(alpha = 0.7f))
+            Text(stringResource(R.string.failed_to_load_image), style = MaterialTheme.typography.bodySmall, color = contentColor.copy(alpha = 0.7f))
         }
     } else {
         Row(
@@ -897,6 +897,12 @@ fun ChatSettingsDialog(
     var modelStatus by remember(selectedBackend?.id) { mutableStateOf<String?>(null) }
     var hermesModels by remember(selectedBackend?.id) { mutableStateOf<List<HermesModelOption>>(emptyList()) }
     val scope = rememberCoroutineScope()
+    val loadingModels = stringResource(R.string.backend_loading_models)
+    val applyingHermes = stringResource(R.string.backend_applying_to_hermes)
+    val loadedModelsFormat = stringResource(R.string.backend_loaded_models)
+    val modelsLoadFailedFormat = stringResource(R.string.backend_models_load_failed)
+    val hermesUpdatedFormat = stringResource(R.string.backend_hermes_model_updated)
+    val hermesUpdateFailedFormat = stringResource(R.string.backend_hermes_update_failed)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -922,9 +928,9 @@ fun ChatSettingsDialog(
                         selected = pendingSelectedId == backend.id,
                         title = backend.displayName,
                         subtitle = when (backend.type) {
-                            BackendType.HERMES_API_SERVER -> "Hermes Agent"
-                            BackendType.OPENCLAW_GATEWAY -> "OpenClaw"
-                            BackendType.OPENCLAW_HTTP -> "OpenClaw API"
+                            BackendType.HERMES_API_SERVER -> stringResource(R.string.av_backend_kind_hermes)
+                            BackendType.OPENCLAW_GATEWAY -> stringResource(R.string.av_backend_kind_gateway)
+                            BackendType.OPENCLAW_HTTP -> stringResource(R.string.av_backend_kind_http)
                         },
                         onClick = { pendingSelectedId = backend.id },
                     )
@@ -949,9 +955,9 @@ fun ChatSettingsDialog(
                     HorizontalDivider()
                     Text(
                         text = when (selectedBackend.type) {
-                            BackendType.HERMES_API_SERVER -> "Hermes Model"
-                            BackendType.OPENCLAW_GATEWAY -> "OpenClaw Model"
-                            BackendType.OPENCLAW_HTTP -> "OpenClaw API Model"
+                            BackendType.HERMES_API_SERVER -> stringResource(R.string.backend_hermes_model_title)
+                            BackendType.OPENCLAW_GATEWAY -> stringResource(R.string.backend_openclaw_model_title)
+                            BackendType.OPENCLAW_HTTP -> stringResource(R.string.backend_openclaw_api_model_title)
                         },
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
@@ -959,13 +965,13 @@ fun ChatSettingsDialog(
                     OutlinedTextField(
                         value = modelName,
                         onValueChange = { modelName = it },
-                        label = { Text("Model") },
+                        label = { Text(stringResource(R.string.elevenlabs_model_label)) },
                         supportingText = {
                             Text(
                                 when (selectedBackend.type) {
-                                    BackendType.HERMES_API_SERVER -> "Saved for chat and can also be applied to Hermes."
-                                    BackendType.OPENCLAW_GATEWAY -> "Sent with gateway chat requests when supported."
-                                    BackendType.OPENCLAW_HTTP -> "Sent as the OpenAI-compatible model field."
+                                    BackendType.HERMES_API_SERVER -> stringResource(R.string.backend_hermes_model_help)
+                                    BackendType.OPENCLAW_GATEWAY -> stringResource(R.string.backend_openclaw_model_help)
+                                    BackendType.OPENCLAW_HTTP -> stringResource(R.string.backend_openclaw_api_model_help)
                                 },
                             )
                         },
@@ -978,34 +984,34 @@ fun ChatSettingsDialog(
                                 onClick = {
                                     val target = selectedBackend.copy(modelName = modelName.trim().ifBlank { "default" })
                                     scope.launch {
-                                        modelStatus = "Loading models..."
+                                        modelStatus = loadingModels
                                         runCatching { HermesConfigApi().fetchCatalog(target) }
                                             .onSuccess { catalog ->
                                                 hermesModels = catalog.models
                                                 catalog.config?.model?.takeIf { it.isNotBlank() }?.let { modelName = it }
-                                                modelStatus = "Loaded ${catalog.models.size} model${if (catalog.models.size == 1) "" else "s"}"
+                                                modelStatus = loadedModelsFormat.format(catalog.models.size)
                                             }
-                                            .onFailure { modelStatus = "Could not load models: ${it.message ?: it.javaClass.simpleName}" }
+                                            .onFailure { modelStatus = modelsLoadFailedFormat.format(it.message ?: it.javaClass.simpleName) }
                                     }
                                 },
-                            ) { Text("Load Models") }
+                            ) { Text(stringResource(R.string.backend_load_models)) }
                             OutlinedButton(
                                 onClick = {
                                     val target = selectedBackend.copy(modelName = modelName.trim().ifBlank { "default" })
                                     scope.launch {
-                                        modelStatus = "Applying to Hermes..."
+                                        modelStatus = applyingHermes
                                         runCatching { HermesConfigApi().updateModel(target, modelName) }
                                             .onSuccess { state ->
                                                 val saved = target.copy(modelName = state.model ?: modelName.trim().ifBlank { "default" })
                                                 repo.upsert(saved)
                                                 modelName = saved.modelName ?: "default"
-                                                modelStatus = "Hermes model updated: ${saved.modelName}"
+                                                modelStatus = hermesUpdatedFormat.format(saved.modelName)
                                             }
-                                            .onFailure { modelStatus = "Could not update Hermes: ${it.message ?: it.javaClass.simpleName}" }
+                                            .onFailure { modelStatus = hermesUpdateFailedFormat.format(it.message ?: it.javaClass.simpleName) }
                                     }
                                 },
                                 enabled = modelName.isNotBlank(),
-                            ) { Text("Apply to Hermes") }
+                            ) { Text(stringResource(R.string.backend_apply_to_hermes)) }
                         }
                         if (hermesModels.isNotEmpty()) {
                             FlowRow(

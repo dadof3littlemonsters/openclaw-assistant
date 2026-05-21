@@ -42,6 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -51,6 +52,7 @@ import com.openclaw.assistant.backend.AgentDiagnostics
 import com.openclaw.assistant.backend.BackendRepository
 import com.openclaw.assistant.backend.BackendType
 import com.openclaw.assistant.backend.ConnectionTestResult
+import com.openclaw.assistant.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -101,7 +103,7 @@ fun BackendListScreen(
             ExtendedFloatingActionButton(
                 onClick = onAdd,
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                text = { Text("Add backend") },
+                text = { Text(stringResource(R.string.add_backend)) },
             )
         },
     ) { padding ->
@@ -137,9 +139,9 @@ private fun EmptyState(padding: PaddingValues) {
         modifier = Modifier.fillMaxSize().padding(padding).padding(32.dp),
         verticalArrangement = Arrangement.Center,
     ) {
-        Text("No backends configured yet.", style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.backends_empty), style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(8.dp))
-        Text("Tap “Add backend” to configure OpenClaw or Hermes Agent.",
+        Text(stringResource(R.string.backends_empty_desc),
             style = MaterialTheme.typography.bodyMedium)
     }
 }
@@ -162,16 +164,16 @@ private fun BackendRow(
                     Text(config.displayName, style = MaterialTheme.typography.titleMedium)
                     Text(config.typeLabel(), style = MaterialTheme.typography.bodySmall)
                 }
-                if (config.isPrimary) AssistChip(onClick = {}, label = { Text("Primary") })
+                if (config.isPrimary) AssistChip(onClick = {}, label = { Text(stringResource(R.string.primary_backend)) })
                 Switch(checked = config.enabled, onCheckedChange = onToggleEnabled)
                 IconButton(onClick = { menuOpen = true }) {
-                    Icon(Icons.Filled.MoreVert, contentDescription = "More")
+                    Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.more_options))
                 }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                    DropdownMenuItem(text = { Text("Edit") }, onClick = { menuOpen = false; onEdit() })
-                    DropdownMenuItem(text = { Text("Set primary") }, enabled = !config.isPrimary, onClick = { menuOpen = false; onSetPrimary() })
-                    DropdownMenuItem(text = { Text("Test connection") }, onClick = { menuOpen = false; onTest() })
-                    DropdownMenuItem(text = { Text("Delete") }, onClick = { menuOpen = false; onDelete() })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.av_backends_edit)) }, onClick = { menuOpen = false; onEdit() })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.av_backends_set_primary)) }, enabled = !config.isPrimary, onClick = { menuOpen = false; onSetPrimary() })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.test_connection)) }, onClick = { menuOpen = false; onTest() })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.delete)) }, onClick = { menuOpen = false; onDelete() })
                 }
             }
             testResult?.let {
@@ -186,8 +188,9 @@ private fun BackendRow(
     }
 }
 
+@Composable
 private fun AgentBackendConfig.typeLabel(): String = when (type) {
-    BackendType.HERMES_API_SERVER -> "Hermes Agent — ${baseUrl ?: "no URL"}"
-    BackendType.OPENCLAW_GATEWAY -> "OpenClaw — ${host ?: "?"}:${port ?: "?"}"
-    BackendType.OPENCLAW_HTTP -> "OpenClaw API — ${baseUrl ?: "no URL"}"
+    BackendType.HERMES_API_SERVER -> stringResource(R.string.backend_type_hermes_with_url, baseUrl ?: stringResource(R.string.no_url))
+    BackendType.OPENCLAW_GATEWAY -> stringResource(R.string.backend_type_openclaw_with_host, host ?: "?", port?.toString() ?: "?")
+    BackendType.OPENCLAW_HTTP -> stringResource(R.string.backend_type_openclaw_api_with_url, baseUrl ?: stringResource(R.string.no_url))
 }

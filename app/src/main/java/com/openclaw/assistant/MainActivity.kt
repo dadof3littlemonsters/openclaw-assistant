@@ -1214,7 +1214,7 @@ fun CapabilityCard(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.HelpOutline,
-                        contentDescription = "More info about $label",
+                        contentDescription = stringResource(R.string.more_info_about, label),
                         tint = if (isActive) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(16.dp)
                     )
@@ -1613,7 +1613,7 @@ fun TroubleshootingDialog(onDismiss: () -> Unit) {
                 try {
                     context.startService(Intent(context, OpenClawAssistantService::class.java).apply { action = OpenClawAssistantService.ACTION_SHOW_ASSISTANT })
                 } catch (e: Exception) {
-                    android.widget.Toast.makeText(context, "Failed to start service: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+                    android.widget.Toast.makeText(context, context.getString(R.string.failed_to_start_service, e.message.orEmpty()), android.widget.Toast.LENGTH_SHORT).show()
                 }
             }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)) { Text(stringResource(R.string.debug_force_start)) }
         }
