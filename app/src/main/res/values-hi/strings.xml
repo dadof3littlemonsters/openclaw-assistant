@@ -612,16 +612,14 @@
     <string name="cron_job_deliver">Deliver target</string>
     <string name="cron_owner_hermes_agent">HermesAgent</string>
     <string name="cron_owner_openclaw">OpenClaw</string>
-    <string name="cron_hermes_backend_header">HermesAgent Cron: %1$s</string>
     <string name="cron_hermes_not_configured">HermesAgent Cron configured नहीं है</string>
     <string name="cron_hermes_not_configured_desc">HermesAgent Cron jobs manage करने के लिए Settings में Hermes API Server backend add और enable करें.</string>
     <string name="cron_openclaw_title">OpenClaw Cron</string>
     <string name="cron_openclaw_not_configured_desc">कोई enabled OpenClaw backend configured नहीं है.</string>
-    <string name="cron_openclaw_not_supported_desc">Configured OpenClaw backend(s): %1$s. इस app में OpenClaw Cron jobs list या edit करने के लिए अभी API नहीं है.</string>
     <string name="cron_job_deliver_value">Delivery: %1$s</string>
     <string name="cron_job_prompt_value">Prompt: %1$s</string>
     <string name="cron_job_repeat_value">Repeat: %1$d / %2$d</string>
-    <string name="cron_deliver_hermes_local">सिर्फ HermesAgent local</string>
+    <string name="cron_deliver_local_only">सिर्फ local</string>
     <string name="cron_deliver_origin">Origin channel</string>
     <string name="cron_deliver_all">सभी Hermes channels</string>
     <string name="cron_deliver_unknown">Unknown</string>

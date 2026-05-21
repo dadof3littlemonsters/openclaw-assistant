@@ -612,16 +612,14 @@
     <string name="cron_job_deliver">交付目标</string>
     <string name="cron_owner_hermes_agent">HermesAgent</string>
     <string name="cron_owner_openclaw">OpenClaw</string>
-    <string name="cron_hermes_backend_header">HermesAgent Cron：%1$s</string>
     <string name="cron_hermes_not_configured">HermesAgent Cron 未配置</string>
     <string name="cron_hermes_not_configured_desc">请在设置中添加并启用 Hermes API Server 后端，以管理 HermesAgent Cron 作业。</string>
     <string name="cron_openclaw_title">OpenClaw Cron</string>
     <string name="cron_openclaw_not_configured_desc">未配置已启用的 OpenClaw 后端。</string>
-    <string name="cron_openclaw_not_supported_desc">已配置的 OpenClaw 后端：%1$s。此应用尚无用于列出或编辑作业的 OpenClaw Cron API。</string>
     <string name="cron_job_deliver_value">交付：%1$s</string>
     <string name="cron_job_prompt_value">提示词：%1$s</string>
     <string name="cron_job_repeat_value">重复：%1$d / %2$d</string>
-    <string name="cron_deliver_hermes_local">仅 HermesAgent 本地</string>
+    <string name="cron_deliver_local_only">仅本地</string>
     <string name="cron_deliver_origin">来源频道</string>
     <string name="cron_deliver_all">所有 Hermes 频道</string>
     <string name="cron_deliver_unknown">未知</string>

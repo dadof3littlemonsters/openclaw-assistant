@@ -953,16 +953,14 @@
     <string name="cron_job_deliver">Deliver target</string>
     <string name="cron_owner_hermes_agent">HermesAgent</string>
     <string name="cron_owner_openclaw">OpenClaw</string>
-    <string name="cron_hermes_backend_header">HermesAgent cron: %1$s</string>
     <string name="cron_hermes_not_configured">HermesAgent cron is not configured</string>
     <string name="cron_hermes_not_configured_desc">Add and enable a Hermes API Server backend in Settings to manage HermesAgent cron jobs.</string>
     <string name="cron_openclaw_title">OpenClaw cron</string>
     <string name="cron_openclaw_not_configured_desc">No enabled OpenClaw backend is configured.</string>
-    <string name="cron_openclaw_not_supported_desc">Configured OpenClaw backend(s): %1$s. This app does not have an OpenClaw cron API to list or edit jobs yet.</string>
     <string name="cron_job_deliver_value">Delivery: %1$s</string>
     <string name="cron_job_prompt_value">Prompt: %1$s</string>
     <string name="cron_job_repeat_value">Repeat: %1$d / %2$d</string>
-    <string name="cron_deliver_hermes_local">HermesAgent local only</string>
+    <string name="cron_deliver_local_only">Local only</string>
     <string name="cron_deliver_origin">Origin channel</string>
     <string name="cron_deliver_all">All Hermes channels</string>
     <string name="cron_deliver_unknown">Unknown</string>

@@ -21,12 +21,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.openclaw.assistant.OpenClawApplication
 import com.openclaw.assistant.R
 import com.openclaw.assistant.backend.AgentBackendConfig
 import com.openclaw.assistant.backend.BackendRepository
 import com.openclaw.assistant.backend.BackendType
 import com.openclaw.assistant.backend.HermesConfigApi
 import com.openclaw.assistant.backend.HermesCronJob
+import com.openclaw.assistant.backend.OpenClawCronApi
+import com.openclaw.assistant.backend.OpenClawCronJob
 import kotlinx.coroutines.launch
 
 private enum class CronOwner {
@@ -82,17 +85,14 @@ fun CronScreen(modifier: Modifier = Modifier) {
                             }
                         }
                         CronOwner.OpenClaw -> {
-                            EmptyCronState(
-                                title = stringResource(R.string.cron_openclaw_title),
-                                body = if (openClawBackends.isEmpty()) {
-                                    stringResource(R.string.cron_openclaw_not_configured_desc)
-                                } else {
-                                    stringResource(
-                                        R.string.cron_openclaw_not_supported_desc,
-                                        openClawBackends.joinToString { it.displayName },
-                                    )
-                                },
-                            )
+                            if (openClawBackends.isEmpty()) {
+                                EmptyCronState(
+                                    title = stringResource(R.string.cron_openclaw_title),
+                                    body = stringResource(R.string.cron_openclaw_not_configured_desc),
+                                )
+                            } else {
+                                OpenClawCronJobList()
+                            }
                         }
                     }
                 }
@@ -234,12 +234,6 @@ fun CronJobList(backend: AgentBackendConfig) {
             ) {
                 item {
                     Text(
-                        text = stringResource(R.string.cron_hermes_backend_header, backend.displayName),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
                         text = backend.baseUrl.orEmpty(),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -248,7 +242,6 @@ fun CronJobList(backend: AgentBackendConfig) {
                 items(jobs, key = { it.id }) { job ->
                     CronJobCard(
                         job = job,
-                        backendName = backend.displayName,
                         onToggle = { enabled ->
                             scope.launch {
                                 try {
@@ -367,7 +360,6 @@ fun CronJobList(backend: AgentBackendConfig) {
 @Composable
 fun CronJobCard(
     job: HermesCronJob,
-    backendName: String,
     onToggle: (Boolean) -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit
@@ -397,17 +389,6 @@ fun CronJobCard(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        AssistChip(
-                            onClick = {},
-                            label = { Text(stringResource(R.string.cron_owner_hermes_agent)) },
-                        )
-                        AssistChip(
-                            onClick = {},
-                            label = { Text(backendName) },
-                        )
-                    }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Switch(
@@ -452,10 +433,289 @@ fun CronJobCard(
 @Composable
 private fun cronDeliverLabel(deliver: String): String {
     return when (deliver.trim().lowercase()) {
-        "local" -> stringResource(R.string.cron_deliver_hermes_local)
+        "local" -> stringResource(R.string.cron_deliver_local_only)
         "origin" -> stringResource(R.string.cron_deliver_origin)
         "all" -> stringResource(R.string.cron_deliver_all)
         else -> deliver.ifBlank { stringResource(R.string.cron_deliver_unknown) }
+    }
+}
+
+@Composable
+private fun OpenClawCronJobList() {
+    val context = LocalContext.current
+    val runtime = remember(context.applicationContext) {
+        (context.applicationContext as OpenClawApplication).nodeRuntime
+    }
+    val api = remember(runtime) { OpenClawCronApi(runtime) }
+    val scope = rememberCoroutineScope()
+
+    var jobs by remember { mutableStateOf<List<OpenClawCronJob>>(emptyList()) }
+    var deliveryPreviews by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    var showAddDialog by remember { mutableStateOf(false) }
+    var editingJob by remember { mutableStateOf<OpenClawCronJob?>(null) }
+    var jobToDelete by remember { mutableStateOf<OpenClawCronJob?>(null) }
+
+    fun refresh() {
+        scope.launch {
+            isLoading = true
+            errorMessage = null
+            try {
+                val result = api.fetchJobs()
+                jobs = result.jobs
+                deliveryPreviews = result.deliveryPreviews.mapValues { it.value.label.orEmpty() }
+            } catch (e: Exception) {
+                errorMessage = e.message ?: context.getString(R.string.cron_error_fetch)
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) { refresh() }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (isLoading) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        } else if (errorMessage != null) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = errorMessage!!,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.error
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = { refresh() }) {
+                    Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.action_try_again))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.action_try_again))
+                }
+            }
+        } else if (jobs.isEmpty()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = stringResource(R.string.cron_no_jobs),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = { showAddDialog = true }) {
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cron_add_job))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.cron_add_job))
+                }
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(jobs, key = { it.id }) { job ->
+                    OpenClawCronJobCard(
+                        job = job,
+                        deliveryPreview = deliveryPreviews[job.id].orEmpty(),
+                        onToggle = { enabled ->
+                            scope.launch {
+                                try {
+                                    api.updateJob(job, enabled = enabled)
+                                    refresh()
+                                } catch (e: Exception) {
+                                    errorMessage = e.message ?: context.getString(R.string.cron_error_save)
+                                }
+                            }
+                        },
+                        onEdit = { editingJob = job },
+                        onDelete = { jobToDelete = job },
+                    )
+                }
+            }
+        }
+
+        FloatingActionButton(
+            onClick = { showAddDialog = true },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(24.dp)
+        ) {
+            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cron_add_job))
+        }
+    }
+
+    if (showAddDialog) {
+        JobEditDialog(
+            title = stringResource(R.string.cron_add_job),
+            onDismiss = { showAddDialog = false },
+            onSave = { name, expr, prompt, _ ->
+                scope.launch {
+                    isLoading = true
+                    try {
+                        api.createJob(name, expr, prompt)
+                        showAddDialog = false
+                        refresh()
+                    } catch (e: Exception) {
+                        errorMessage = e.message ?: context.getString(R.string.cron_error_save)
+                        isLoading = false
+                    }
+                }
+            }
+        )
+    }
+
+    editingJob?.let { job ->
+        JobEditDialog(
+            title = stringResource(R.string.cron_edit_job),
+            initialName = job.name,
+            initialSchedule = job.schedule.expr.orEmpty(),
+            initialPrompt = job.promptText(),
+            onDismiss = { editingJob = null },
+            onSave = { name, expr, prompt, _ ->
+                scope.launch {
+                    isLoading = true
+                    try {
+                        api.updateJob(job, name = name, expr = expr, prompt = prompt)
+                        editingJob = null
+                        refresh()
+                    } catch (e: Exception) {
+                        errorMessage = e.message ?: context.getString(R.string.cron_error_save)
+                        isLoading = false
+                    }
+                }
+            }
+        )
+    }
+
+    jobToDelete?.let { job ->
+        AlertDialog(
+            onDismissRequest = { jobToDelete = null },
+            title = { Text(stringResource(R.string.cron_delete_job)) },
+            text = { Text(stringResource(R.string.cron_delete_confirm)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            isLoading = true
+                            try {
+                                api.deleteJob(job.id)
+                                jobToDelete = null
+                                refresh()
+                            } catch (e: Exception) {
+                                errorMessage = e.message ?: context.getString(R.string.cron_error_delete)
+                                isLoading = false
+                            }
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.cron_delete_job), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { jobToDelete = null }) {
+                    Text(stringResource(R.string.cron_cancel))
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun OpenClawCronJobCard(
+    job: OpenClawCronJob,
+    deliveryPreview: String,
+    onToggle: (Boolean) -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = job.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = job.scheduleLabel(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Switch(
+                        checked = job.enabled,
+                        onCheckedChange = onToggle
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(onClick = onEdit, enabled = job.schedule.kind == "cron") {
+                        Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.cron_edit_job))
+                    }
+                    IconButton(onClick = onDelete) {
+                        Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.cron_delete_job), tint = MaterialTheme.colorScheme.error)
+                    }
+                }
+            }
+            val prompt = job.promptText()
+            if (prompt.isNotBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.cron_job_prompt_value, prompt),
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 2,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            val delivery = deliveryPreview.ifBlank { job.deliveryLabel() }
+            if (delivery.isNotBlank()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.cron_job_deliver_value, delivery),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
+        }
+    }
+}
+
+private fun OpenClawCronJob.promptText(): String = payload.message ?: payload.text.orEmpty()
+
+private fun OpenClawCronJob.deliveryLabel(): String {
+    val mode = delivery?.mode.orEmpty()
+    val channel = delivery?.channel.orEmpty()
+    val to = delivery?.to.orEmpty()
+    return listOf(mode, channel, to).filter { it.isNotBlank() }.joinToString(" ")
+}
+
+private fun OpenClawCronJob.scheduleLabel(): String {
+    return when (schedule.kind) {
+        "cron" -> listOfNotNull(schedule.expr, schedule.tz?.takeIf { it.isNotBlank() }).joinToString("  ")
+        "every" -> schedule.everyMs?.let { "every ${it / 1000}s" } ?: schedule.kind
+        "at" -> schedule.at ?: schedule.kind
+        else -> schedule.kind
     }
 }
 

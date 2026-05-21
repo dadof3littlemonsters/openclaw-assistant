@@ -1151,6 +1151,10 @@ class NodeRuntime(context: Context) {
     }
   }
 
+  suspend fun requestGateway(method: String, paramsJson: String = "{}", timeoutMs: Long = 15_000): String {
+    return operatorSession.request(method, paramsJson, timeoutMs)
+  }
+
   /** Push current gateway + agent state into the home canvas so it survives reconnects and restarts. */
   private fun updateHomeCanvasState() {
     val connected = _isConnected.value

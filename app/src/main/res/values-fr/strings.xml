@@ -612,16 +612,14 @@ Pour plus de détails, consultez le site officiel de VOICEVOX.</string>
     <string name="cron_job_deliver">Destination de livraison</string>
     <string name="cron_owner_hermes_agent">HermesAgent</string>
     <string name="cron_owner_openclaw">OpenClaw</string>
-    <string name="cron_hermes_backend_header">Cron HermesAgent : %1$s</string>
     <string name="cron_hermes_not_configured">Cron HermesAgent non configuré</string>
     <string name="cron_hermes_not_configured_desc">Ajoutez et activez un backend Hermes API Server dans les paramètres pour gérer les tâches Cron de HermesAgent.</string>
     <string name="cron_openclaw_title">Cron OpenClaw</string>
     <string name="cron_openclaw_not_configured_desc">Aucun backend OpenClaw activé n’est configuré.</string>
-    <string name="cron_openclaw_not_supported_desc">Backend(s) OpenClaw configuré(s) : %1$s. Cette app n’a pas encore d’API Cron OpenClaw pour lister ou modifier les tâches.</string>
     <string name="cron_job_deliver_value">Livraison : %1$s</string>
     <string name="cron_job_prompt_value">Prompt : %1$s</string>
     <string name="cron_job_repeat_value">Répétition : %1$d / %2$d</string>
-    <string name="cron_deliver_hermes_local">HermesAgent local uniquement</string>
+    <string name="cron_deliver_local_only">Local uniquement</string>
     <string name="cron_deliver_origin">Canal d’origine</string>
     <string name="cron_deliver_all">Tous les canaux Hermes</string>
     <string name="cron_deliver_unknown">Inconnu</string>

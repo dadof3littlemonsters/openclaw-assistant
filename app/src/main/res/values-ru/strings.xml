@@ -612,16 +612,14 @@
     <string name="cron_job_deliver">Цель доставки</string>
     <string name="cron_owner_hermes_agent">HermesAgent</string>
     <string name="cron_owner_openclaw">OpenClaw</string>
-    <string name="cron_hermes_backend_header">Cron HermesAgent: %1$s</string>
     <string name="cron_hermes_not_configured">Cron HermesAgent не настроен</string>
     <string name="cron_hermes_not_configured_desc">Добавьте и включите бэкенд Hermes API Server в настройках, чтобы управлять заданиями Cron HermesAgent.</string>
     <string name="cron_openclaw_title">Cron OpenClaw</string>
     <string name="cron_openclaw_not_configured_desc">Нет включенного бэкенда OpenClaw.</string>
-    <string name="cron_openclaw_not_supported_desc">Настроенные бэкенды OpenClaw: %1$s. В этом приложении пока нет API Cron OpenClaw для просмотра или редактирования заданий.</string>
     <string name="cron_job_deliver_value">Доставка: %1$s</string>
     <string name="cron_job_prompt_value">Промпт: %1$s</string>
     <string name="cron_job_repeat_value">Повтор: %1$d / %2$d</string>
-    <string name="cron_deliver_hermes_local">Только локально в HermesAgent</string>
+    <string name="cron_deliver_local_only">Только локально</string>
     <string name="cron_deliver_origin">Исходный канал</string>
     <string name="cron_deliver_all">Все каналы Hermes</string>
     <string name="cron_deliver_unknown">Неизвестно</string>

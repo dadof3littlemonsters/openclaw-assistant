@@ -670,16 +670,14 @@
     <string name="cron_job_deliver">配信先</string>
     <string name="cron_owner_hermes_agent">HermesAgent</string>
     <string name="cron_owner_openclaw">OpenClaw</string>
-    <string name="cron_hermes_backend_header">HermesAgent Cron: %1$s</string>
     <string name="cron_hermes_not_configured">HermesAgent Cron が未設定です</string>
     <string name="cron_hermes_not_configured_desc">HermesAgent の Cron ジョブを管理するには、設定で Hermes API Server バックエンドを追加して有効にしてください。</string>
     <string name="cron_openclaw_title">OpenClaw Cron</string>
     <string name="cron_openclaw_not_configured_desc">有効な OpenClaw バックエンドが設定されていません。</string>
-    <string name="cron_openclaw_not_supported_desc">設定済み OpenClaw バックエンド: %1$s。このアプリには OpenClaw の Cron ジョブを一覧・編集する API がまだありません。</string>
     <string name="cron_job_deliver_value">配信先: %1$s</string>
     <string name="cron_job_prompt_value">プロンプト: %1$s</string>
     <string name="cron_job_repeat_value">リピート: %1$d / %2$d</string>
-    <string name="cron_deliver_hermes_local">HermesAgent ローカルのみ</string>
+    <string name="cron_deliver_local_only">ローカルのみ</string>
     <string name="cron_deliver_origin">作成元チャンネル</string>
     <string name="cron_deliver_all">Hermes 全チャンネル</string>
     <string name="cron_deliver_unknown">不明</string>
