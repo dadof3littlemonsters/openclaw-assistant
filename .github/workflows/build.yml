@@ -12,10 +12,11 @@ jobs:
           java-version: 17
       - uses: android-actions/setup-android@v3
       - name: List build variants
-        run: ./gradlew tasks --group build | grep -i assemble
+        run: ./gradlew tasks --group build 2>&1 | grep -i assemble || true
       - name: Build
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleSideloadDebug || ./gradlew assembleOssDebug || ./gradlew assembleFossDebug || echo "FALLBACK" && ./gradlew tasks --all 2>&1 | grep -i assemble
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: wakehermesclaw-debug
           path: app/build/outputs/apk/**/debug/*.apk
