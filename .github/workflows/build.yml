@@ -11,6 +11,30 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: android-actions/setup-android@v3
+      - name: Find package name
+        run: grep -r "applicationId" app/build.gradle* || grep -r "namespace" app/build.gradle*
+      - name: Create dummy google-services.json
+        run: |
+          PKGNAME=$(grep -oP 'applicationId\s*=?\s*"?\K[^"]+' app/build.gradle.kts app/build.gradle 2>/dev/null | head -1)
+          [ -z "$PKGNAME" ] && PKGNAME="com.yuga.openclawassistant"
+          echo "Using package: $PKGNAME"
+          cat > app/google-services.json << EOF
+          {
+            "project_info": {
+              "project_number": "000000000000",
+              "project_id": "dummy",
+              "storage_bucket": "dummy.appspot.com"
+            },
+            "client": [{
+              "client_info": {
+                "mobilesdk_app_id": "1:000000000000:android:0000000000000000",
+                "android_client_info": { "package_name": "$PKGNAME" }
+              },
+              "api_key": [{ "current_key": "dummy" }]
+            }],
+            "configuration_version": "1"
+          }
+          EOF
       - name: Build
         run: ./gradlew assembleStandardDebug
       - uses: actions/upload-artifact@v4
